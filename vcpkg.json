@@ -1,5 +1,5 @@
 {
-  "name": "meeting-sdk-linux-sample",
+  "name": "python-zoom-linux-sdk",
   "version": "1",
   "dependencies": [
     "ada-url",

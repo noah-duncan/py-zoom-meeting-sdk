@@ -8,14 +8,9 @@
 #include <sstream>
 #include <vector>
 #include <future>
-
+#include <glib.h>
 
 #include <X11/Xlib.h>
-
-#include <opencv2/objdetect.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/videoio.hpp>
 
 #include "zoom_sdk_raw_data_def.h"
 #include "rawdata/rawdata_renderer_interface.h"
@@ -23,7 +18,6 @@
 #include "../util/SocketServer.h"
 #include "../util/Log.h"
 
-using namespace cv;
 using namespace std;
 using namespace ZOOMSDK;
 
@@ -35,9 +29,6 @@ class ZoomSDKRendererDelegate : public IZoomSDKRendererDelegate {
     unsigned int m_frameCount = 0;
     double m_scale=3;
     double m_fx = 1/m_scale;
-
-    vector<Rect> m_faces;
-    CascadeClassifier m_cascade;
 
     SocketServer m_socketServer;
 

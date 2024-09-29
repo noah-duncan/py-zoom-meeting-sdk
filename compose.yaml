@@ -3,6 +3,6 @@ services:
     build: ./
     platform: linux/amd64
     volumes:
-     - .:/tmp/meeting-sdk-linux-sample
+     - .:/tmp/python-zoom-linux-sdk
     ports:
       - "3000:3000"
