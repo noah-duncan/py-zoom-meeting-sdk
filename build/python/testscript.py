@@ -11,6 +11,11 @@ import asyncio
 import signal
 import sys
 
+import gi
+gi.require_version('GLib', '2.0')
+from gi.repository import GLib
+
+
 def on_signal(signum, frame):
     print(f"Received signal {signum}")
     sys.exit(0)
@@ -18,7 +23,8 @@ def on_signal(signum, frame):
 def on_exit():
     print("Exiting...")
 
-
+def on_timeout():
+    return True  # Returning True keeps the timeout active
 
 
 def generate_jwt(client_id, client_secret):
@@ -36,7 +42,7 @@ def generate_jwt(client_id, client_secret):
     return token
 
 
-async def run():
+def run():
     def join_meeting():
         mid = "4849920355"
         password = "22No8yGYAajAoTaz5H00RIg5HkgEWk.1"
@@ -127,53 +133,32 @@ async def run():
 
     if result == zoom.SDKError.SDKERR_SUCCESS:
         print("Authentication successful")
+        print("098")
     else:
         print(f"Authentication failed with errqor: {result}")
         print(f"Authentication failed with error: {auth_service.GetAuthResult()}")
 
+    print("qqqq")
 
+    
+    # Create a GLib main loop
+    main_loop = GLib.MainLoop()
 
-    zoom.runloopy();
+    # Add a timeout function that will be called every 100ms
+    GLib.timeout_add(100, on_timeout)
 
-    # # join start
-    # mid = "4849920355"
-    # password = "22No8yGYAajAoTaz5H00RIg5HkgEWk.1"
-    # display_name = "test bi"
+    # Run the main loop
+    try:
+        print("STARTLOOPP")
+        main_loop.run()
+    except KeyboardInterrupt:
+        print("Interrupted by user, shutting down...")
+    finally:
+        # Cleanup code here
+        # zoom_api.cleanup()
+        main_loop.quit()
 
-    # meeting_number = int(mid)
-
-    # join_param = zoom.JoinParam()
-    # join_param.userType = zoom.SDKUserType.SDK_UT_WITHOUT_LOGIN
-
-    # param = join_param.param
-    # param.meetingNumber = meeting_number
-    # param.userName = display_name
-    # param.psw = password
-    # param.vanityID = ""
-    # param.customer_key = ""
-    # param.webinarToken = ""
-    # param.isVideoOff = False
-    # param.isAudioOff = False
-
-    # print(param.meetingNumber)
-    # print(param.psw)
-    # print(param.userName)
-
-    # join_result = meeting_service.Join(join_param)
-    # print("join_result")
-    # print(join_result)
-
-    # zoom.runloopy();
-
-    # zoom.DestroyAuthService(auth_service)
-    # zoom.DestroySettingService(setting_service)
-    # zoom.DestroyMeetingService(meeting_service)
-    # time.sleep(5)
-
-    # #meeting_service
-    # #status = meeting_service.GetMeetingStatus()
-
-async def main():
+def main():
     # Set up signal handlers
     signal.signal(signal.SIGINT, on_signal)
     signal.signal(signal.SIGTERM, on_signal)
@@ -183,15 +168,11 @@ async def main():
     atexit.register(on_exit)
 
     # Run the Meeting Bot
-    err = await run()
+    run()
 
-    if zoom.Zoom.hasError(err, "waiting"):
-        return err
-
-    zoom.runloopy()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
 
 
 
