@@ -39,6 +39,7 @@ RUN apt-get update  \
     libxfixes3 \
     linux-libc-dev \
     pkgconf \
+    python3-pip \
     tar \
     unzip \
     zip
@@ -48,6 +49,9 @@ RUN apt-get install -y libasound2 libasound2-plugins alsa alsa-utils alsa-oss
 
 # Install Pulseaudio
 RUN apt-get install -y  pulseaudio pulseaudio-utils
+
+# Install pybind11
+RUN pip install pybind11 pyjwt
 
 FROM base AS deps
 
@@ -68,6 +72,6 @@ RUN git clone --depth 1 https://github.com/Microsoft/vcpkg.git \
 FROM deps AS build
 
 WORKDIR $cwd
-ENTRYPOINT ["/tini", "--", "./bin/entry.sh"]
-
+#ENTRYPOINT ["/tini", "--", "./bin/entry.sh"]
+CMD ["/bin/bash"]
 

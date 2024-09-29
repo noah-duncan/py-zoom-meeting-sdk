@@ -1,5 +1,6 @@
 # Build folder
-build
+/build/*
+!/build/python/
 
 # output folder
 out
