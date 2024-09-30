@@ -2,57 +2,15 @@
 #include <pybind11/functional.h>
 #include <pybind11/stl.h>
 #include "zoom_sdk.h"
-#include "rawdata/zoom_rawdata_api.h"
-#include "rawdata/rawdata_renderer_interface.h"
 
-#include "meeting_service_components/meeting_audio_interface.h"
-#include "meeting_service_components/meeting_participants_ctrl_interface.h"
-#include "meeting_service_components/meeting_video_interface.h"
 #include "meeting_service_interface.h"
 #include "setting_service_interface.h"
 #include "auth_service_interface.h"
 #include "events/AuthServiceEvent.h"
 #include <iostream>
 #include <functional>
-#include "Zoom.h"
-#include <jwt-cpp/jwt.h>
 
 namespace py = pybind11;
-
-
-/**
- *  Callback fired atexit()
- */
-void onExit() {
-    auto* zoom = &Zoom::getInstance();
-    zoom->leave();
-    zoom->clean();
-
-    cout << "exiting..." << endl;
-}
-
-/**
- * Callback fired when a signal is trapped
- * @param signal type of signal
- */
-void onSignal(int signal) {
-    onExit();
-    _Exit(signal);
-}
-
-
-/**
- * Callback for glib event loop
- * @param data event data
- * @return always TRUE
- */
-gboolean onTimeout (gpointer data) {
-    return TRUE;
-}
-
-std::function<void()> onAuth = []() {
-        throw std::runtime_error("qwewe");
-};
 
 class PyAuthServiceEvent : public ZOOM_SDK_NAMESPACE::IAuthServiceEvent {
 public:
@@ -78,175 +36,6 @@ public:
         PYBIND11_OVERLOAD_PURE(void, ZOOM_SDK_NAMESPACE::IAuthServiceEvent, onZoomAuthIdentityExpired);
     }
 };
-
-SDKError runshuggy(int argc, char** argv) {
-    SDKError err{SDKERR_SUCCESS};
-    auto* zoom = &Zoom::getInstance();
-
-    signal(SIGINT, onSignal);
-    signal(SIGTERM, onSignal);
-
-    atexit(onExit);
-
-    // read the CLI and config.ini file
-    err = zoom->config(argc, argv);
-    if (Zoom::hasError(err, "configure"))
-        return err;
-
-    // initialize the Zoom SDK
-    err = zoom->init();
-    if(Zoom::hasError(err, "initialize"))
-        return err;
-
-    // authorize with the Zoom SDK
-    err = zoom->auth();
-    if (Zoom::hasError(err, "authorize"))
-        return err;
-
-    return err;
-}
-
-static gboolean quitMainLoop(gpointer data) {
-    GMainLoop *loop = (GMainLoop *)data;
-    g_main_loop_quit(loop);
-    return G_SOURCE_REMOVE;
-}
-
-void runloopy() {
-    signal(SIGINT, onSignal);
-    signal(SIGTERM, onSignal);
-
-    atexit(onExit);
-
-    GMainLoop* eventLoop;
-    eventLoop = g_main_loop_new(NULL, FALSE);
-    g_timeout_add(100, onTimeout, eventLoop);
-    g_timeout_add_seconds(50, quitMainLoop, eventLoop);
-    g_main_loop_run(eventLoop);
-}
-
-int mainshuggy(int argc, char **argv) {
-    // Run the Meeting Botsdsdss
-    SDKError err = runshuggy(argc, argv);
-
-    if (Zoom::hasError(err))
-        return err;
-
-    // Use an event loop to receive callbacks
-    GMainLoop* eventLoop;
-    eventLoop = g_main_loop_new(NULL, FALSE);
-    g_timeout_add(100, onTimeout, eventLoop);
-    g_main_loop_run(eventLoop);
-
-    return err;
-}
-
-
-void log(const std::string& message) {
-    std::cout << message << std::endl;
-}
-
-// Function call guard for logging
-struct LogGuard {
-    std::string funcName;
-    LogGuard(const std::string& name) : funcName(name) {
-        log("Entering " + funcName);
-    }
-    ~LogGuard() {
-        log("Exiting " + funcName);
-    }
-};
-
-std::string zcharToString(const zchar_t* str) {
-    return str ? std::string(str) : "null";
-}
-
-// Helper function to convert SDKUserType to string
-std::string SDKUserTypeToString(ZOOM_SDK_NAMESPACE::SDKUserType type) {
-    switch (type) {
-        case ZOOM_SDK_NAMESPACE::SDK_UT_NORMALUSER: return "SDK_UT_NORMALUSER";
-        case ZOOM_SDK_NAMESPACE::SDK_UT_WITHOUT_LOGIN: return "SDK_UT_WITHOUT_LOGIN";
-        default: return "UNKNOWN";
-    }
-}
-
-// Helper function to convert AudioRawdataSamplingRate to string
-std::string AudioRawdataSamplingRateToString(ZOOM_SDK_NAMESPACE::AudioRawdataSamplingRate rate) {
-    switch (rate) {
-        default: return "UNKNOWN";
-    }
-}
-
-std::string SDKErrorToString(ZOOM_SDK_NAMESPACE::SDKError error) {
-    // Implement this function based on the SDK's error codes
-    // For example:
-    switch (error) {
-        case ZOOM_SDK_NAMESPACE::SDKERR_SUCCESS: return "SDKERR_SUCCESS";
-        // Add other error codes as needed
-        default: return "UNKNOWN_ERROR";
-    }
-}
-
-// Function to log JoinParam4WithoutLogin
-void logJoinParam4WithoutLogin(const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin& param) {
-    std::stringstream ss;
-    ss << "JoinParam4WithoutLogin:" << std::endl
-       << "  meetingNumber: " << param.meetingNumber << std::endl
-       << "  vanityID: " << zcharToString(param.vanityID) << std::endl
-       << "  userName: " << zcharToString(param.userName) << std::endl
-       << "  psw: " << zcharToString(param.psw) << std::endl
-       << "  app_privilege_token: " << zcharToString(param.app_privilege_token) << std::endl
-       << "  userZAK: " << zcharToString(param.userZAK) << std::endl
-       << "  customer_key: " << zcharToString(param.customer_key) << std::endl
-       << "  webinarToken: " << zcharToString(param.webinarToken) << std::endl
-       << "  isVideoOff: " << (param.isVideoOff ? "true" : "false") << std::endl
-       << "  isAudioOff: " << (param.isAudioOff ? "true" : "false") << std::endl
-       << "  join_token: " << zcharToString(param.join_token) << std::endl
-       << "  isMyVoiceInMix: " << (param.isMyVoiceInMix ? "true" : "false") << std::endl
-#if defined(WIN32)
-       << "  hDirectShareAppWnd: " << param.hDirectShareAppWnd << std::endl
-       << "  isDirectShareDesktop: " << (param.isDirectShareDesktop ? "true" : "false") << std::endl
-#endif
-       << "  isAudioRawDataStereo: " << (param.isAudioRawDataStereo ? "true" : "false") << std::endl
-       << "  eAudioRawdataSamplingRate: " << AudioRawdataSamplingRateToString(param.eAudioRawdataSamplingRate);
-    log(ss.str());
-}
-
-// Function to log JoinParam4NormalUser
-void logJoinParam4NormalUser(const ZOOM_SDK_NAMESPACE::JoinParam4NormalUser& param) {
-    std::stringstream ss;
-    ss << "JoinParam4NormalUser:" << std::endl
-       << "  meetingNumber: " << param.meetingNumber << std::endl
-       << "  vanityID: " << zcharToString(param.vanityID) << std::endl
-       << "  userName: " << zcharToString(param.userName) << std::endl
-       << "  psw: " << zcharToString(param.psw) << std::endl
-       << "  app_privilege_token: " << zcharToString(param.app_privilege_token) << std::endl
-       << "  customer_key: " << zcharToString(param.customer_key) << std::endl
-       << "  webinarToken: " << zcharToString(param.webinarToken) << std::endl
-       << "  isVideoOff: " << (param.isVideoOff ? "true" : "false") << std::endl
-       << "  isAudioOff: " << (param.isAudioOff ? "true" : "false") << std::endl
-       << "  join_token: " << zcharToString(param.join_token) << std::endl
-       << "  isMyVoiceInMix: " << (param.isMyVoiceInMix ? "true" : "false") << std::endl
-#if defined(WIN32)
-       << "  hDirectShareAppWnd: " << param.hDirectShareAppWnd << std::endl
-       << "  isDirectShareDesktop: " << (param.isDirectShareDesktop ? "true" : "false") << std::endl
-#endif
-       << "  isAudioRawDataStereo: " << (param.isAudioRawDataStereo ? "true" : "false") << std::endl
-       << "  eAudioRawdataSamplingRate: " << AudioRawdataSamplingRateToString(param.eAudioRawdataSamplingRate);
-    log(ss.str());
-}
-
-// Function to log JoinParam
-void logJoinParam(const ZOOM_SDK_NAMESPACE::JoinParam& param) {
-    log("JoinParam:");
-    log("  userType: " + SDKUserTypeToString(param.userType));
-    if (param.userType == ZOOM_SDK_NAMESPACE::SDK_UT_NORMALUSER) {
-        logJoinParam4NormalUser(param.param.normaluserJoin);
-    } else {
-        logJoinParam4WithoutLogin(param.param.withoutloginuserJoin);
-    }
-}
-
 
 PYBIND11_MODULE(zoom_sdk_python, m) {
     m.doc() = "Python bindings for Zoom SDK";
@@ -345,7 +134,6 @@ py::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
         .def_readwrite("enableLogByDefault", &ZOOM_SDK_NAMESPACE::InitParam::enableLogByDefault)
         .def_readwrite("uiLogFileSize", &ZOOM_SDK_NAMESPACE::InitParam::uiLogFileSize);
 
-
     m.def("InitSDK", [](ZOOM_SDK_NAMESPACE::InitParam& initParam) {
         std::cout << "strWebDomain" << std::endl;
         std::cout << initParam.strWebDomain << std::endl;
@@ -441,17 +229,27 @@ py::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
             }
         );
 
+    py::enum_<ZOOM_SDK_NAMESPACE::AuthResult>(m, "AuthResult")
+    .value("AUTHRET_SUCCESS", ZOOM_SDK_NAMESPACE::AUTHRET_SUCCESS)
+    .value("AUTHRET_KEYORSECRETEMPTY", ZOOM_SDK_NAMESPACE::AUTHRET_KEYORSECRETEMPTY)
+    .value("AUTHRET_KEYORSECRETWRONG", ZOOM_SDK_NAMESPACE::AUTHRET_KEYORSECRETWRONG)
+    .value("AUTHRET_ACCOUNTNOTSUPPORT", ZOOM_SDK_NAMESPACE::AUTHRET_ACCOUNTNOTSUPPORT)
+    .value("AUTHRET_ACCOUNTNOTENABLESDK", ZOOM_SDK_NAMESPACE::AUTHRET_ACCOUNTNOTENABLESDK)
+    .value("AUTHRET_UNKNOWN", ZOOM_SDK_NAMESPACE::AUTHRET_UNKNOWN)
+    .value("AUTHRET_SERVICE_BUSY", ZOOM_SDK_NAMESPACE::AUTHRET_SERVICE_BUSY)
+    .value("AUTHRET_NONE", ZOOM_SDK_NAMESPACE::AUTHRET_NONE)
+    .value("AUTHRET_OVERTIME", ZOOM_SDK_NAMESPACE::AUTHRET_OVERTIME)
+    .value("AUTHRET_NETWORKISSUE", ZOOM_SDK_NAMESPACE::AUTHRET_NETWORKISSUE)
+    .value("AUTHRET_CLIENT_INCOMPATIBLE", ZOOM_SDK_NAMESPACE::AUTHRET_CLIENT_INCOMPATIBLE)
+    .value("AUTHRET_JWTTOKENWRONG", ZOOM_SDK_NAMESPACE::AUTHRET_JWTTOKENWRONG)
+    .value("AUTHRET_LIMIT_EXCEEDED_EXCEPTION", ZOOM_SDK_NAMESPACE::AUTHRET_LIMIT_EXCEEDED_EXCEPTION)
+    .export_values();        
 
     // Binding IMeetingService as an abstract base class
     py::class_<ZOOM_SDK_NAMESPACE::IMeetingService, std::unique_ptr<ZOOM_SDK_NAMESPACE::IMeetingService, py::nodelete>>(m, "IMeetingService")
         .def("GetMeetingStatus", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingStatus)
         .def("Join", [](ZOOM_SDK_NAMESPACE::IMeetingService& self, ZOOM_SDK_NAMESPACE::JoinParam& param) {
-            LogGuard guard("IMeetingService::Join");
-            logJoinParam(param);
-            auto result = self.Join(param);
-            log("  Return value: " + SDKErrorToString(result));
-            logJoinParam(param);  // Log again after the call in case the SDK modified the param
-            return result;
+            return self.Join(param);
         })
         .def("Start", &ZOOM_SDK_NAMESPACE::IMeetingService::Start)
         .def("Leave", &ZOOM_SDK_NAMESPACE::IMeetingService::Leave)
@@ -497,26 +295,7 @@ py::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
         return ZOOM_SDK_NAMESPACE::DestroySettingService(pService);
     }, "Destroy a setting service instance");
 
-        py::enum_<ZOOM_SDK_NAMESPACE::AuthResult>(m, "AuthResult")
-        .value("AUTHRET_SUCCESS", ZOOM_SDK_NAMESPACE::AUTHRET_SUCCESS)
-        .value("AUTHRET_KEYORSECRETEMPTY", ZOOM_SDK_NAMESPACE::AUTHRET_KEYORSECRETEMPTY)
-        .value("AUTHRET_KEYORSECRETWRONG", ZOOM_SDK_NAMESPACE::AUTHRET_KEYORSECRETWRONG)
-        .value("AUTHRET_ACCOUNTNOTSUPPORT", ZOOM_SDK_NAMESPACE::AUTHRET_ACCOUNTNOTSUPPORT)
-        .value("AUTHRET_ACCOUNTNOTENABLESDK", ZOOM_SDK_NAMESPACE::AUTHRET_ACCOUNTNOTENABLESDK)
-        .value("AUTHRET_UNKNOWN", ZOOM_SDK_NAMESPACE::AUTHRET_UNKNOWN)
-        .value("AUTHRET_SERVICE_BUSY", ZOOM_SDK_NAMESPACE::AUTHRET_SERVICE_BUSY)
-        .value("AUTHRET_NONE", ZOOM_SDK_NAMESPACE::AUTHRET_NONE)
-        .value("AUTHRET_OVERTIME", ZOOM_SDK_NAMESPACE::AUTHRET_OVERTIME)
-        .value("AUTHRET_NETWORKISSUE", ZOOM_SDK_NAMESPACE::AUTHRET_NETWORKISSUE)
-        .value("AUTHRET_CLIENT_INCOMPATIBLE", ZOOM_SDK_NAMESPACE::AUTHRET_CLIENT_INCOMPATIBLE)
-        .value("AUTHRET_JWTTOKENWRONG", ZOOM_SDK_NAMESPACE::AUTHRET_JWTTOKENWRONG)
-        .value("AUTHRET_LIMIT_EXCEEDED_EXCEPTION", ZOOM_SDK_NAMESPACE::AUTHRET_LIMIT_EXCEEDED_EXCEPTION)
-        .export_values();
-
-
-        
-
-    // LG
+    // Binding for AuthContext
     py::class_<ZOOM_SDK_NAMESPACE::AuthContext>(m, "AuthContext")
         .def(py::init<>())
         .def_property("jwt_token",
@@ -529,24 +308,27 @@ py::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
                 self.jwt_token = stored_token.c_str();
             }
         );
-py::class_<IAuthServiceEvent, std::shared_ptr<IAuthServiceEvent>>(m, "IAuthServiceEvent")
-    .def("onAuthenticationReturn", &IAuthServiceEvent::onAuthenticationReturn)
-    .def("onLoginReturnWithReason", &IAuthServiceEvent::onLoginReturnWithReason)
-    .def("onLogout", &IAuthServiceEvent::onLogout)
-    .def("onZoomIdentityExpired", &IAuthServiceEvent::onZoomIdentityExpired)
-    .def("onZoomAuthIdentityExpired", &IAuthServiceEvent::onZoomAuthIdentityExpired);
 
-py::class_<AuthServiceEvent, IAuthServiceEvent, std::shared_ptr<AuthServiceEvent>>(m, "AuthServiceEvent")
-    .def(py::init<std::function<void()>&>())
-    .def("onAuthenticationReturn", &AuthServiceEvent::onAuthenticationReturn)
-    .def("onLoginReturnWithReason", &AuthServiceEvent::onLoginReturnWithReason)
-    .def("onLogout", &AuthServiceEvent::onLogout)
-    .def("onZoomIdentityExpired", &AuthServiceEvent::onZoomIdentityExpired)
-    .def("onZoomAuthIdentityExpired", &AuthServiceEvent::onZoomAuthIdentityExpired)
-    .def("setOnAuth", &AuthServiceEvent::setOnAuth)
-    .def("setOnAuthenticationReturn", &AuthServiceEvent::setOnAuthenticationReturn);
+    // Binding for IAuthServiceEvent
+    py::class_<IAuthServiceEvent, std::shared_ptr<IAuthServiceEvent>>(m, "IAuthServiceEvent")
+        .def("onAuthenticationReturn", &IAuthServiceEvent::onAuthenticationReturn)
+        .def("onLoginReturnWithReason", &IAuthServiceEvent::onLoginReturnWithReason)
+        .def("onLogout", &IAuthServiceEvent::onLogout)
+        .def("onZoomIdentityExpired", &IAuthServiceEvent::onZoomIdentityExpired)
+        .def("onZoomAuthIdentityExpired", &IAuthServiceEvent::onZoomAuthIdentityExpired);
 
+    // Binding for AuthServiceEvent (Not in SDK)
+    py::class_<AuthServiceEvent, IAuthServiceEvent, std::shared_ptr<AuthServiceEvent>>(m, "AuthServiceEvent")
+        .def(py::init<std::function<void()>&>())
+        .def("onAuthenticationReturn", &AuthServiceEvent::onAuthenticationReturn)
+        .def("onLoginReturnWithReason", &AuthServiceEvent::onLoginReturnWithReason)
+        .def("onLogout", &AuthServiceEvent::onLogout)
+        .def("onZoomIdentityExpired", &AuthServiceEvent::onZoomIdentityExpired)
+        .def("onZoomAuthIdentityExpired", &AuthServiceEvent::onZoomAuthIdentityExpired)
+        .def("setOnAuth", &AuthServiceEvent::setOnAuth)
+        .def("setOnAuthenticationReturn", &AuthServiceEvent::setOnAuthenticationReturn);
 
+    // Binding for IAuthService
     py::class_<ZOOM_SDK_NAMESPACE::IAuthService>(m, "IAuthService")
         .def("SetEvent", &ZOOM_SDK_NAMESPACE::IAuthService::SetEvent)
         .def("SDKAuth", &ZOOM_SDK_NAMESPACE::IAuthService::SDKAuth)
@@ -567,115 +349,8 @@ py::class_<AuthServiceEvent, IAuthServiceEvent, std::shared_ptr<AuthServiceEvent
         return std::unique_ptr<ZOOM_SDK_NAMESPACE::IAuthService, py::nodelete>(pService);
     }, "Create a new auth service instance");
 
-    // Binding for DestroyAuthService
+    // Binding for DestroyAuthService 
     m.def("DestroyAuthService", [](ZOOM_SDK_NAMESPACE::IAuthService* pService) {
         return ZOOM_SDK_NAMESPACE::DestroyAuthService(pService);
     }, "Destroy an auth service instance");
-
-
-   py::class_<Zoom, std::unique_ptr<Zoom, py::nodelete>>(m, "Zoom")
-        .def("init", &Zoom::init)
-        .def("auth", &Zoom::auth)
-        .def("config", [](Zoom& self, const std::vector<std::string>& args) {
-            std::vector<char*> cargs;
-            cargs.reserve(args.size());
-            for (const auto& arg : args) {
-                cargs.push_back(const_cast<char*>(arg.c_str()));
-            }
-            return self.config(static_cast<int>(cargs.size()), cargs.data());
-        })
-        .def("join", &Zoom::join)
-        .def("start", &Zoom::start)
-        .def("leave", &Zoom::leave)
-        .def("clean", &Zoom::clean)
-        .def("startRawRecording", &Zoom::startRawRecording)
-        .def("stopRawRecording", &Zoom::stopRawRecording)
-        .def("isMeetingStart", &Zoom::isMeetingStart)
-        .def_static("hasError", &Zoom::hasError);
-    m.def("get_zoom_instance", []() -> Zoom& { return Zoom::getInstance(); },
-          py::return_value_policy::reference);
-
-
-    m.def("mainshuggy", [](const std::vector<std::string>& args) -> void { 
-                    std::vector<char*> cargs;
-            cargs.reserve(args.size());
-            for (const auto& arg : args) {
-                cargs.push_back(const_cast<char*>(arg.c_str()));
-            }
-            mainshuggy(static_cast<int>(cargs.size()), cargs.data());
-    });
-        m.def("runloopy", []() -> void { 
-                   runloopy();
-    });
-
-
-    m.def("dothebull", []() -> void { 
-        InitParam initParam;
-
-        auto host = "https://zoom.us";
-
-        initParam.strWebDomain = host;
-        initParam.strSupportUrl = host;
-
-        initParam.emLanguageID = LANGUAGE_English;
-
-        initParam.enableLogByDefault = true;
-        initParam.enableGenerateDump = true;
-
-        auto err = InitSDK(initParam);
-
-
-        IMeetingService* m_meetingService;
-        ISettingService* m_settingService;
-        IAuthService* m_authService;
-
-        err = CreateMeetingService(&m_meetingService);
-        
-
-        err = CreateSettingService(&m_settingService);
-       
-
-        err = CreateAuthService(&m_authService);
-        
-
-        ////
-
-        string client_id = "C_yBC775To66EK6MhNin9A";
-        string client_secret = "jnLJW1BKXq4AAD7dgtjHPsUwAGYczPQZ";
-
-        function<void()> onAuth = [&]() {
-            std::cout << "YOLO" << std::endl;
-        };
-        
-
-
-        time_point   m_iat = std::chrono::system_clock::now();
-        time_point m_exp = m_iat + std::chrono::hours{24};
-
-         auto   m_jwt = jwt::create()
-                    .set_type("JWT")
-                    .set_issued_at(m_iat)
-                    .set_expires_at(m_exp)
-                    .set_payload_claim("appKey", jwt::claim(client_id))
-                    .set_payload_claim("tokenExp", jwt::claim(m_exp))
-                    .sign(algorithm::hs256{client_secret});
-
-
-        err = m_authService->SetEvent(new AuthServiceEvent(onAuth));
-
-
-        AuthContext ctx;
-        Log::error("m_jwtzzz " + m_jwt);
-        ctx.jwt_token =  m_jwt.c_str();
-
-        m_authService->SDKAuth(ctx);
-
-        GMainLoop* eventLoop;
-        eventLoop = g_main_loop_new(NULL, FALSE);
-        g_timeout_add(100, onTimeout, eventLoop);
-        g_timeout_add_seconds(30, quitMainLoop, eventLoop);
-        g_main_loop_run(eventLoop);
-
-        return;
-    });
 }
