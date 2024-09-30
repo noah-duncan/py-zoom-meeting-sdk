@@ -94,6 +94,79 @@ def run():
     setting_service = zoom.CreateSettingService()
     print("setting_service")
     print(setting_service)
+    use_raw_recording = True
+
+    def start_raw_recording():
+        # Implement raw recording start logic here
+        print("start_raw_recording")
+
+
+        recording_ctrl = meeting_service.GetMeetingRecordingController()
+        recording_ctrl.CanStartRawRecording()
+        recording_ctrl.RequestLocalRecordingPrivilege()
+        recording_ctrl.StartRawRecording()
+        print("STARTED")
+
+            auto recCtl = m_meetingService->GetMeetingRecordingController();
+
+    SDKError err = recCtl->CanStartRawRecording();
+
+    if (hasError(err)) {
+        Log::info("requesting local recording privilege");
+        return recCtl->RequestLocalRecordingPrivilege();
+    }
+
+    err = recCtl->StartRawRecording();
+    if (hasError(err, "start raw recording"))
+        return err;
+
+
+    if (m_config.useRawAudio()) {
+        m_audioHelper = GetAudioRawdataHelper();
+        if (!m_audioHelper)
+            return SDKERR_UNINITIALIZE;
+
+        if (!m_audioSource) {
+            auto mixedAudio = !m_config.separateParticipantAudio();
+            auto transcribe = m_config.transcribe();
+
+            m_audioSource = new ZoomSDKAudioRawDataDelegate(mixedAudio, transcribe);
+            m_audioSource->setDir(m_config.audioDir());
+            m_audioSource->setFilename(m_config.audioFile());
+        }
+
+        err = m_audioHelper->subscribe(m_audioSource);
+        if (hasError(err, "subscribe to raw audio"))
+            return err;
+    }
+
+    def stop_raw_recording():
+        # Implement raw recording stop logic here
+        print("stop_raw_recording")
+
+    def on_join():
+        print("Joined successfully")
+
+        reminder_controller = meeting_service.GetMeetingReminderController()
+        reminder_controller.SetEvent(zoom.MeetingReminderEvent())
+
+        if use_raw_recording:
+            recording_ctrl = meeting_service.GetMeetingRecordingController()
+
+            def on_recording_privilege_changed(can_rec):
+                if can_rec:
+                    start_raw_recording()
+                else:
+                    stop_raw_recording()
+
+            recording_event = zoom.MeetingRecordingCtrlEvent(on_recording_privilege_changed)
+            recording_ctrl.SetEvent(recording_event)
+
+            start_raw_recording()
+
+    meeting_service_event = zoom.MeetingServiceEvent()
+    meeting_service_event.setOnMeetingJoin(on_join)
+    meeting_service.SetEvent(meeting_service_event)
 
     # Create an auth service
     def on_auth():

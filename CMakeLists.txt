@@ -40,6 +40,12 @@ pybind11_add_module(zoom_sdk_python src/pythonlib.cpp
         lib/zoomsdk/h/zoom_sdk.h
         src/events/AuthServiceEvent.cpp
         src/events/AuthServiceEvent.h
+        src/events/MeetingServiceEvent.cpp
+        src/events/MeetingServiceEvent.h     
+        src/events/MeetingReminderEvent.cpp
+        src/events/MeetingReminderEvent.h        
+        src/events/MeetingRecordingCtrlEvent.cpp
+        src/events/MeetingRecordingCtrlEvent.h
 )
 
 target_include_directories(zoom_sdk_python PRIVATE ${JWT_CPP_INCLUDE_DIRS})

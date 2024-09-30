@@ -6,7 +6,12 @@
 #include "meeting_service_interface.h"
 #include "setting_service_interface.h"
 #include "auth_service_interface.h"
+#include "meeting_service_components/meeting_recording_interface.h"
+#include "meeting_service_components/meeting_reminder_ctrl_interface.h"
 #include "events/AuthServiceEvent.h"
+#include "events/MeetingServiceEvent.h"
+#include "events/MeetingReminderEvent.h"
+#include "events/MeetingRecordingCtrlEvent.h"
 #include <iostream>
 #include <functional>
 
@@ -251,9 +256,11 @@ py::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
         .def("Join", [](ZOOM_SDK_NAMESPACE::IMeetingService& self, ZOOM_SDK_NAMESPACE::JoinParam& param) {
             return self.Join(param);
         })
+        .def("SetEvent", &ZOOM_SDK_NAMESPACE::IMeetingService::SetEvent)
         .def("Start", &ZOOM_SDK_NAMESPACE::IMeetingService::Start)
         .def("Leave", &ZOOM_SDK_NAMESPACE::IMeetingService::Leave)
-        .def("GetMeetingStatus", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingStatus);
+        .def("GetMeetingRecordingController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingRecordingController, py::return_value_policy::reference)
+        .def("GetMeetingReminderController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingReminderController, py::return_value_policy::reference);
         // Add other methods as needed
 
     // Binding for CreateMeetingService
@@ -270,6 +277,79 @@ py::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
     m.def("DestroyMeetingService", [](ZOOM_SDK_NAMESPACE::IMeetingService* pService) {
         return ZOOM_SDK_NAMESPACE::DestroyMeetingService(pService);
     }, "Destroy a meeting service instance");
+
+    py::enum_<ZOOM_SDK_NAMESPACE::MeetingStatus>(m, "MeetingStatus")
+        .value("MEETING_STATUS_IDLE", ZOOM_SDK_NAMESPACE::MEETING_STATUS_IDLE)
+        .value("MEETING_STATUS_CONNECTING", ZOOM_SDK_NAMESPACE::MEETING_STATUS_CONNECTING)
+        .value("MEETING_STATUS_WAITINGFORHOST", ZOOM_SDK_NAMESPACE::MEETING_STATUS_WAITINGFORHOST)
+        .value("MEETING_STATUS_INMEETING", ZOOM_SDK_NAMESPACE::MEETING_STATUS_INMEETING)
+        .value("MEETING_STATUS_DISCONNECTING", ZOOM_SDK_NAMESPACE::MEETING_STATUS_DISCONNECTING)
+        .value("MEETING_STATUS_RECONNECTING", ZOOM_SDK_NAMESPACE::MEETING_STATUS_RECONNECTING)
+        .value("MEETING_STATUS_FAILED", ZOOM_SDK_NAMESPACE::MEETING_STATUS_FAILED)
+        .value("MEETING_STATUS_ENDED", ZOOM_SDK_NAMESPACE::MEETING_STATUS_ENDED)
+        .value("MEETING_STATUS_UNKNOWN", ZOOM_SDK_NAMESPACE::MEETING_STATUS_UNKNOWN)
+        .value("MEETING_STATUS_LOCKED", ZOOM_SDK_NAMESPACE::MEETING_STATUS_LOCKED)
+        .value("MEETING_STATUS_UNLOCKED", ZOOM_SDK_NAMESPACE::MEETING_STATUS_UNLOCKED)
+        .value("MEETING_STATUS_IN_WAITING_ROOM", ZOOM_SDK_NAMESPACE::MEETING_STATUS_IN_WAITING_ROOM)
+        .value("MEETING_STATUS_WEBINAR_PROMOTE", ZOOM_SDK_NAMESPACE::MEETING_STATUS_WEBINAR_PROMOTE)
+        .value("MEETING_STATUS_WEBINAR_DEPROMOTE", ZOOM_SDK_NAMESPACE::MEETING_STATUS_WEBINAR_DEPROMOTE)
+        .value("MEETING_STATUS_JOIN_BREAKOUT_ROOM", ZOOM_SDK_NAMESPACE::MEETING_STATUS_JOIN_BREAKOUT_ROOM)
+        .value("MEETING_STATUS_LEAVE_BREAKOUT_ROOM", ZOOM_SDK_NAMESPACE::MEETING_STATUS_LEAVE_BREAKOUT_ROOM)
+        .export_values();
+
+    py::enum_<ZOOM_SDK_NAMESPACE::StatisticsWarningType>(m, "StatisticsWarningType")
+        .value("Statistics_Warning_None", ZOOM_SDK_NAMESPACE::Statistics_Warning_None)
+        .value("Statistics_Warning_Network_Quality_Bad", ZOOM_SDK_NAMESPACE::Statistics_Warning_Network_Quality_Bad)
+        .export_values();
+
+    py::enum_<ZOOM_SDK_NAMESPACE::MeetingType>(m, "MeetingType")
+    .value("MEETING_TYPE_NONE", ZOOM_SDK_NAMESPACE::MEETING_TYPE_NONE)
+    .value("MEETING_TYPE_NORMAL", ZOOM_SDK_NAMESPACE::MEETING_TYPE_NORMAL)
+    .value("MEETING_TYPE_WEBINAR", ZOOM_SDK_NAMESPACE::MEETING_TYPE_WEBINAR)
+    .value("MEETING_TYPE_BREAKOUTROOM", ZOOM_SDK_NAMESPACE::MEETING_TYPE_BREAKOUTROOM)
+    .export_values();
+
+    py::class_<ZOOM_SDK_NAMESPACE::MeetingParameter>(m, "MeetingParameter")
+        .def(py::init<>())
+        .def_readwrite("meeting_type", &ZOOM_SDK_NAMESPACE::MeetingParameter::meeting_type)
+        .def_readwrite("is_view_only", &ZOOM_SDK_NAMESPACE::MeetingParameter::is_view_only)
+        .def_readwrite("is_auto_recording_local", &ZOOM_SDK_NAMESPACE::MeetingParameter::is_auto_recording_local)
+        .def_readwrite("is_auto_recording_cloud", &ZOOM_SDK_NAMESPACE::MeetingParameter::is_auto_recording_cloud)
+        .def_readwrite("meeting_number", &ZOOM_SDK_NAMESPACE::MeetingParameter::meeting_number)
+        .def_property("meeting_topic",
+            [](const ZOOM_SDK_NAMESPACE::MeetingParameter &p) { return p.meeting_topic ? py::str(p.meeting_topic) : py::str(""); },
+            [](ZOOM_SDK_NAMESPACE::MeetingParameter &p, const std::string &s) {
+                static std::string temp;
+                temp = s;
+                p.meeting_topic = temp.c_str();
+            })
+        .def_property("meeting_host",
+            [](const ZOOM_SDK_NAMESPACE::MeetingParameter &p) { return p.meeting_host ? py::str(p.meeting_host) : py::str(""); },
+            [](ZOOM_SDK_NAMESPACE::MeetingParameter &p, const std::string &s) {
+                static std::string temp;
+                temp = s;
+                p.meeting_host = temp.c_str();
+            });
+
+    py::class_<IMeetingServiceEvent, std::shared_ptr<IMeetingServiceEvent>>(m, "IMeetingServiceEvent")
+        .def("onMeetingStatusChanged", &IMeetingServiceEvent::onMeetingStatusChanged, py::arg("status"), py::arg("iResult") = 0)
+        .def("onMeetingStatisticsWarningNotification", &IMeetingServiceEvent::onMeetingStatisticsWarningNotification)
+        .def("onMeetingParameterNotification", &IMeetingServiceEvent::onMeetingParameterNotification)
+        .def("onSuspendParticipantsActivities", &IMeetingServiceEvent::onSuspendParticipantsActivities)
+        .def("onAICompanionActiveChangeNotice", &IMeetingServiceEvent::onAICompanionActiveChangeNotice)
+        .def("onMeetingTopicChanged", &IMeetingServiceEvent::onMeetingTopicChanged);
+
+    py::class_<MeetingServiceEvent, ZOOM_SDK_NAMESPACE::IMeetingServiceEvent, std::shared_ptr<MeetingServiceEvent>>(m, "MeetingServiceEvent")
+        .def(py::init<>())
+        .def("onMeetingStatusChanged", &MeetingServiceEvent::onMeetingStatusChanged)
+        .def("onMeetingParameterNotification", &MeetingServiceEvent::onMeetingParameterNotification)
+        .def("onMeetingStatisticsWarningNotification", &MeetingServiceEvent::onMeetingStatisticsWarningNotification)
+        .def("onSuspendParticipantsActivities", &MeetingServiceEvent::onSuspendParticipantsActivities)
+        .def("onAICompanionActiveChangeNotice", &MeetingServiceEvent::onAICompanionActiveChangeNotice)
+        .def("onMeetingTopicChanged", &MeetingServiceEvent::onMeetingTopicChanged)
+        .def("setOnMeetingJoin", &MeetingServiceEvent::setOnMeetingJoin)
+        .def("setOnMeetingEnd", &MeetingServiceEvent::setOnMeetingEnd)
+        .def("setOnMeetingStatusChanged", &MeetingServiceEvent::setOnMeetingStatusChanged);
 
     // Binding ISettingService as an abstract base class
     py::class_<ZOOM_SDK_NAMESPACE::ISettingService, std::unique_ptr<ZOOM_SDK_NAMESPACE::ISettingService, py::nodelete>>(m, "ISettingService")
@@ -308,6 +388,85 @@ py::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
                 self.jwt_token = stored_token.c_str();
             }
         );
+
+   // Binding for IMeetingRecordingCtrlEvent
+   py::class_<IMeetingRecordingCtrlEvent, std::shared_ptr<IMeetingRecordingCtrlEvent>>(m, "IMeetingRecordingCtrlEvent")
+        .def("onRecordingStatus", &IMeetingRecordingCtrlEvent::onRecordingStatus)
+        .def("onCloudRecordingStatus", &IMeetingRecordingCtrlEvent::onCloudRecordingStatus)
+        .def("onRecordPrivilegeChanged", &IMeetingRecordingCtrlEvent::onRecordPrivilegeChanged)
+        .def("onLocalRecordingPrivilegeRequestStatus", &IMeetingRecordingCtrlEvent::onLocalRecordingPrivilegeRequestStatus)
+        .def("onRequestCloudRecordingResponse", &IMeetingRecordingCtrlEvent::onRequestCloudRecordingResponse)
+        .def("onLocalRecordingPrivilegeRequested", &IMeetingRecordingCtrlEvent::onLocalRecordingPrivilegeRequested)
+        .def("onStartCloudRecordingRequested", &IMeetingRecordingCtrlEvent::onStartCloudRecordingRequested)
+        .def("onCloudRecordingStorageFull", &IMeetingRecordingCtrlEvent::onCloudRecordingStorageFull)
+        .def("onEnableAndStartSmartRecordingRequested", &IMeetingRecordingCtrlEvent::onEnableAndStartSmartRecordingRequested)
+        .def("onSmartRecordingEnableActionCallback", &IMeetingRecordingCtrlEvent::onSmartRecordingEnableActionCallback)
+        .def("onTranscodingStatusChanged", &IMeetingRecordingCtrlEvent::onTranscodingStatusChanged);
+
+    // Binding for MeetingRecordingCtrlEvent
+    py::class_<MeetingRecordingCtrlEvent, IMeetingRecordingCtrlEvent, std::shared_ptr<MeetingRecordingCtrlEvent>>(m, "MeetingRecordingCtrlEvent")
+        .def(py::init<std::function<void(bool)>>())
+        .def("onRecordingStatus", &MeetingRecordingCtrlEvent::onRecordingStatus)
+        .def("onCloudRecordingStatus", &MeetingRecordingCtrlEvent::onCloudRecordingStatus)
+        .def("onRecordPrivilegeChanged", &MeetingRecordingCtrlEvent::onRecordPrivilegeChanged)
+        .def("onLocalRecordingPrivilegeRequestStatus", &MeetingRecordingCtrlEvent::onLocalRecordingPrivilegeRequestStatus)
+        .def("onLocalRecordingPrivilegeRequested", &MeetingRecordingCtrlEvent::onLocalRecordingPrivilegeRequested)
+        .def("onCloudRecordingStorageFull", &MeetingRecordingCtrlEvent::onCloudRecordingStorageFull)
+        .def("onRequestCloudRecordingResponse", &MeetingRecordingCtrlEvent::onRequestCloudRecordingResponse)
+        .def("onStartCloudRecordingRequested", &MeetingRecordingCtrlEvent::onStartCloudRecordingRequested)
+        .def("onEnableAndStartSmartRecordingRequested", &MeetingRecordingCtrlEvent::onEnableAndStartSmartRecordingRequested)
+        .def("onSmartRecordingEnableActionCallback", &MeetingRecordingCtrlEvent::onSmartRecordingEnableActionCallback)
+        .def("onTranscodingStatusChanged", &MeetingRecordingCtrlEvent::onTranscodingStatusChanged);
+
+    py::class_<IMeetingRecordingController, std::shared_ptr<IMeetingRecordingController>>(m, "IMeetingRecordingController")
+        .def("SetEvent", &IMeetingRecordingController::SetEvent)
+        .def("IsSupportRequestLocalRecordingPrivilege", &IMeetingRecordingController::IsSupportRequestLocalRecordingPrivilege)
+        .def("RequestLocalRecordingPrivilege", &IMeetingRecordingController::RequestLocalRecordingPrivilege)
+        .def("RequestStartCloudRecording", &IMeetingRecordingController::RequestStartCloudRecording)
+        .def("StartRecording", [](IMeetingRecordingController& self) {
+            time_t startTimestamp;
+            SDKError result = self.StartRecording(startTimestamp);
+            return py::make_tuple(result, py::cast(startTimestamp));
+        })
+        .def("StopRecording", [](IMeetingRecordingController& self) {
+            time_t stopTimestamp;
+            SDKError result = self.StopRecording(stopTimestamp);
+            return py::make_tuple(result, py::cast(stopTimestamp));
+        })
+        .def("CanStartRecording", &IMeetingRecordingController::CanStartRecording)
+        .def("IsSmartRecordingEnabled", &IMeetingRecordingController::IsSmartRecordingEnabled)
+        .def("CanEnableSmartRecordingFeature", &IMeetingRecordingController::CanEnableSmartRecordingFeature)
+        .def("EnableSmartRecording", &IMeetingRecordingController::EnableSmartRecording)
+        .def("CanAllowDisAllowLocalRecording", &IMeetingRecordingController::CanAllowDisAllowLocalRecording)
+        .def("StartCloudRecording", &IMeetingRecordingController::StartCloudRecording)
+        .def("StopCloudRecording", &IMeetingRecordingController::StopCloudRecording)
+        .def("IsSupportLocalRecording", &IMeetingRecordingController::IsSupportLocalRecording)
+        .def("AllowLocalRecording", &IMeetingRecordingController::AllowLocalRecording)
+        .def("DisAllowLocalRecording", &IMeetingRecordingController::DisAllowLocalRecording)
+        .def("PauseRecording", &IMeetingRecordingController::PauseRecording)
+        .def("ResumeRecording", &IMeetingRecordingController::ResumeRecording)
+        .def("PauseCloudRecording", &IMeetingRecordingController::PauseCloudRecording)
+        .def("ResumeCloudRecording", &IMeetingRecordingController::ResumeCloudRecording)
+        .def("CanStartRawRecording", &IMeetingRecordingController::CanStartRawRecording)
+        .def("StartRawRecording", &IMeetingRecordingController::StartRawRecording)
+        .def("StopRawRecording", &IMeetingRecordingController::StopRawRecording)
+        .def("GetCloudRecordingStatus", &IMeetingRecordingController::GetCloudRecordingStatus)
+        .def("SubscribeLocalrecordingResource", &IMeetingRecordingController::SubscribeLocalrecordingResource)
+        .def("UnSubscribeLocalrecordingResource", &IMeetingRecordingController::UnSubscribeLocalrecordingResource);
+   
+    py::class_<IMeetingReminderEvent, std::shared_ptr<IMeetingReminderEvent>>(m, "IMeetingReminderEvent")
+        .def("onReminderNotify", &IMeetingReminderEvent::onReminderNotify)
+        .def("onEnableReminderNotify", &IMeetingReminderEvent::onEnableReminderNotify);
+
+    // Binding for IMeetingReminderEvent
+    py::class_<MeetingReminderEvent, IMeetingReminderEvent, std::shared_ptr<MeetingReminderEvent>>(m, "MeetingReminderEvent")
+        .def(py::init<>())
+        .def("onReminderNotify", &MeetingReminderEvent::onReminderNotify)
+        .def("onEnableReminderNotify", &MeetingReminderEvent::onEnableReminderNotify);
+        
+    // Binding for IMeetingReminderController  
+    py::class_<IMeetingReminderController, std::shared_ptr<IMeetingReminderController>>(m, "IMeetingReminderController")
+        .def("SetEvent", &IMeetingReminderController::SetEvent);
 
     // Binding for IAuthServiceEvent
     py::class_<IAuthServiceEvent, std::shared_ptr<IAuthServiceEvent>>(m, "IAuthServiceEvent")
