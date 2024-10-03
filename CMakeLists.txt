@@ -10,7 +10,6 @@ set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
 set(ZOOM_SDK lib/zoomsdk)
 
-
 # Find pybind11
 execute_process(
     COMMAND python3 -m pybind11 --cmakedir
@@ -18,7 +17,6 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 find_package(pybind11 CONFIG REQUIRED PATHS ${PYBIND11_CMAKE_DIR} NO_DEFAULT_PATH)
-
 
 find_package(ada REQUIRED)
 find_package(CLI11 REQUIRED)
@@ -28,28 +26,43 @@ find_package(X11 REQUIRED)
 include_directories(${X11_INCLUDE_DIR})
 link_directories(${X11_LIBRARIES})
 
+link_directories(${ZOOM_SDK} ${ZOOM_SDK})
+link_directories(${ZOOM_SDK} ${ZOOM_SDK}/qt_libs/**)
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(deps REQUIRED IMPORTED_TARGET glib-2.0 gio-2.0)
 
 include_directories(${ZOOM_SDK}/h)
-link_directories(${ZOOM_SDK} ${ZOOM_SDK})
-link_directories(${ZOOM_SDK} ${ZOOM_SDK}/qt_libs/**)
 
 # Create the Python module
 pybind11_add_module(zoom_sdk_python src/pythonlib.cpp
-        lib/zoomsdk/h/zoom_sdk.h
-        src/events/AuthServiceEvent.cpp
-        src/events/AuthServiceEvent.h
-        src/events/MeetingServiceEvent.cpp
-        src/events/MeetingServiceEvent.h     
-        src/events/MeetingReminderEvent.cpp
-        src/events/MeetingReminderEvent.h        
-        src/events/MeetingRecordingCtrlEvent.cpp
-        src/events/MeetingRecordingCtrlEvent.h
+    lib/zoomsdk/h/zoom_sdk.h
+    src/events/AuthServiceEvent.cpp
+    src/events/AuthServiceEvent.h
+    src/events/MeetingServiceEvent.cpp
+    src/events/MeetingServiceEvent.h     
+    src/events/MeetingReminderEvent.cpp
+    src/events/MeetingReminderEvent.h        
+    src/events/MeetingRecordingCtrlEvent.cpp
+    src/events/MeetingRecordingCtrlEvent.h
 )
 
 target_include_directories(zoom_sdk_python PRIVATE ${JWT_CPP_INCLUDE_DIRS})
-target_link_libraries(zoom_sdk_python PRIVATE meetingsdk ada::ada CLI11::CLI11 PkgConfig::deps ${X11_LIBRARIES})
+
+# Link against the Zoom SDK dynamically
+target_link_libraries(zoom_sdk_python PRIVATE 
+    ada::ada 
+    CLI11::CLI11 
+    PkgConfig::deps 
+    ${X11_LIBRARIES}
+    -L${ZOOM_SDK} -lmeetingsdk
+)
+
+# Add runtime path for the Zoom SDK library
+set_target_properties(zoom_sdk_python PROPERTIES
+    INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${ZOOM_SDK}"
+    BUILD_WITH_INSTALL_RPATH TRUE
+)
 
 # Set the output directory for the Python module
 set_target_properties(zoom_sdk_python PROPERTIES

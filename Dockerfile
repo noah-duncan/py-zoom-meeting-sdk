@@ -42,7 +42,8 @@ RUN apt-get update  \
     python3-pip \
     tar \
     unzip \
-    zip
+    zip \
+    vim
 
 # Install ALSA
 RUN apt-get install -y libasound2 libasound2-plugins alsa alsa-utils alsa-oss
@@ -51,7 +52,8 @@ RUN apt-get install -y libasound2 libasound2-plugins alsa alsa-utils alsa-oss
 RUN apt-get install -y  pulseaudio pulseaudio-utils
 
 # Install pybind11
-RUN pip install pybind11 pyjwt
+RUN pip install pybind11 pyjwt cython
+
 
 FROM base AS deps
 

@@ -1,25 +1,10 @@
-#include <pybind11/pybind11.h>
-#include <pybind11/functional.h>
-#include <pybind11/stl.h>
-#include "zoom_sdk.h"
-
-#include "meeting_service_interface.h"
-#include "setting_service_interface.h"
-#include "auth_service_interface.h"
-#include "meeting_service_components/meeting_recording_interface.h"
-#include "meeting_service_components/meeting_reminder_ctrl_interface.h"
-#include "events/AuthServiceEvent.h"
-#include "events/MeetingServiceEvent.h"
-#include "events/MeetingReminderEvent.h"
-#include "events/MeetingRecordingCtrlEvent.h"
-#include <iostream>
-#include <functional>
-
-namespace py = pybind11;
+#include "pch.hpp"
+ 
+namespace py = pybind11; 
 
 class PyAuthServiceEvent : public ZOOM_SDK_NAMESPACE::IAuthServiceEvent {
 public:
-    using ZOOM_SDK_NAMESPACE::IAuthServiceEvent::IAuthServiceEvent; // Inherit constructors
+    using ZOOM_SDK_NAMESPACE::IAuthServiceEvent::IAuthServiceEvent; // Inherit consstsruzzctors
 
     void onAuthenticationReturn(ZOOM_SDK_NAMESPACE::AuthResult ret) override {
         PYBIND11_OVERLOAD_PURE(void, ZOOM_SDK_NAMESPACE::IAuthServiceEvent, onAuthenticationReturn, ret);
@@ -62,7 +47,6 @@ py::enum_<ZOOM_SDK_NAMESPACE::LOGINSTATUS>(m, "LOGINSTATUS")
     .value("LOGIN_IDLE", ZOOM_SDK_NAMESPACE::LOGIN_IDLE)
     .value("LOGIN_PROCESSING", ZOOM_SDK_NAMESPACE::LOGIN_PROCESSING)
     .value("LOGIN_SUCCESS", ZOOM_SDK_NAMESPACE::LOGIN_SUCCESS)
-    .value("LOGIN_FAILED", ZOOM_SDK_NAMESPACE::LOGIN_FAILED)
     .export_values();
 
 py::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
@@ -108,7 +92,7 @@ py::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
     py::enum_<ZOOM_SDK_NAMESPACE::SDK_LANGUAGE_ID>(m, "SDK_LANGUAGE_ID")
         .value("LANGUAGE_Unknown", ZOOM_SDK_NAMESPACE::LANGUAGE_Unknown)
         .value("LANGUAGE_English", ZOOM_SDK_NAMESPACE::LANGUAGE_English)
-        // Add other enum values here
+        // Add other enum values hered sdssdssdxxssssdsdssdsdaasdxssdsdsdsx
         .export_values();
 
     py::class_<ZOOM_SDK_NAMESPACE::InitParam>(m, "InitParam")
