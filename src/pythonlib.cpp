@@ -190,26 +190,8 @@ nb::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
     nb::class_<ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin>(m, "JoinParam4WithoutLogin")
         .def(nb::init<>())
         .def_rw("meetingNumber", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::meetingNumber)
-        .def_prop_rw("userName",
-            [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &self) -> std::string {
-                return self.userName ? self.userName : "";
-            },
-            [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &self, const std::string &userName) {
-                static std::string stored_userName;
-                stored_userName = userName;
-                self.userName = stored_userName.c_str();
-            }
-        )
-        .def_prop_rw("psw",
-            [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &self) -> std::string {
-                return self.psw ? self.psw : "";
-            },
-            [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &self, const std::string &psw) {
-                static std::string stored_psw;
-                stored_psw = psw;
-                self.psw = stored_psw.c_str();
-            }
-        )
+        .def_rw("userName", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::userName)
+        .def_rw("psw", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::psw)
         .def_prop_rw("vanityID",
             [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p) { return p.vanityID ? std::string(p.vanityID) : std::string(); },
             [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p, const std::string &s) { p.vanityID = s.empty() ? nullptr : s.c_str(); })
