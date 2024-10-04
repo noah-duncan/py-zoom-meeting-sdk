@@ -45,7 +45,11 @@ nanobind_add_module(zoom_sdk_python src/pythonlib.cpp
     src/events/MeetingReminderEvent.cpp
     src/events/MeetingReminderEvent.h        
     src/events/MeetingRecordingCtrlEvent.cpp
-    src/events/MeetingRecordingCtrlEvent.h
+    src/events/MeetingRecordingCtrlEvent.h 
+    src/raw_record/ZoomSDKAudioRawDataDelegate.cpp
+    src/raw_record/ZoomSDKAudioRawDataDelegate.h
+    src/util/SocketServer.cpp
+    src/util/SocketServer.h
 )
 
 target_link_libraries(zoom_sdk_python PRIVATE 

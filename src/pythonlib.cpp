@@ -27,6 +27,10 @@
 #include "events/MeetingServiceEvent.h"
 #include "events/MeetingReminderEvent.h"
 #include "events/MeetingRecordingCtrlEvent.h"
+#include "raw_record/ZoomSDKAudioRawDataDelegate.h"
+#include "rawdata/zoom_rawdata_api.h"
+#include "rawdata/rawdata_audio_helper_interface.h"
+
 #include <iostream>
 #include <functional>
 #include <memory>
@@ -247,8 +251,10 @@ nb::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
     })
     .def("SetEvent", &ZOOM_SDK_NAMESPACE::IMeetingService::SetEvent)
     .def("Start", &ZOOM_SDK_NAMESPACE::IMeetingService::Start)
-    .def("Leave", &ZOOM_SDK_NAMESPACE::IMeetingService::Leave);
-        
+    .def("Leave", &ZOOM_SDK_NAMESPACE::IMeetingService::Leave)
+    .def("GetMeetingRecordingController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingRecordingController, nb::rv_policy::reference)
+    .def("GetMeetingReminderController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingReminderController, nb::rv_policy::reference);
+       
     m.def("CreateMeetingService", []() -> ZOOM_SDK_NAMESPACE::IMeetingService* {
         ZOOM_SDK_NAMESPACE::IMeetingService* pService = nullptr;
         ZOOM_SDK_NAMESPACE::SDKError err = ZOOM_SDK_NAMESPACE::CreateMeetingService(&pService);
@@ -379,4 +385,115 @@ nb::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
     .def_rw("meeting_number", &ZOOM_SDK_NAMESPACE::MeetingParameter::meeting_number)
     .def_rw("meeting_topic", &ZOOM_SDK_NAMESPACE::MeetingParameter::meeting_topic)
     .def_rw("meeting_host", &ZOOM_SDK_NAMESPACE::MeetingParameter::meeting_host);
+
+    // Binding for IMeetingRecordingCtrlEvent
+   nb::class_<IMeetingRecordingCtrlEvent>(m, "IMeetingRecordingCtrlEvent")
+        .def("onRecordingStatus", &IMeetingRecordingCtrlEvent::onRecordingStatus)
+        .def("onCloudRecordingStatus", &IMeetingRecordingCtrlEvent::onCloudRecordingStatus)
+        .def("onRecordPrivilegeChanged", &IMeetingRecordingCtrlEvent::onRecordPrivilegeChanged)
+        .def("onLocalRecordingPrivilegeRequestStatus", &IMeetingRecordingCtrlEvent::onLocalRecordingPrivilegeRequestStatus)
+        .def("onRequestCloudRecordingResponse", &IMeetingRecordingCtrlEvent::onRequestCloudRecordingResponse)
+        .def("onLocalRecordingPrivilegeRequested", &IMeetingRecordingCtrlEvent::onLocalRecordingPrivilegeRequested)
+        .def("onStartCloudRecordingRequested", &IMeetingRecordingCtrlEvent::onStartCloudRecordingRequested)
+        .def("onCloudRecordingStorageFull", &IMeetingRecordingCtrlEvent::onCloudRecordingStorageFull)
+        .def("onEnableAndStartSmartRecordingRequested", &IMeetingRecordingCtrlEvent::onEnableAndStartSmartRecordingRequested)
+        .def("onSmartRecordingEnableActionCallback", &IMeetingRecordingCtrlEvent::onSmartRecordingEnableActionCallback)
+        .def("onTranscodingStatusChanged", &IMeetingRecordingCtrlEvent::onTranscodingStatusChanged);
+
+    // Binding for MeetingRecordingCtrlEvent
+    nb::class_<MeetingRecordingCtrlEvent, IMeetingRecordingCtrlEvent>(m, "MeetingRecordingCtrlEvent")
+        .def(nb::init<std::function<void(bool)>>())
+        .def("onRecordingStatus", &MeetingRecordingCtrlEvent::onRecordingStatus)
+        .def("onCloudRecordingStatus", &MeetingRecordingCtrlEvent::onCloudRecordingStatus)
+        .def("onRecordPrivilegeChanged", &MeetingRecordingCtrlEvent::onRecordPrivilegeChanged)
+        .def("onLocalRecordingPrivilegeRequestStatus", &MeetingRecordingCtrlEvent::onLocalRecordingPrivilegeRequestStatus)
+        .def("onLocalRecordingPrivilegeRequested", &MeetingRecordingCtrlEvent::onLocalRecordingPrivilegeRequested)
+        .def("onCloudRecordingStorageFull", &MeetingRecordingCtrlEvent::onCloudRecordingStorageFull)
+        .def("onRequestCloudRecordingResponse", &MeetingRecordingCtrlEvent::onRequestCloudRecordingResponse)
+        .def("onStartCloudRecordingRequested", &MeetingRecordingCtrlEvent::onStartCloudRecordingRequested)
+        .def("onEnableAndStartSmartRecordingRequested", &MeetingRecordingCtrlEvent::onEnableAndStartSmartRecordingRequested)
+        .def("onSmartRecordingEnableActionCallback", &MeetingRecordingCtrlEvent::onSmartRecordingEnableActionCallback)
+        .def("onTranscodingStatusChanged", &MeetingRecordingCtrlEvent::onTranscodingStatusChanged);
+
+
+    nb::class_<IMeetingRecordingController>(m, "IMeetingRecordingController")
+        .def("SetEvent", &IMeetingRecordingController::SetEvent)
+        .def("IsSupportRequestLocalRecordingPrivilege", &IMeetingRecordingController::IsSupportRequestLocalRecordingPrivilege)
+        .def("RequestLocalRecordingPrivilege", &IMeetingRecordingController::RequestLocalRecordingPrivilege)
+        .def("RequestStartCloudRecording", &IMeetingRecordingController::RequestStartCloudRecording)
+        .def("StartRecording", [](IMeetingRecordingController& self) {
+            time_t startTimestamp;
+            SDKError result = self.StartRecording(startTimestamp);
+            return nb::make_tuple(result, nb::cast(startTimestamp));
+        })
+        .def("StopRecording", [](IMeetingRecordingController& self) {
+            time_t stopTimestamp;
+            SDKError result = self.StopRecording(stopTimestamp);
+            return nb::make_tuple(result, nb::cast(stopTimestamp));
+        })
+        .def("CanStartRecording", &IMeetingRecordingController::CanStartRecording)
+        .def("IsSmartRecordingEnabled", &IMeetingRecordingController::IsSmartRecordingEnabled)
+        .def("CanEnableSmartRecordingFeature", &IMeetingRecordingController::CanEnableSmartRecordingFeature)
+        .def("EnableSmartRecording", &IMeetingRecordingController::EnableSmartRecording)
+        .def("CanAllowDisAllowLocalRecording", &IMeetingRecordingController::CanAllowDisAllowLocalRecording)
+        .def("StartCloudRecording", &IMeetingRecordingController::StartCloudRecording)
+        .def("StopCloudRecording", &IMeetingRecordingController::StopCloudRecording)
+        .def("IsSupportLocalRecording", &IMeetingRecordingController::IsSupportLocalRecording)
+        .def("AllowLocalRecording", &IMeetingRecordingController::AllowLocalRecording)
+        .def("DisAllowLocalRecording", &IMeetingRecordingController::DisAllowLocalRecording)
+        .def("PauseRecording", &IMeetingRecordingController::PauseRecording)
+        .def("ResumeRecording", &IMeetingRecordingController::ResumeRecording)
+        .def("PauseCloudRecording", &IMeetingRecordingController::PauseCloudRecording)
+        .def("ResumeCloudRecording", &IMeetingRecordingController::ResumeCloudRecording)
+        .def("CanStartRawRecording", &IMeetingRecordingController::CanStartRawRecording)
+        .def("StartRawRecording", &IMeetingRecordingController::StartRawRecording)
+        .def("StopRawRecording", &IMeetingRecordingController::StopRawRecording)
+        .def("GetCloudRecordingStatus", &IMeetingRecordingController::GetCloudRecordingStatus)
+        .def("SubscribeLocalrecordingResource", &IMeetingRecordingController::SubscribeLocalrecordingResource)
+        .def("UnSubscribeLocalrecordingResource", &IMeetingRecordingController::UnSubscribeLocalrecordingResource);
+
+    // Binding for IMeetingReminderEvent
+    nb::class_<IMeetingReminderEvent>(m, "IMeetingReminderEvent")
+        .def("onReminderNotify", &IMeetingReminderEvent::onReminderNotify)
+        .def("onEnableReminderNotify", &IMeetingReminderEvent::onEnableReminderNotify);
+
+    // Binding for MeetingReminderEvent
+    nb::class_<MeetingReminderEvent, IMeetingReminderEvent>(m, "MeetingReminderEvent")
+        .def(nb::init<>())
+        .def("onReminderNotify", &MeetingReminderEvent::onReminderNotify)
+        .def("onEnableReminderNotify", &MeetingReminderEvent::onEnableReminderNotify);
+        
+    // Binding for IMeetingReminderController  
+    nb::class_<IMeetingReminderController>(m, "IMeetingReminderController")
+        .def("SetEvent", &IMeetingReminderController::SetEvent);
+
+    nb::class_<IZoomSDKAudioRawDataHelper>(m, "IZoomSDKAudioRawDataHelper")
+    .def("subscribe", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::subscribe)
+    .def("unSubscribe", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::unSubscribe)
+    .def("setExternalAudioSource", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::setExternalAudioSource);
+
+    m.def("GetAudioRawdataHelper", []() -> ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper* {
+        return GetAudioRawdataHelper();
+    }, nb::rv_policy::take_ownership);
+
+    nb::class_<IZoomSDKAudioRawDataDelegate>(m, "IZoomSDKAudioRawDataDelegate")
+    .def("onMixedAudioRawDataReceived", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataDelegate::onMixedAudioRawDataReceived)
+    .def("onOneWayAudioRawDataReceived", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataDelegate::onOneWayAudioRawDataReceived)
+    .def("onShareAudioRawDataReceived", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataDelegate::onShareAudioRawDataReceived)
+    .def("onOneWayInterpreterAudioRawDataReceived", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataDelegate::onOneWayInterpreterAudioRawDataReceived);
+
+    // Not part of SDK
+    nb::class_<ZoomSDKAudioRawDataDelegate, IZoomSDKAudioRawDataDelegate>(m, "ZoomSDKAudioRawDataDelegate")
+    .def(nb::init<bool, bool>())
+    .def("setDir", &ZoomSDKAudioRawDataDelegate::setDir)
+    .def("setFilename", &ZoomSDKAudioRawDataDelegate::setFilename)
+    .def("onMixedAudioRawDataReceived", &ZoomSDKAudioRawDataDelegate::onMixedAudioRawDataReceived)
+    .def("onOneWayAudioRawDataReceived", &ZoomSDKAudioRawDataDelegate::onOneWayAudioRawDataReceived)
+    .def("onShareAudioRawDataReceived", &ZoomSDKAudioRawDataDelegate::onShareAudioRawDataReceived)
+    .def("onOneWayInterpreterAudioRawDataReceived", &ZoomSDKAudioRawDataDelegate::onOneWayInterpreterAudioRawDataReceived);
+
+    nb::class_<IAudioSettingContext>(m, "IAudioSettingContext")
+    .def("EnableAutoJoinAudio", &IAudioSettingContext::EnableAutoJoinAudio);
+
+
 }
