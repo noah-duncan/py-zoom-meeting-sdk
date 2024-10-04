@@ -55,7 +55,7 @@ void printJoinParam(const JoinParam& param) {
         std::cout << "  Audio Raw Data Sampling Rate: " << np.eAudioRawdataSamplingRate << std::endl;
     } else {
         const auto& wp = param.param.withoutloginuserJoin;
-        std::cout << "Without Login User Join Parameters:" << std::endl;
+        std::cout << "zzzWithout Login User Join Parameters:" << std::endl;
         std::cout << "  Meeting Number: " << wp.meetingNumber << std::endl;
         std::cout << "  Vanity ID: " << (wp.vanityID ? wp.vanityID : "NULL") << std::endl;
         std::cout << "  User Name: " << (wp.userName ? wp.userName : "NULL") << std::endl;
@@ -188,18 +188,45 @@ nb::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
     );
 
     nb::class_<ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin>(m, "JoinParam4WithoutLogin")
-    .def(nb::init<>())
-    .def_rw("meetingNumber", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::meetingNumber)
-    .def_rw("userName", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::userName)
-    .def_rw("psw", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::psw)
-    .def_rw("vanityID", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::vanityID)
-    .def_rw("customer_key", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::customer_key)
-    .def_rw("webinarToken", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::webinarToken)
-    .def_rw("psw", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::psw)
-    .def_rw("isVideoOff", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::isVideoOff)
-    .def_rw("isAudioOff", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::isAudioOff)
-    .def_rw("userZAK", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::userZAK)
-    .def_rw("app_privilege_token", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::app_privilege_token);
+        .def(nb::init<>())
+        .def_rw("meetingNumber", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::meetingNumber)
+        .def_prop_rw("userName",
+            [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &self) -> std::string {
+                return self.userName ? self.userName : "";
+            },
+            [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &self, const std::string &userName) {
+                static std::string stored_userName;
+                stored_userName = userName;
+                self.userName = stored_userName.c_str();
+            }
+        )
+        .def_prop_rw("psw",
+            [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &self) -> std::string {
+                return self.psw ? self.psw : "";
+            },
+            [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &self, const std::string &psw) {
+                static std::string stored_psw;
+                stored_psw = psw;
+                self.psw = stored_psw.c_str();
+            }
+        )
+        .def_prop_rw("vanityID",
+            [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p) { return p.vanityID ? std::string(p.vanityID) : std::string(); },
+            [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p, const std::string &s) { p.vanityID = s.empty() ? nullptr : s.c_str(); })
+        .def_prop_rw("customer_key",
+            [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p) { return p.customer_key ? std::string(p.customer_key) : std::string(); },
+            [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p, const std::string &s) { p.customer_key = s.empty() ? nullptr : s.c_str(); })
+        .def_prop_rw("webinarToken",
+            [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p) { return p.webinarToken ? std::string(p.webinarToken) : std::string(); },
+            [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p, const std::string &s) { p.webinarToken = s.empty() ? nullptr : s.c_str(); })
+        .def_rw("isVideoOff", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::isVideoOff)
+        .def_rw("isAudioOff", &ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin::isAudioOff)
+        .def_prop_rw("userZAK",
+            [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p) { return p.userZAK ? std::string(p.userZAK) : std::string(); },
+            [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p, const std::string &s) { p.userZAK = s.empty() ? nullptr : s.c_str(); })
+        .def_prop_rw("app_privilege_token",
+            [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p) { return p.app_privilege_token ? std::string(p.app_privilege_token) : std::string(); },
+            [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p, const std::string &s) { p.app_privilege_token = s.empty() ? nullptr : s.c_str(); });
 
     nb::class_<ZOOM_SDK_NAMESPACE::JoinParam>(m, "JoinParam")
     .def(nb::init<>())
