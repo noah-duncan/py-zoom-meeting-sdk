@@ -51,6 +51,9 @@ RUN apt-get install -y libasound2 libasound2-plugins alsa alsa-utils alsa-oss
 # Install Pulseaudio
 RUN apt-get install -y  pulseaudio pulseaudio-utils
 
+# Install Linux Kernel Dev
+RUN apt-get update && apt-get install -y linux-libc-dev
+
 # Install pybind11
 RUN pip install pybind11 pyjwt cython
 

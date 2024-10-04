@@ -1,8 +1,8 @@
 #pragma once
 
-#include <pybind11/pybind11.h>
-#include <pybind11/functional.h>
-#include <pybind11/stl.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/functional.h>
+#include <nanobind/stl.h>
 #include "zoom_sdk.h"
 
 #include "meeting_service_interface.h"
