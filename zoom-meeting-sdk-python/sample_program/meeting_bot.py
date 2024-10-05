@@ -34,6 +34,15 @@ class MeetingBot:
 
         self.use_raw_recording = True
 
+    def cleanup(self):
+        if self.meeting_service:
+            zoom.DestroyMeetingService(self.meeting_service)
+        if self.setting_service:
+            zoom.DestroySettingService(self.setting_service)
+        if self.auth_service:
+            zoom.DestroyAuthService(self.auth_service)
+        zoom.CleanUPSDK()
+
     def init(self):
         init_param = zoom.InitParam()
 
@@ -151,10 +160,13 @@ class MeetingBot:
 
     def create_services(self):
         self.meeting_service = zoom.CreateMeetingService()
+        
         self.setting_service = zoom.CreateSettingService()
 
         self.meeting_service_event = zoom.MeetingServiceEvent()
+        
         self.meeting_service_event.setOnMeetingJoin(self.on_join)
+        
         meeting_service_set_revent_result = self.meeting_service.SetEvent(self.meeting_service_event)
         if meeting_service_set_revent_result != zoom.SDKERR_SUCCESS:
             raise Exception("Meeting Service set event failed")

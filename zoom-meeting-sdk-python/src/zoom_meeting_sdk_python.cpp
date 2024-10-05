@@ -42,6 +42,7 @@ void init_m2(nb::module_ &);
 
 NB_MODULE(_zoom_meeting_sdk_python_impl, m) {
     m.doc() = "Python bindings for Zoom SDsdsdKsssss";
+    nb::set_leak_warnings(false);
 
     init_m1(m);
     init_m2(m);

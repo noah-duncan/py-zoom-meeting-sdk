@@ -21,13 +21,15 @@ def on_signal(signum, frame):
 
 def on_exit():
     print("Exiting...")
+    bot.cleanup()
 
 def on_timeout():
     return True  # Returning True keeps the timeout active
 
 
-
+bot=None
 def run():
+    global bot
     bot = MeetingBot()
     bot.init()   
     

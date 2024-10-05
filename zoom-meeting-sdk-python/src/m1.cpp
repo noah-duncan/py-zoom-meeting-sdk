@@ -2,6 +2,8 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/trampoline.h>
 #include <nanobind/stl/function.h>
+#include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/unique_ptr.h>
 
 #include "zoom_sdk.h"
 
@@ -169,6 +171,8 @@ nb::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
         return ZOOM_SDK_NAMESPACE::InitSDK(initParam);
     }, nb::arg("initParam"), "Initialize ZOOM SDK");
 
+    m.def("CleanUPSDK", &CleanUPSDK);
+
     nb::enum_<ZOOM_SDK_NAMESPACE::SDKUserType>(m, "SDKUserType")
         .value("SDK_UT_NORMALUSER", ZOOM_SDK_NAMESPACE::SDK_UT_NORMALUSER)
         .value("SDK_UT_WITHOUT_LOGIN", ZOOM_SDK_NAMESPACE::SDK_UT_WITHOUT_LOGIN)
@@ -261,7 +265,7 @@ nb::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
             throw std::runtime_error("Failed to create meeting service");
         }
         return pService;
-    }, nb::rv_policy::take_ownership);
+    }, nb::rv_policy::reference);
 
     m.def("DestroyMeetingService", [](ZOOM_SDK_NAMESPACE::IMeetingService* pService) {
         return ZOOM_SDK_NAMESPACE::DestroyMeetingService(pService);
@@ -282,7 +286,9 @@ nb::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
             throw std::runtime_error("Failed to create setting service");
         }
         return pService;
-    }, nb::rv_policy::take_ownership);
+    }, nb::rv_policy::reference);
+
+    m.def("DestroySettingService", &DestroySettingService);
 
     nb::class_<IAuthService>(m, "IAuthService")
         .def("SetEvent", &ZOOM_SDK_NAMESPACE::IAuthService::SetEvent)
@@ -301,7 +307,9 @@ nb::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
             throw std::runtime_error("Failed to create auth service");
         }
         return pService;
-    }, nb::rv_policy::take_ownership);
+    }, nb::rv_policy::reference);
+
+    m.def("DestroyAuthService", &DestroyAuthService);
 
     nb::class_<IAuthServiceEvent>(m, "IAuthServiceEvent")
     .def("onAuthenticationReturn", &IAuthServiceEvent::onAuthenticationReturn)
