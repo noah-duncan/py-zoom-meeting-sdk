@@ -1,0 +1,14 @@
+# ninja log v5
+21	10639	1728096183348968589	CMakeFiles/nanobind-static.dir/usr/local/lib/python3.10/dist-packages/nanobind/src/implicit.cpp.o	2ac80a4316a76911
+19	10707	1728096183351963505	CMakeFiles/nanobind-static.dir/usr/local/lib/python3.10/dist-packages/nanobind/src/nb_static_property.cpp.o	2726e70579ceb90b
+20	11265	1728096183993012623	CMakeFiles/nanobind-static.dir/usr/local/lib/python3.10/dist-packages/nanobind/src/trampoline.cpp.o	8ec1bc6bbb483c76
+17	12949	1728096185683410820	CMakeFiles/nanobind-static.dir/usr/local/lib/python3.10/dist-packages/nanobind/src/nb_internals.cpp.o	24a16e3dea2f5d03
+20	12960	1728096185694480151	CMakeFiles/nanobind-static.dir/usr/local/lib/python3.10/dist-packages/nanobind/src/error.cpp.o	1ef7f88df931044
+19	13817	1728096186552756600	CMakeFiles/nanobind-static.dir/usr/local/lib/python3.10/dist-packages/nanobind/src/nb_ndarray.cpp.o	941c2f0b690f8f5d
+20	14356	1728096187084935199	CMakeFiles/nanobind-static.dir/usr/local/lib/python3.10/dist-packages/nanobind/src/common.cpp.o	cee605ad32f68830
+18	16469	1728096189198902433	CMakeFiles/nanobind-static.dir/usr/local/lib/python3.10/dist-packages/nanobind/src/nb_enum.cpp.o	e473c25fd1ecf414
+18	17392	1728096190126592952	CMakeFiles/nanobind-static.dir/usr/local/lib/python3.10/dist-packages/nanobind/src/nb_func.cpp.o	57329fb995f315c5
+18	18661	1728096191395087609	CMakeFiles/nanobind-static.dir/usr/local/lib/python3.10/dist-packages/nanobind/src/nb_type.cpp.o	b3ff92881b73014
+18662	18968	1728096191709566295	libnanobind-static.a	4731b80297f448ab
+15	31683	1728096204417249862	CMakeFiles/_zoom_meeting_sdk_impl.dir/src/zoom_meeting_sdk_python.cpp.o	3788d13b12f20665
+31685	32212	1728096204948846086	_zoom_meeting_sdk_impl.cpython-310-x86_64-linux-gnu.so	1338dcf5e604537
