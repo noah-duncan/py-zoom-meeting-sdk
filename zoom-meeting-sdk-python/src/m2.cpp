@@ -37,22 +37,21 @@
 
 namespace nb = nanobind;
 
+//	virtual SDKError subscribe(IZoomSDKAudioRawDataDelegate* pDelegate, bool bWithInterpreters = false) = 0;
+
 void init_m2(nb::module_ &m) {
     nb::class_<IZoomSDKAudioRawDataHelper>(m, "IZoomSDKAudioRawDataHelper")
     .def("subscribe", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::subscribe)
+    .def("subscribe2", [](IZoomSDKAudioRawDataHelper & self, IZoomSDKAudioRawDataDelegate& pDelegate, bool bWithInterpreters = false) -> SDKError {
+        return self.subscribe(&pDelegate, bWithInterpreters);
+    }, nb::rv_policy::take_ownership)
     .def("unSubscribe", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::unSubscribe)
     .def("setExternalAudioSource", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::setExternalAudioSource);
 
     m.def("GetAudioRawdataHelper", []() -> ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper* {
         return GetAudioRawdataHelper();
     }, nb::rv_policy::take_ownership);
-
-    nb::class_<IZoomSDKAudioRawDataDelegate>(m, "IZoomSDKAudioRawDataDelegate")
-    .def("onMixedAudioRawDataReceived", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataDelegate::onMixedAudioRawDataReceived)
-    .def("onOneWayAudioRawDataReceived", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataDelegate::onOneWayAudioRawDataReceived)
-    .def("onShareAudioRawDataReceived", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataDelegate::onShareAudioRawDataReceived)
-    .def("onOneWayInterpreterAudioRawDataReceived", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataDelegate::onOneWayInterpreterAudioRawDataReceived);
-
+/*
     // Not part of SDK
     nb::class_<ZoomSDKAudioRawDataDelegate, IZoomSDKAudioRawDataDelegate>(m, "ZoomSDKAudioRawDataDelegate")
     .def(nb::init<bool, bool>())
@@ -62,7 +61,7 @@ void init_m2(nb::module_ &m) {
     .def("onOneWayAudioRawDataReceived", &ZoomSDKAudioRawDataDelegate::onOneWayAudioRawDataReceived)
     .def("onShareAudioRawDataReceived", &ZoomSDKAudioRawDataDelegate::onShareAudioRawDataReceived)
     .def("onOneWayInterpreterAudioRawDataReceived", &ZoomSDKAudioRawDataDelegate::onOneWayInterpreterAudioRawDataReceived);
-
+*/
     nb::class_<IAudioSettingContext>(m, "IAudioSettingContext")
     .def("EnableAutoJoinAudio", &IAudioSettingContext::EnableAutoJoinAudio);
 }

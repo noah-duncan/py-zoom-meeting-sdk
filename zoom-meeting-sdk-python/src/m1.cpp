@@ -352,6 +352,20 @@ nb::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
     .def("setOnMeetingEnd", &MeetingServiceEvent::setOnMeetingEnd)
     .def("setOnMeetingStatusChanged", &MeetingServiceEvent::setOnMeetingStatusChanged);
 
+    nb::enum_<LeaveMeetingCmd>(m, "LeaveMeetingCmd")
+    .value("LEAVE_MEETING", LEAVE_MEETING)
+    .value("END_MEETING", END_MEETING);
+
+    nb::enum_<MeetingEndReason>(m, "MeetingEndReason")
+    .value("EndMeetingReason_None", EndMeetingReason_None)
+    .value("EndMeetingReason_KickByHost", EndMeetingReason_KickByHost)
+    .value("EndMeetingReason_EndByHost", EndMeetingReason_EndByHost)
+    .value("EndMeetingReason_JBHTimeOut", EndMeetingReason_JBHTimeOut)
+    .value("EndMeetingReason_NoAttendee", EndMeetingReason_NoAttendee)
+    .value("EndMeetingReason_HostStartAnotherMeeting", EndMeetingReason_HostStartAnotherMeeting)
+    .value("EndMeetingReason_FreeMeetingTimeOut", EndMeetingReason_FreeMeetingTimeOut)
+    .value("EndMeetingReason_NetworkBroken", EndMeetingReason_NetworkBroken);
+
     nb::enum_<ZOOM_SDK_NAMESPACE::MeetingStatus>(m, "MeetingStatus")
     .value("MEETING_STATUS_IDLE", ZOOM_SDK_NAMESPACE::MEETING_STATUS_IDLE)
     .value("MEETING_STATUS_CONNECTING", ZOOM_SDK_NAMESPACE::MEETING_STATUS_CONNECTING)

@@ -1,6 +1,10 @@
 import zoom_meeting_sdk_python as zoom
 import jwt
 from datetime import datetime, timedelta
+from raw_audio_delegate import RawAudioDelegate
+
+def dummy_func():
+    print("yolod")
 
 def generate_jwt(client_id, client_secret):
     iat = datetime.utcnow()
@@ -34,7 +38,14 @@ class MeetingBot:
 
         self.use_raw_recording = True
 
+        self.reminder_controller = None
+
+        self.recording_ctrl = None
+
     def cleanup(self):
+
+        #self.meeting_service_event.setOnMeetingJoin(None)
+
         if self.meeting_service:
             zoom.DestroyMeetingService(self.meeting_service)
         if self.setting_service:
@@ -61,11 +72,11 @@ class MeetingBot:
     def on_join(self):
         print("Joined successfully")
 
-        reminder_controller = self.meeting_service.GetMeetingReminderController()
-        reminder_controller.SetEvent(zoom.MeetingReminderEvent())
+        self.reminder_controller = self.meeting_service.GetMeetingReminderController()
+        self.reminder_controller.SetEvent(zoom.MeetingReminderEvent())
 
         if self.use_raw_recording:
-            recording_ctrl = self.meeting_service.GetMeetingRecordingController()
+            self.recording_ctrl = self.meeting_service.GetMeetingRecordingController()
 
             def on_recording_privilege_changed(can_rec):
                 print("can_rec = ", can_rec)
@@ -75,22 +86,27 @@ class MeetingBot:
                     self.stop_raw_recording()
 
             self.recording_event = zoom.MeetingRecordingCtrlEvent(on_recording_privilege_changed)
-            recording_ctrl.SetEvent(self.recording_event)
+            self.recording_ctrl.SetEvent(self.recording_event)
 
             self.start_raw_recording()
+
+    def on_one_way_audio_raw_data_received_callback(self, data, node_id):
+        print("GDFFG", node_id)
+        print("q", data.GetBufferLen())        
+        
     
     def start_raw_recording(self):
         print("start_raw_recording")
 
-        recording_ctrl = self.meeting_service.GetMeetingRecordingController()
+        self.recording_ctrl = self.meeting_service.GetMeetingRecordingController()
 
-        can_start_recording_result = recording_ctrl.CanStartRawRecording()
+        can_start_recording_result = self.recording_ctrl.CanStartRawRecording()
         if can_start_recording_result != zoom.SDKERR_SUCCESS:
-            recording_ctrl.RequestLocalRecordingPrivilege()
+            self.recording_ctrl.RequestLocalRecordingPrivilege()
             print("Requesting recording privilege.")
             return
 
-        start_raw_recording_result = recording_ctrl.StartRawRecording()
+        start_raw_recording_result = self.recording_ctrl.StartRawRecording()
         print("start_raw_recording_result")
         print(start_raw_recording_result)
         if start_raw_recording_result != zoom.SDKERR_SUCCESS:
@@ -104,19 +120,33 @@ class MeetingBot:
         if self.audio_source is None:
             mixedAudio = False
             transcribe = False
-            self.audio_source = zoom.ZoomSDKAudioRawDataDelegate(mixedAudio, transcribe)
-            self.audio_source.setDir("out")
-            self.audio_source.setFilename("test.pcm")
+            self.audio_source = zoom.ZoomSDKAudioRawDataDelegatePassThrough()
+            self.audio_source.setOnOneWayAudioRawDataReceived(self.on_one_way_audio_raw_data_received_callback)
+            #self.audio_source.setDir("out")
+            #self.audio_source.setFilename("test.pcm")
             print("set some shit")
 
+        print("self.audio_source", self.audio_source)
         audio_helper_subscribe_result = self.audio_helper.subscribe(self.audio_source, False)
         print("audio_helper_subscribe_result")
         print(audio_helper_subscribe_result)
         print("z")
 
-    def stop_raw_recording():
-        # Implement raw recording stop logic here
+    def stop_raw_recording(self):
         print("stop_raw_recording")
+        rec_ctrl = self.meeting_service.StopRawRecording()
+        if rec_ctrl.StopRawRecording() != zoom.SDKERR_SUCCESS:
+            raise Exception("Error with stop raw recording")
+
+    def leave(self):
+        if self.meeting_service is None:
+            return
+        
+        status = self.meeting_service.GetMeetingStatus()
+        if status == zoom.MEETING_STATUS_IDLE:
+            return
+
+        self.meeting_service.Leave(zoom.LEAVE_MEETING)
 
     def join_meeting(self):
         mid = "4849920355"

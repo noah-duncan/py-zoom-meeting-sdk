@@ -57,6 +57,8 @@ nanobind_add_module(
   src/zoom_meeting_sdk_python.cpp
   src/m1.cpp
   src/m2.cpp
+  src/m3.cpp
+  src/m4.cpp
   src/zoomsdk/zoom_sdk.h
   src/zoom_sample_app/events/AuthServiceEvent.cpp
   src/zoom_sample_app/events/AuthServiceEvent.h
