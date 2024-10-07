@@ -1,12 +1,13 @@
 import zoom_meeting_sdk_python as zoom
 
 class RawAudioDelegate(zoom.IZoomSDKAudioRawDataDelegate):
-    def __init__(self):
-        self.use_mixed_audio = False
-        self.transcribe = False
+    # def __init__(self):
+    #     print("CPGO")
+    #     self.use_mixed_audio = False
+    #     self.transcribe = False
 
-        self.directory = "out"
-        self.filename = "test.pcm"
+    #     self.directory = "out"
+    #     self.filename = "test.pcm"
 
     def write_to_file(self, path, data):
         print("cu")
@@ -23,3 +24,8 @@ class RawAudioDelegate(zoom.IZoomSDKAudioRawDataDelegate):
 
     def onOneWayInterpreterAudioRawDataReceived(self, data, language_name):
         print("bust")
+
+
+class ShihTzu(zoom.Dog):
+     def bark(self):
+             return "ggg"

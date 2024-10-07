@@ -40,17 +40,7 @@ namespace nb = nanobind;
 //	virtual SDKError subscribe(IZoomSDKAudioRawDataDelegate* pDelegate, bool bWithInterpreters = false) = 0;
 
 void init_m2(nb::module_ &m) {
-    nb::class_<IZoomSDKAudioRawDataHelper>(m, "IZoomSDKAudioRawDataHelper")
-    .def("subscribe", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::subscribe)
-    .def("subscribe2", [](IZoomSDKAudioRawDataHelper & self, IZoomSDKAudioRawDataDelegate& pDelegate, bool bWithInterpreters = false) -> SDKError {
-        return self.subscribe(&pDelegate, bWithInterpreters);
-    }, nb::rv_policy::take_ownership)
-    .def("unSubscribe", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::unSubscribe)
-    .def("setExternalAudioSource", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::setExternalAudioSource);
 
-    m.def("GetAudioRawdataHelper", []() -> ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper* {
-        return GetAudioRawdataHelper();
-    }, nb::rv_policy::take_ownership);
 /*
     // Not part of SDK
     nb::class_<ZoomSDKAudioRawDataDelegate, IZoomSDKAudioRawDataDelegate>(m, "ZoomSDKAudioRawDataDelegate")

@@ -3,9 +3,13 @@
 #include <nanobind/trampoline.h>
 #include <nanobind/stl/function.h>
 
+#include "zoom_sdk.h"
+#include "zoom_sdk_def.h"
+
 #include "util/SocketServer.h"
 #include "rawdata/rawdata_audio_helper_interface.h"
 #include "zoom_sdk_raw_data_def.h"
+#include "rawdata/zoom_rawdata_api.h"
 
 
 #include <iostream>
@@ -62,7 +66,35 @@ public:
     void onOneWayInterpreterAudioRawDataReceived(AudioRawData* data_, const zchar_t* pLanguageName) override {};
 };
 
+struct Dog {
+    std::string name;
+    //Dog() { }
+    virtual std::string bark() const = 0;
+};
+
+void alarm(Dog *dog, size_t count) {
+    for (size_t i = 0; i < count; ++i)
+        std::cout << dog->bark() << std::endl;
+}
+
+struct PyDog : Dog {
+    NB_TRAMPOLINE(Dog, 1);
+
+    std::string bark() const override {
+        NB_OVERRIDE_PURE(bark);
+    }
+};
+
 void init_m4(nb::module_ &m) {
+    //m.def("alarm", &alarm);
+    m.def("alarm", [](Dog *dog, size_t count) { return alarm(dog, count); });
+
+
+    nb::class_<Dog, PyDog>(m, "Dog")
+    .def(nb::init<>())
+    .def_rw("name", &Dog::name)
+    .def("bark", &Dog::bark); /* <--- THIS IS WRONG, use &Dog::bark */
+
     nb::class_<AudioRawData>(m, "AudioRawData")
     .def("GetBuffer", &AudioRawData::GetBuffer)
     .def("GetBufferLen", &AudioRawData::GetBufferLen);
@@ -82,4 +114,17 @@ void init_m4(nb::module_ &m) {
     .def("onShareAudioRawDataReceived", &ZoomSDKAudioRawDataDelegatePassThrough::onShareAudioRawDataReceived)
     .def("onOneWayInterpreterAudioRawDataReceived", &ZoomSDKAudioRawDataDelegatePassThrough::onOneWayInterpreterAudioRawDataReceived);
 
+
+    nb::class_<ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper>(m, "IZoomSDKAudioRawDataHelper")
+    .def("subscribe", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::subscribe)
+    .def("subscribe2", [](ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper & self, const ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataDelegate& pDelegate, bool bWithInterpreters = false) -> ZOOM_SDK_NAMESPACE::SDKError {
+        std::cout << "subscribe2 &pDelegatez " << (&pDelegate) << std::endl;
+        return ZOOM_SDK_NAMESPACE::SDKERR_SUCCESS;
+    })
+    .def("unSubscribe", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::unSubscribe)
+    .def("setExternalAudioSource", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::setExternalAudioSource);
+
+    m.def("GetAudioRawdataHelper", []() -> ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper* {
+        return ZOOM_SDK_NAMESPACE::GetAudioRawdataHelper();
+    }, nb::rv_policy::take_ownership);
 }

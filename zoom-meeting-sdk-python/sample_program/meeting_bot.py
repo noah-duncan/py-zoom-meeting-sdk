@@ -113,20 +113,22 @@ class MeetingBot:
             print("Start raw recording failed.")
             return
 
-        self.audio_helper = zoom.GetAudioRawdataHelper();
+        self.audio_helper = zoom.GetAudioRawdataHelper()
         if self.audio_helper is None:
             print("audio_helper is None")
             return "BAD"
         if self.audio_source is None:
             mixedAudio = False
             transcribe = False
-            self.audio_source = zoom.ZoomSDKAudioRawDataDelegatePassThrough()
-            self.audio_source.setOnOneWayAudioRawDataReceived(self.on_one_way_audio_raw_data_received_callback)
+            self.audio_source = RawAudioDelegate()
+            #self.audio_source = zoom.ZoomSDKAudioRawDataDelegatePassThrough()
+            #self.audio_source.setOnOneWayAudioRawDataReceived(self.on_one_way_audio_raw_data_received_callback)
             #self.audio_source.setDir("out")
             #self.audio_source.setFilename("test.pcm")
             print("set some shit")
 
         print("self.audio_source", self.audio_source)
+        print("self.audio_helper", self.audio_helper)
         audio_helper_subscribe_result = self.audio_helper.subscribe(self.audio_source, False)
         print("audio_helper_subscribe_result")
         print(audio_helper_subscribe_result)
