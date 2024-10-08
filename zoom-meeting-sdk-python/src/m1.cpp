@@ -254,7 +254,7 @@ nb::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
     })
     .def("SetEvent", &ZOOM_SDK_NAMESPACE::IMeetingService::SetEvent)
     .def("Start", &ZOOM_SDK_NAMESPACE::IMeetingService::Start)
-    .def("Leave", &ZOOM_SDK_NAMESPACE::IMeetingService::Leave)
+    .def("Leave", &ZOOM_SDK_NAMESPACE::IMeetingService::Leave, nb::call_guard<nb::gil_scoped_release>())
     .def("GetMeetingRecordingController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingRecordingController, nb::rv_policy::reference)
     .def("GetMeetingReminderController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingReminderController, nb::rv_policy::reference);
        

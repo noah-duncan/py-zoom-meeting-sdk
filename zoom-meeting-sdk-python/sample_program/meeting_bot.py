@@ -46,6 +46,9 @@ class MeetingBot:
         print("CLEANN")
         #self.meeting_service_event.setOnMeetingJoin(None)
 
+        if self.audio_source:
+            self.audio_source.setSendOnOneWayAudioRawDataReceived(False)
+        print("GOAS")
 
         if self.meeting_service:
             zoom.DestroyMeetingService(self.meeting_service)
@@ -59,7 +62,8 @@ class MeetingBot:
             print("CLA")
             reg = self.audio_helper.unSubscribe()
             print("REG = ", reg)
-
+        rez = self.meeting_service.Leave(zoom.LEAVE_MEETING)
+        print("rezz = ", rez)
         zoom.CleanUPSDK()
 
     def init(self):
@@ -148,12 +152,17 @@ class MeetingBot:
         if self.meeting_service is None:
             return
         
+        print("yo")
         status = self.meeting_service.GetMeetingStatus()
         print("1")
         if status == zoom.MEETING_STATUS_IDLE:
             return
         print("2")
-        self.meeting_service.Leave(zoom.LEAVE_MEETING)
+        #if self.audio_source:
+        #    self.audio_source = None
+        print("zz")
+        rez = self.meeting_service.Leave(zoom.LEAVE_MEETING)
+        print("rez", rez)
         print("3")
 
     def join_meeting(self):

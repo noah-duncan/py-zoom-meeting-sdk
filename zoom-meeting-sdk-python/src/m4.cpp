@@ -21,6 +21,7 @@ namespace nb = nanobind;
 class ZoomSDKAudioRawDataDelegatePassThrough : public ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataDelegate {
 private:
     function<void(AudioRawData*, uint32_t)> m_on_one_way_audio_raw_data_received_callback;
+    bool send_m_on_one_way_audio_raw_data_received_callback = true;
 public:
     ZoomSDKAudioRawDataDelegatePassThrough(){};
 
@@ -33,8 +34,13 @@ public:
         m_on_one_way_audio_raw_data_received_callback = on_one_way_audio_raw_data_received_callback;
     }
 
+    void setSendOnOneWayAudioRawDataReceived(bool send)
+    {
+        send_m_on_one_way_audio_raw_data_received_callback = false;
+    }
+
     void onOneWayAudioRawDataReceived(AudioRawData* data, uint32_t node_id) override {
-        if (m_on_one_way_audio_raw_data_received_callback)
+        if (m_on_one_way_audio_raw_data_received_callback && send_m_on_one_way_audio_raw_data_received_callback)
             m_on_one_way_audio_raw_data_received_callback(data, node_id);
     };
 
@@ -60,6 +66,7 @@ void init_m4(nb::module_ &m) {
     nb::class_<ZoomSDKAudioRawDataDelegatePassThrough, ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataDelegate>(m, "ZoomSDKAudioRawDataDelegatePassThrough")
     .def(nb::init<>())
     .def("setOnOneWayAudioRawDataReceived", &ZoomSDKAudioRawDataDelegatePassThrough::setOnOneWayAudioRawDataReceived)
+    .def("setSendOnOneWayAudioRawDataReceived", &ZoomSDKAudioRawDataDelegatePassThrough::setSendOnOneWayAudioRawDataReceived)
     .def("onMixedAudioRawDataReceived", &ZoomSDKAudioRawDataDelegatePassThrough::onMixedAudioRawDataReceived)
     .def("onOneWayAudioRawDataReceived", &ZoomSDKAudioRawDataDelegatePassThrough::onOneWayAudioRawDataReceived)
     .def("onShareAudioRawDataReceived", &ZoomSDKAudioRawDataDelegatePassThrough::onShareAudioRawDataReceived)
