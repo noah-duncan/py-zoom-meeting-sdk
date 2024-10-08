@@ -21,6 +21,8 @@ def on_signal(signum, frame):
 
 def on_exit():
     print("Exiting...")
+    bot.leave()
+    print("cleaning...")
     bot.cleanup()
 
 def on_timeout():

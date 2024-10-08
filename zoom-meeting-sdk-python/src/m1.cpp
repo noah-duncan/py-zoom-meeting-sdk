@@ -352,9 +352,10 @@ nb::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
     .def("setOnMeetingEnd", &MeetingServiceEvent::setOnMeetingEnd)
     .def("setOnMeetingStatusChanged", &MeetingServiceEvent::setOnMeetingStatusChanged);
 
-    nb::enum_<LeaveMeetingCmd>(m, "LeaveMeetingCmd")
-    .value("LEAVE_MEETING", LEAVE_MEETING)
-    .value("END_MEETING", END_MEETING);
+    nb::enum_<ZOOM_SDK_NAMESPACE::LeaveMeetingCmd>(m, "LeaveMeetingCmd")
+    .value("LEAVE_MEETING", ZOOM_SDK_NAMESPACE::LEAVE_MEETING)
+    .value("END_MEETING", ZOOM_SDK_NAMESPACE::END_MEETING)
+    .export_values();
 
     nb::enum_<MeetingEndReason>(m, "MeetingEndReason")
     .value("EndMeetingReason_None", EndMeetingReason_None)

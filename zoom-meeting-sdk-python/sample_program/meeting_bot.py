@@ -1,7 +1,7 @@
 import zoom_meeting_sdk_python as zoom
 import jwt
 from datetime import datetime, timedelta
-from raw_audio_delegate import RawAudioDelegate
+#from raw_audio_delegate import RawAudioDelegate
 
 def dummy_func():
     print("yolod")
@@ -43,8 +43,9 @@ class MeetingBot:
         self.recording_ctrl = None
 
     def cleanup(self):
-
+        print("CLEANN")
         #self.meeting_service_event.setOnMeetingJoin(None)
+
 
         if self.meeting_service:
             zoom.DestroyMeetingService(self.meeting_service)
@@ -52,6 +53,13 @@ class MeetingBot:
             zoom.DestroySettingService(self.setting_service)
         if self.auth_service:
             zoom.DestroyAuthService(self.auth_service)
+
+
+        if self.audio_helper:
+            print("CLA")
+            reg = self.audio_helper.unSubscribe()
+            print("REG = ", reg)
+
         zoom.CleanUPSDK()
 
     def init(self):
@@ -93,8 +101,7 @@ class MeetingBot:
     def on_one_way_audio_raw_data_received_callback(self, data, node_id):
         print("GDFFG", node_id)
         print("q", data.GetBufferLen())        
-        
-    
+       
     def start_raw_recording(self):
         print("start_raw_recording")
 
@@ -120,11 +127,8 @@ class MeetingBot:
         if self.audio_source is None:
             mixedAudio = False
             transcribe = False
-            self.audio_source = RawAudioDelegate()
-            #self.audio_source = zoom.ZoomSDKAudioRawDataDelegatePassThrough()
-            #self.audio_source.setOnOneWayAudioRawDataReceived(self.on_one_way_audio_raw_data_received_callback)
-            #self.audio_source.setDir("out")
-            #self.audio_source.setFilename("test.pcm")
+            self.audio_source = zoom.ZoomSDKAudioRawDataDelegatePassThrough()
+            self.audio_source.setOnOneWayAudioRawDataReceived(self.on_one_way_audio_raw_data_received_callback)
             print("set some shit")
 
         print("self.audio_source", self.audio_source)
@@ -145,10 +149,12 @@ class MeetingBot:
             return
         
         status = self.meeting_service.GetMeetingStatus()
+        print("1")
         if status == zoom.MEETING_STATUS_IDLE:
             return
-
+        print("2")
         self.meeting_service.Leave(zoom.LEAVE_MEETING)
+        print("3")
 
     def join_meeting(self):
         mid = "4849920355"
