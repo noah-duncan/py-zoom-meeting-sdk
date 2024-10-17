@@ -1,6 +1,9 @@
 import zoom_meeting_sdk_python as zoom
 import jwt
+import threading
 from datetime import datetime, timedelta
+import ctypes
+
 #from raw_audio_delegate import RawAudioDelegate
 
 def dummy_func():
@@ -62,8 +65,7 @@ class MeetingBot:
             print("CLA")
             reg = self.audio_helper.unSubscribe()
             print("REG = ", reg)
-        rez = self.meeting_service.Leave(zoom.LEAVE_MEETING)
-        print("rezz = ", rez)
+
         zoom.CleanUPSDK()
 
     def init(self):
@@ -82,7 +84,7 @@ class MeetingBot:
         self.create_services()
 
     def on_join(self):
-        print("Joined successfully")
+        print("Joined successfully ", threading.get_native_id())
 
         self.reminder_controller = self.meeting_service.GetMeetingReminderController()
         self.reminder_controller.SetEvent(zoom.MeetingReminderEvent())
@@ -104,8 +106,24 @@ class MeetingBot:
 
     def on_one_way_audio_raw_data_received_callback(self, data, node_id):
         print("GDFFG", node_id)
-        print("q", data.GetBufferLen())        
+        print("q", threading.get_native_id())
+        print("Shared Audio Raw data: ", (data.GetBufferLen() / 10), "k at ", data.GetSampleRate(), "Hz")
+
+        self.write_to_file("out/test_audio_" + str(node_id) + ".pcm", data)      
        
+    def write_to_file(self, path, data):
+        try:
+            buffer_bytes = data.GetBuffer78()            
+
+            with open(path, 'ab') as file:
+                file.write(buffer_bytes)
+        except IOError as e:
+            print(f"Error: failed to open or write to audio file path: {path}. Error: {e}")
+            return
+        except Exception as e:
+            print(f"Unexpected error occurred: {e}")
+            return
+
     def start_raw_recording(self):
         print("start_raw_recording")
 
