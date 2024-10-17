@@ -54,18 +54,12 @@ public:
 void init_m4(nb::module_ &m) {
 
     nb::class_<AudioRawData>(m, "AudioRawData")
-    .def("GetBuffer77", [](AudioRawData& self) -> std::string {
-        std::cout << "len" << self.GetBufferLen() << std::endl;
-        std::cout << "bad";
-        std::cout << std::string(self.GetBuffer(), self.GetBufferLen()) << std::endl;
-        return std::string(self.GetBuffer(), self.GetBufferLen());
-     })
-    .def("GetBuffer78", [](AudioRawData& self) -> nb::bytes {
+    .def("GetBuffer", [](AudioRawData& self) -> nb::bytes {
         return nb::bytes(self.GetBuffer(), self.GetBufferLen());
      })
-    .def("GetBuffer", &AudioRawData::GetBuffer)
     .def("GetBufferLen", &AudioRawData::GetBufferLen)
-    .def("GetSampleRate", &AudioRawData::GetSampleRate);
+    .def("GetSampleRate", &AudioRawData::GetSampleRate)
+    .def("GetChannelNum", &AudioRawData::GetChannelNum);
 
     nb::class_<ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataDelegate>(m, "IZoomSDKAudioRawDataDelegate")
     .def("onMixedAudioRawDataReceived", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataDelegate::onMixedAudioRawDataReceived)

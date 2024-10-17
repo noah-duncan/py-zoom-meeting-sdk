@@ -105,15 +105,15 @@ class MeetingBot:
             self.start_raw_recording()
 
     def on_one_way_audio_raw_data_received_callback(self, data, node_id):
-        print("GDFFG", node_id)
-        print("q", threading.get_native_id())
-        print("Shared Audio Raw data: ", (data.GetBufferLen() / 10), "k at ", data.GetSampleRate(), "Hz")
+        print("node_id", node_id)
+        print("thread_id", threading.get_native_id())
+        print("Shared Audio Raw data: ", (data.GetBufferLen() / 10), "k at ", data.GetSampleRate(), "Hz with channels =", data.GetChannelNum())
 
         self.write_to_file("out/test_audio_" + str(node_id) + ".pcm", data)      
        
     def write_to_file(self, path, data):
         try:
-            buffer_bytes = data.GetBuffer78()            
+            buffer_bytes = data.GetBuffer()          
 
             with open(path, 'ab') as file:
                 file.write(buffer_bytes)
