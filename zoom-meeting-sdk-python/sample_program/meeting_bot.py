@@ -1,6 +1,7 @@
 import zoom_meeting_sdk_python as zoom
 import jwt
 import threading
+from deepgram_transcriber import DeepgramTranscriber
 from datetime import datetime, timedelta
 import ctypes
 
@@ -45,6 +46,8 @@ class MeetingBot:
 
         self.recording_ctrl = None
 
+        self.deepgram_transcriber = DeepgramTranscriber()
+
     def cleanup(self):
         print("CLEANN")
         #self.meeting_service_event.setOnMeetingJoin(None)
@@ -55,18 +58,22 @@ class MeetingBot:
 
         if self.meeting_service:
             zoom.DestroyMeetingService(self.meeting_service)
+            print("Destroyed meeting service")
         if self.setting_service:
             zoom.DestroySettingService(self.setting_service)
+            print("Destroyed setting service")
         if self.auth_service:
             zoom.DestroyAuthService(self.auth_service)
+            print("Destroyed auth service")
 
 
         if self.audio_helper:
-            print("CLA")
+            print("self.audio_helper.unSubscribe()")
             reg = self.audio_helper.unSubscribe()
-            print("REG = ", reg)
+            print("self.audio_helper.unSubscribe() result = ", reg)
 
         zoom.CleanUPSDK()
+        print("cleaned up sdk")
 
     def init(self):
         init_param = zoom.InitParam()
@@ -105,12 +112,28 @@ class MeetingBot:
             self.start_raw_recording()
 
     def on_one_way_audio_raw_data_received_callback(self, data, node_id):
-        print("node_id", node_id)
-        print("thread_id", threading.get_native_id())
-        print("Shared Audio Raw data: ", (data.GetBufferLen() / 10), "k at ", data.GetSampleRate(), "Hz with channels =", data.GetChannelNum())
+        #print("node_id", node_id)
+        #print("thread_id", threading.get_native_id())
+        #print("Shared Audio Raw data: ", (data.GetBufferLen() / 10), "k at ", data.GetSampleRate(), "Hz with channels =", data.GetChannelNum())
 
-        self.write_to_file("out/test_audio_" + str(node_id) + ".pcm", data)      
+
+        if node_id == 16778240:
+            self.write_to_deepgram("out/test_audio_" + str(node_id) + ".pcm", data)      
+        #self.write_to_file("out/test_audio_" + str(node_id) + ".pcm", data)      
        
+    def write_to_deepgram(self, path, data):
+        try:
+            #print("s")
+            buffer_bytes = data.GetBuffer()          
+
+            self.deepgram_transcriber.send(buffer_bytes)
+        except IOError as e:
+            print(f"Error: failed to open or write to audio file path: {path}. Error: {e}")
+            return
+        except Exception as e:
+            print(f"Unexpected error occurred: {e}")
+            return
+
     def write_to_file(self, path, data):
         try:
             buffer_bytes = data.GetBuffer()          
