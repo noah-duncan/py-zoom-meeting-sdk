@@ -46,6 +46,9 @@ class MeetingBot:
 
         self.recording_ctrl = None
 
+        self.audio_raw_data_sender = None
+        self.virtual_audio_mic_event_passthrough = None
+
         self.deepgram_transcriber = DeepgramTranscriber()
 
     def cleanup(self):
@@ -72,6 +75,7 @@ class MeetingBot:
             reg = self.audio_helper.unSubscribe()
             print("self.audio_helper.unSubscribe() result = ", reg)
 
+        print("start clean up sdk")
         zoom.CleanUPSDK()
         print("cleaned up sdk")
 
@@ -110,6 +114,18 @@ class MeetingBot:
             self.recording_ctrl.SetEvent(self.recording_event)
 
             self.start_raw_recording()
+
+    def on_mic_initialize_callback(self, sender):
+        print("on_mic_initialize_callback sender = ", sender)
+        self.audio_raw_data_sender = sender
+
+    def on_mic_start_send_callback(self):
+        print("CAN START SENDING STUFF!!")
+
+        with open('/tmp/python-zoom-linux-sdk/zoom-meeting-sdk-python/out/test_audio_16778240.pcm', 'rb') as pcm_file:
+            chunk = pcm_file.read(64000*10)
+            self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
+            print("sent")
 
     def on_one_way_audio_raw_data_received_callback(self, data, node_id):
         #print("node_id", node_id)
@@ -182,6 +198,12 @@ class MeetingBot:
         print("audio_helper_subscribe_result")
         print(audio_helper_subscribe_result)
         print("z")
+        print("more stuff")
+        self.virtual_audio_mic_event_passthrough = zoom.ZoomSDKZoomSDKVirtualAudioMicEventPassThrough()
+        self.virtual_audio_mic_event_passthrough.setOnMicInitialize(self.on_mic_initialize_callback)
+        self.virtual_audio_mic_event_passthrough.setOnMicStartSend(self.on_mic_start_send_callback)
+        audio_helper_set_external_audio_source_result = self.audio_helper.setExternalAudioSource(self.virtual_audio_mic_event_passthrough)
+        print("audio_helper_set_external_audio_source_result =", audio_helper_set_external_audio_source_result)
 
     def stop_raw_recording(self):
         print("stop_raw_recording")

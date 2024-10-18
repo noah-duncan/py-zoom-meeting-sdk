@@ -171,7 +171,7 @@ nb::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
         return ZOOM_SDK_NAMESPACE::InitSDK(initParam);
     }, nb::arg("initParam"), "Initialize ZOOM SDK");
 
-    m.def("CleanUPSDK", &CleanUPSDK);
+    m.def("CleanUPSDK", &CleanUPSDK, nb::call_guard<nb::gil_scoped_release>());
 
     nb::enum_<ZOOM_SDK_NAMESPACE::SDKUserType>(m, "SDKUserType")
         .value("SDK_UT_NORMALUSER", ZOOM_SDK_NAMESPACE::SDK_UT_NORMALUSER)
