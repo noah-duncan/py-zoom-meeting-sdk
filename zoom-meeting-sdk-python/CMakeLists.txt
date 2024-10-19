@@ -32,12 +32,12 @@ find_package(Python 3.10
 
 find_package(nanobind CONFIG REQUIRED)
 
-set(ZOOM_SDK src/zoomsdk)
+set(ZOOM_SDK src/zoomsdk/h)
 set(ZOOM_SAMPLE_APP src/zoom_sample_app)
 include_directories(${ZOOM_SDK} ${ZOOM_SAMPLE_APP})
 
 # Link against zoom sdk static lib
-set(ZOOM_SDK_LIB_DIR /tmp/python-zoom-linux-sdk/lib/zoomsdk)
+set(ZOOM_SDK_LIB_DIR src/zoomsdk)
 link_directories(${ZOOM_SDK_LIB_DIR} ${ZOOM_SDK_LIB_DIR})
 
 # Link against some required libs that should be in the system
@@ -59,7 +59,7 @@ nanobind_add_module(
   src/m2.cpp
   src/m3.cpp
   src/m4.cpp
-  src/zoomsdk/zoom_sdk.h
+  src/zoomsdk/h/zoom_sdk.h
   src/zoom_sample_app/events/AuthServiceEvent.cpp
   src/zoom_sample_app/events/AuthServiceEvent.h
   src/zoom_sample_app/events/MeetingServiceEvent.cpp

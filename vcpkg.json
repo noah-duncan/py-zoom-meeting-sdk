@@ -1,9 +1,0 @@
-{
-  "name": "python-zoom-linux-sdk",
-  "version": "1",
-  "dependencies": [
-    "ada-url",
-    "cli11",
-    "jwt-cpp"
-  ]
-}

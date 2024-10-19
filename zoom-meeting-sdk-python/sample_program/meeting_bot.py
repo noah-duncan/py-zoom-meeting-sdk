@@ -122,7 +122,7 @@ class MeetingBot:
     def on_mic_start_send_callback(self):
         print("CAN START SENDING STUFF!!")
 
-        with open('/tmp/python-zoom-linux-sdk/zoom-meeting-sdk-python/out/test_audio_16778240.pcm', 'rb') as pcm_file:
+        with open('/tmp/python-zoom-linux-sdk/zoom-meeting-sdk-python/sample_program/out/test_audio_16778240.pcm', 'rb') as pcm_file:
             chunk = pcm_file.read(64000*10)
             self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
             print("sent")
@@ -134,10 +134,10 @@ class MeetingBot:
 
 
         if node_id == 16778240:
-            self.write_to_deepgram("out/test_audio_" + str(node_id) + ".pcm", data)      
+            self.write_to_deepgram(data)      
         #self.write_to_file("out/test_audio_" + str(node_id) + ".pcm", data)      
        
-    def write_to_deepgram(self, path, data):
+    def write_to_deepgram(self, data):
         try:
             #print("s")
             buffer_bytes = data.GetBuffer()          
