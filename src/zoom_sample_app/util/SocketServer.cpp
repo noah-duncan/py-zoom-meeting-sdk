@@ -92,7 +92,7 @@ int SocketServer::writeBuf(const char* buf, int len) {
     return 0;
 }
 
-int SocketServer::writeBuf(const unsigned char* buf, int len) {
+int SocketServer::writeBufUnsignedChar(const unsigned char* buf, int len) {
     auto ret = write(m_dataSocket, buf, len);
     if (ret == -1) {
         Log::error("failed to write data");

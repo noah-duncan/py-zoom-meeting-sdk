@@ -1,57 +1,86 @@
-cmake_minimum_required(VERSION 3.20.2)
-project(zoom_sdk_python VERSION 1.0.1)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_COMPILER /usr/bin/g++)
+cmake_minimum_required(VERSION 3.15...3.27)
+project(zoom_meeting_sdk_python LANGUAGES CXX)
 
 set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_SYSTEM_NAME Linux)
-set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
-set(ZOOM_SDK lib/zoomsdk)
+if (NOT SKBUILD)
+  message(WARNING "\
+  This CMake file is meant to be executed using 'scikit-build-core'.
+  Running it directly will almost certainly not produce the desired
+  result. If you are a user trying to install this package, use the
+  command below, which will install all necessary build dependencies,
+  compile the package in an isolated environment, and then install it.
+  =====================================================================
+   $ pip install .
+  =====================================================================
+  If you are a software developer, and this is your own package, then
+  it is usually much more efficient to install the build dependencies
+  in your environment once and use the following command that avoids
+  a costly creation of a new virtual environment at every compilation:
+  =====================================================================
+   $ pip install nanobind scikit-build-core[pyproject]
+   $ pip install --no-build-isolation -ve .
+  =====================================================================
+  You may optionally add -Ceditable.rebuild=true to auto-rebuild when
+  the package is imported. Otherwise, you need to rerun the above
+  after editing C++ files.")
+endif()
 
+find_package(Python 3.10
+  REQUIRED COMPONENTS Interpreter Development.Module
+  OPTIONAL_COMPONENTS Development.SABIModule)
 
-# Find pybind11
-execute_process(
-    COMMAND python3 -m pybind11 --cmakedir
-    OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-find_package(pybind11 CONFIG REQUIRED PATHS ${PYBIND11_CMAKE_DIR} NO_DEFAULT_PATH)
+find_package(nanobind CONFIG REQUIRED)
 
+set(ZOOM_SDK src/zoomsdk/h)
+set(ZOOM_SAMPLE_APP src/zoom_sample_app)
+include_directories(${ZOOM_SDK} ${ZOOM_SAMPLE_APP})
 
-find_package(ada REQUIRED)
-find_package(CLI11 REQUIRED)
-find_path(JWT_CPP_INCLUDE_DIRS "jwt-cpp/base.h")
+# Link against zoom sdk static lib
+set(ZOOM_SDK_LIB_DIR src/zoomsdk)
+link_directories(${ZOOM_SDK_LIB_DIR} ${ZOOM_SDK_LIB_DIR})
 
-find_package(X11 REQUIRED)
-include_directories(${X11_INCLUDE_DIR})
-link_directories(${X11_LIBRARIES})
-
+# Link against some required libs that should be in the system
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(deps REQUIRED IMPORTED_TARGET glib-2.0 gio-2.0)
 
-include_directories(${ZOOM_SDK}/h)
-link_directories(${ZOOM_SDK} ${ZOOM_SDK})
-link_directories(${ZOOM_SDK} ${ZOOM_SDK}/qt_libs/**)
+nanobind_add_module(
+  # Name of the extension
+  _zoom_meeting_sdk_python_impl
 
-# Create the Python module
-pybind11_add_module(zoom_sdk_python src/pythonlib.cpp
-        lib/zoomsdk/h/zoom_sdk.h
-        src/events/AuthServiceEvent.cpp
-        src/events/AuthServiceEvent.h
-        src/events/MeetingServiceEvent.cpp
-        src/events/MeetingServiceEvent.h     
-        src/events/MeetingReminderEvent.cpp
-        src/events/MeetingReminderEvent.h        
-        src/events/MeetingRecordingCtrlEvent.cpp
-        src/events/MeetingRecordingCtrlEvent.h
+  # Target the stable ABI for Python 3.12+, which reduces
+  # the number of binary wheels that must be built. This
+  # does nothing on older Python versions
+  STABLE_ABI
+
+  # Source code goes here
+  src/zoom_meeting_sdk_python.cpp
+  src/m1.cpp
+  src/m2.cpp
+  src/m3.cpp
+  src/m4.cpp
+  src/zoomsdk/h/zoom_sdk.h
+  src/zoom_sample_app/events/AuthServiceEvent.cpp
+  src/zoom_sample_app/events/AuthServiceEvent.h
+  src/zoom_sample_app/events/MeetingServiceEvent.cpp
+  src/zoom_sample_app/events/MeetingServiceEvent.h
+  src/zoom_sample_app/events/MeetingReminderEvent.cpp
+  src/zoom_sample_app/events/MeetingReminderEvent.h
+  src/zoom_sample_app/events/MeetingRecordingCtrlEvent.cpp
+  src/zoom_sample_app/events/MeetingRecordingCtrlEvent.h
+  src/zoom_sample_app/raw_record/ZoomSDKAudioRawDataDelegate.cpp
+  src/zoom_sample_app/raw_record/ZoomSDKAudioRawDataDelegate.h
+  src/zoom_sample_app/util/SocketServer.cpp
+  src/zoom_sample_app/util/SocketServer.h
 )
 
-target_include_directories(zoom_sdk_python PRIVATE ${JWT_CPP_INCLUDE_DIRS})
-target_link_libraries(zoom_sdk_python PRIVATE meetingsdk ada::ada CLI11::CLI11 PkgConfig::deps ${X11_LIBRARIES})
-
-# Set the output directory for the Python module
-set_target_properties(zoom_sdk_python PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/python
+target_link_libraries(_zoom_meeting_sdk_python_impl PRIVATE 
+    PkgConfig::deps 
+    -L${ZOOM_SDK_LIB_DIR} -lmeetingsdk
 )
+
+# Install directive for scikit-build-core
+install(TARGETS _zoom_meeting_sdk_python_impl LIBRARY DESTINATION zoom_meeting_sdk_python)
+
+
+

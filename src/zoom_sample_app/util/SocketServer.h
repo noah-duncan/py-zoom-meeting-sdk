@@ -44,7 +44,7 @@ public:
     int start();
     void stop();
 
-    int writeBuf(const unsigned char* buf, int len);
+    int writeBufUnsignedChar(const unsigned char* buf, int len);
     int writeBuf(const char* buf, int len);
     int writeStr(const string& str);
 

@@ -16,6 +16,12 @@ lib/zoomsdk/qt_libs
 lib/zoomsdk/*.so
 lib/zoomsdk/*.md
 
+# new stuff
+src/zoomsdk
+build
+sample_program/__pycache__
+src/zoom_meeting_sdk_python/__pycache__/
+
 # PCM files
 *.pcm
 
