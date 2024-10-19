@@ -56,7 +56,7 @@ class DeepgramTranscriber:
     def finish(self):
         self.dg_connection.finish()
 
-PCM_FILE_PATH = '/tmp/python-zoom-linux-sdk/zoom-meeting-sdk-python/out/test_audio_16778240.pcm'
+PCM_FILE_PATH = 'sample_program/out/test_audio_16778240.pcm'
 CHUNK_SIZE = 64000*10
 async def send_pcm(transcriber):
     with open(PCM_FILE_PATH, 'rb') as pcm_file:

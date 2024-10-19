@@ -17,9 +17,10 @@ lib/zoomsdk/*.so
 lib/zoomsdk/*.md
 
 # new stuff
-zoom-meeting-sdk-python/src/zoomsdk
-zoom-meeting-sdk-python/build
-zoom-meeting-sdk-python/sample_program/__pycache__
+src/zoomsdk
+build
+sample_program/__pycache__
+src/zoom_meeting_sdk_python/__pycache__/
 
 # PCM files
 *.pcm
