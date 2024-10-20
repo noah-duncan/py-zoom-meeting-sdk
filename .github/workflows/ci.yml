@@ -29,8 +29,29 @@ jobs:
         gdown 1S8rIC2ejb3dUBs0qDbzRWNBnzgJRqNQv
         tar -xf zoom-meeting-sdk-linux_x86_64-6.2.0.1953.tar.xz -C src/zoomsdk
     - name: Look at files
-      run: | 
-        ls src/zoomsdk/*
-        ls .
-    - name: Build docker image
-      run: docker build -t zoomsdk .
+      run: ls src/zoomsdk/*
+
+    - name: Calculate Docker cache key
+      id: docker-cache-key
+      run: echo "::set-output name=key::$(md5sum Dockerfile | sort | md5sum | cut -d' ' -f1)"
+
+    - name: Cache Docker layers
+      uses: actions/cache@v4
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ steps.docker-cache-key.outputs.key }}
+
+    - name: Build and cache Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        load: true
+        tags: zoomsdk:latest
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+    - name: Move cache
+      run: |
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
