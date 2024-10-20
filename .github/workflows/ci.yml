@@ -52,5 +52,8 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
+    - name: Run build script in Docker container
+      run: docker compose run --rm zoomsdk /bin/bash -c "source scripts/build.sh"
+
     - name: Look at more
       run: ls .
