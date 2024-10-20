@@ -13,36 +13,34 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4  
+      uses: actions/checkout@v4
+
     - name: Install gdown
       run: pip install gdown
+
     - name: Cache extracted files
       id: cache-extract
       uses: actions/cache@v4
       with:
         path: src/zoomsdk
         key: ${{ runner.os }}-extract-zoom-meeting-sdk-linux_x86_64-6.2.0.1953.tar.xz
+
     - name: Download and extract if cache miss
       if: steps.cache-extract.outputs.cache-hit != 'true'
       run: |
         mkdir src/zoomsdk
         gdown 1S8rIC2ejb3dUBs0qDbzRWNBnzgJRqNQv
         tar -xf zoom-meeting-sdk-linux_x86_64-6.2.0.1953.tar.xz -C src/zoomsdk
+
     - name: Look at files
       run: ls src/zoomsdk/*
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-
-    - name: Calculate Docker cache key
-      id: docker-cache-key
-      run: echo "::set-output name=key::$(md5sum Dockerfile | sort | md5sum | cut -d' ' -f1)"
-
-    - name: Cache Docker layers
-      uses: actions/cache@v4
       with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ steps.docker-cache-key.outputs.key }}
+        driver-opts: |
+          image=moby/buildkit:master
+          network=host
 
     - name: Build and cache Docker image
       uses: docker/build-push-action@v5
@@ -51,13 +49,8 @@ jobs:
         push: false
         load: true
         tags: zoomsdk:latest
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-
-    - name: Move cache
-      run: |
-        rm -rf /tmp/.buildx-cache
-        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
     - name: Look at more
       run: ls *
