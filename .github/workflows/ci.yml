@@ -15,10 +15,8 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    steps:
-      - name: Add mask
-        run: |
-          echo "::add-mask::${{ secrets.ZOOM_SDK_GDRIVE_ID }}" 
+    - name: Add mask
+      run: echo "::add-mask::${{ secrets.ZOOM_SDK_GDRIVE_ID }}"
 
     - name: Install gdown
       run: pip install gdown
