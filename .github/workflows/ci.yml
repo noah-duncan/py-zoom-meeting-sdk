@@ -54,4 +54,4 @@ jobs:
         docker save zoomsdk:latest > /tmp/docker-image/zoomsdk.tar
 
     - name: Look at more
-      run: ls *
+      run: ls .
