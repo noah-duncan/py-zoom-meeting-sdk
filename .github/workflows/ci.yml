@@ -53,4 +53,4 @@ jobs:
         cache-to: type=gha,mode=max
 
     - name: Look at more
-      run: ls *
+      run: ls .
