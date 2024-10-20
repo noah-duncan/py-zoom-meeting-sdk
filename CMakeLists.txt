@@ -3,6 +3,11 @@ project(zoom_meeting_sdk_python LANGUAGES CXX)
 
 set(CMAKE_BUILD_TYPE Debug)
 
+# Add rpath configuration
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 if (NOT SKBUILD)
   message(WARNING "\
   This CMake file is meant to be executed using 'scikit-build-core'.
@@ -79,8 +84,10 @@ target_link_libraries(_zoom_meeting_sdk_python_impl PRIVATE
     -L${ZOOM_SDK_LIB_DIR} -lmeetingsdk
 )
 
+# Set rpath for the target
+set_target_properties(_zoom_meeting_sdk_python_impl PROPERTIES
+    INSTALL_RPATH ${ZOOM_SDK_LIB_DIR}
+)
+
 # Install directive for scikit-build-core
 install(TARGETS _zoom_meeting_sdk_python_impl LIBRARY DESTINATION zoom_meeting_sdk_python)
-
-
-
