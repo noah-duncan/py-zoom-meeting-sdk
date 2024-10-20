@@ -16,3 +16,16 @@ jobs:
       uses: actions/checkout@v4
     - name: Build docker image
       run: docker build -t zoomsdk .    
+    - name: Cache extracted files
+      id: cache-extract
+      uses: actions/cache@v4
+      with:
+        path: src/zoomsdk
+        key: ${{ runner.os }}-extract-${{ hashFiles('src/zoomsdk/zoom-meeting-sdk-linux_x86_64-6.2.0.1953.tar.xz') }}
+    - name: Download and extract if cache miss
+      if: steps.cache-extract.outputs.cache-hit != 'true'
+      run: |
+        wget https://drive.google.com/uc?export=download&id=1S8rIC2ejb3dUBs0qDbzRWNBnzgJRqNQv
+        tar -xf src/zoomsdk/zoom-meeting-sdk-linux_x86_64-6.2.0.1953.tar.xz -C src/zoomsdk
+    - name: Look at files
+      run: ls src/zoomsdk/*
