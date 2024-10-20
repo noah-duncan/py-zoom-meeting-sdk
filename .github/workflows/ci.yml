@@ -26,7 +26,8 @@ jobs:
       if: steps.cache-extract.outputs.cache-hit != 'true'
       run: |
         gdown 1S8rIC2ejb3dUBs0qDbzRWNBnzgJRqNQv
-        tar -xf zoom-meeting-sdk-linux_x86_64-6.2.0.1953.tar.xz -C src/zoomsdk
+        tar -xf zoom-meeting-sdk-linux_x86_64-6.2.0.1953.tar.xz -C src
+        mv src/zoom-meeting-sdk-linux_x86_64-6.2.0.1953 src/zoomsdk
     - name: Look at files
       run: ls src/zoomsdk/*
     - name: Build docker image
