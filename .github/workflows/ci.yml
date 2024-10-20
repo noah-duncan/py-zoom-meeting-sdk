@@ -35,22 +35,23 @@ jobs:
     - name: Look at files
       run: ls src/zoomsdk/*
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+    - name: Cache Docker image
+      id: cache-docker-image
+      uses: actions/cache@v4
       with:
-        driver-opts: |
-          image=moby/buildkit:master
-          network=host
+        path: /tmp/docker-image
+        key: ${{ runner.os }}-docker-image-${{ hashFiles('Dockerfile') }}
 
-    - name: Build and cache Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: false
-        load: true
-        tags: zoomsdk:latest
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+    - name: Load cached Docker image
+      if: steps.cache-docker-image.outputs.cache-hit == 'true'
+      run: docker load < /tmp/docker-image/zoomsdk.tar
+
+    - name: Build Docker image
+      if: steps.cache-docker-image.outputs.cache-hit != 'true'
+      run: |
+        docker build -t zoomsdk:latest .
+        mkdir -p /tmp/docker-image
+        docker save zoomsdk:latest > /tmp/docker-image/zoomsdk.tar
 
     - name: Look at more
-      run: ls .
+      run: ls *
