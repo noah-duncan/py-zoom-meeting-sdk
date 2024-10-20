@@ -55,7 +55,7 @@ RUN apt-get install -y  pulseaudio pulseaudio-utils
 RUN apt-get update && apt-get install -y linux-libc-dev
 
 # Install pybind11
-RUN pip install pybind11 pyjwt cython deepgram-sdk
+RUN pip install pybind11 pyjwt cython gdown deepgram-sdk
 
 
 FROM base AS deps
