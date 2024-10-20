@@ -31,6 +31,9 @@ jobs:
     - name: Look at files
       run: ls src/zoomsdk/*
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
     - name: Calculate Docker cache key
       id: docker-cache-key
       run: echo "::set-output name=key::$(md5sum Dockerfile | sort | md5sum | cut -d' ' -f1)"
