@@ -27,8 +27,7 @@ jobs:
       run: |
         gdown 1S8rIC2ejb3dUBs0qDbzRWNBnzgJRqNQv
         tar -xf zoom-meeting-sdk-linux_x86_64-6.2.0.1953.tar.xz -C src
-        mv src/zoom-meeting-sdk-linux_x86_64-6.2.0.1953 src/zoomsdk
     - name: Look at files
-      run: ls src/zoomsdk/*
+      run: ls src/*
     - name: Build docker image
       run: docker build -t zoomsdk .
