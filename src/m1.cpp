@@ -159,7 +159,7 @@ nb::enum_<ZOOM_SDK_NAMESPACE::SDKError>(m, "SDKError")
     m.def("InitSDK", [](ZOOM_SDK_NAMESPACE::InitParam& initParam) {
         std::cout << "strWebDomain" << std::endl;
         std::cout << initParam.strWebDomain << std::endl;
-        std::cout << "strSupportUrlsz" << std::endl;
+        std::cout << "strSupportUrl" << std::endl;
         std::cout << initParam.strSupportUrl << std::endl;
         std::cout << "enableGenerateDump" << std::endl;
         std::cout << initParam.enableGenerateDump << std::endl;

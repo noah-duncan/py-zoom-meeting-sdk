@@ -9,8 +9,13 @@ def run_and_terminate(program_path):
     
     print(f"Started process with PID: {process.pid}")
     
-    # Wait for 1 minute
-    time.sleep(40)
+    # Wait for 25 seconds or until the process terminates
+    try:
+        process.wait(timeout=25)
+        print("Process terminated on its own.")
+        return
+    except subprocess.TimeoutExpired:
+        print("Process did not terminate on its own. Attempting to terminate.")
     
     # Try to terminate the process gracefully
     process.terminate()

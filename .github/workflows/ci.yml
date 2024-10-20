@@ -15,9 +15,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Add mask
-      run: echo "::add-mask::${{ secrets.ZOOM_SDK_GDRIVE_ID }}"
-
     - name: Install gdown
       run: pip install gdown
 
@@ -56,7 +53,7 @@ jobs:
         cache-to: type=gha,mode=max
 
     - name: Run build script in Docker container
-      run: docker compose run --rm zoomsdk /bin/bash -c "source scripts/build.sh; python3 test_scripts/test.py sample_program/sample.py"
+      run: docker compose run --rm zoomsdk /bin/bash -c "source scripts/build.sh; python3 test_scripts/test.py test_scripts/test_join_meeting.py"
 
     - name: Look at more
       run: ls .

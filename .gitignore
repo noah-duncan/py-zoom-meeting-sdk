@@ -19,6 +19,7 @@ build
 sample_program/out
 sample_program/__pycache__
 src/zoom_meeting_sdk_python/__pycache__/
+.env
 
 # PCM files
 #*.pcm
