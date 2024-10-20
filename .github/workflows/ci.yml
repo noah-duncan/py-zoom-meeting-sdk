@@ -28,4 +28,4 @@ jobs:
     - name: Look at files
       run: ls src/zoomsdk/*
     - name: Build docker image
-      run: docker build -t zoomsdk .  
+      run: docker build -t zoomsdk .
