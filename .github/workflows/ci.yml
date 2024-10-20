@@ -15,6 +15,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    steps:
+      - name: Add mask
+        run: |
+          echo "::add-mask::${{ secrets.ZOOM_SDK_GDRIVE_ID }}" 
+
     - name: Install gdown
       run: pip install gdown
 
@@ -23,14 +28,14 @@ jobs:
       uses: actions/cache@v4
       with:
         path: src/zoomsdk
-        key: ${{ runner.os }}-extract-zoom-meeting-sdk-linux_x86_64-6.2.0.1953.tar.xz
+        key: ${{ runner.os }}-extract-${{ secrets.ZOOM_SDK_FILENAME }}
 
     - name: Download and extract if cache miss
       if: steps.cache-extract.outputs.cache-hit != 'true'
       run: |
         mkdir src/zoomsdk
-        gdown 1S8rIC2ejb3dUBs0qDbzRWNBnzgJRqNQv
-        tar -xf zoom-meeting-sdk-linux_x86_64-6.2.0.1953.tar.xz -C src/zoomsdk
+        gdown ${{ secrets.ZOOM_SDK_GDRIVE_ID }}
+        tar -xf ${{ secrets.ZOOM_SDK_FILENAME }} -C src/zoomsdk
 
     - name: Look at files
       run: ls src/zoomsdk/*
