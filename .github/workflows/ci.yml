@@ -60,4 +60,4 @@ jobs:
         mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
     - name: Look at more
-      run: ls .
+      run: ls *
