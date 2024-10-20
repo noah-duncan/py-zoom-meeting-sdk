@@ -122,7 +122,7 @@ class MeetingBot:
     def on_mic_start_send_callback(self):
         print("CAN START SENDING STUFF!!")
 
-        with open('/tmp/python-zoom-linux-sdk/sample_program/out/test_audio_16778240.pcm', 'rb') as pcm_file:
+        with open('sample_program/input_audio/test_audio_16778240.pcm', 'rb') as pcm_file:
             chunk = pcm_file.read(64000*10)
             self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
             print("sent")
