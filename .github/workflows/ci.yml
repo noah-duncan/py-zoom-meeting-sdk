@@ -32,5 +32,5 @@ jobs:
       run: | 
         ls src/zoomsdk/*
         ls .
-    #- name: Build docker image
-    #  run: docker build -t zoomsdk .
+    - name: Build docker image
+      run: docker build -t zoomsdk .
