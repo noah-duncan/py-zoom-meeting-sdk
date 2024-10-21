@@ -80,22 +80,18 @@ class TestBot():
     
         # Use the auth service
         auth_context = zoom.AuthContext()
-        auth_context.jwt_token = generate_jwt(os.environ.get('ZOOM_APP_CLIENT_ID'), os.environ.get('ZOOM_APP_CLIENT_SECRET'))
+        auth_context.jwt_token = generate_jwt(os.environ.get('ZOOM_APP_CLIENT_ID')+"s", os.environ.get('ZOOM_APP_CLIENT_SECRET'))
         result = self.auth_service.SDKAuth(auth_context)
         if result != zoom.SDKError.SDKERR_SUCCESS:
             raise Exception('SDKAuth failed!')
 
     def on_join(self):
         print("on_join called")
+        with open("/tmp/test_passed", 'w') as f:
+            f.write('test_passed')
         GLib.timeout_add_seconds(4, self.exit_process)
 
     def exit_process(self):
-        print("Shutting down the process")
-        print("Exiting...")
-        self.leave()
-        print("cleaning...")
-        self.cleanup()
-        # Instead of sys.exit(0), quit the main loop
         if main_loop:
             main_loop.quit()
         return False  # To stop the timeout from repeating

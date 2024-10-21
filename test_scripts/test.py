@@ -2,6 +2,7 @@ import subprocess
 import time
 import signal
 import sys
+import os
 
 def run_and_terminate(program_path):
     # Start the process
@@ -37,6 +38,9 @@ def run_and_terminate(program_path):
         
         print("Process still running. Killing forcefully.")
         process.kill()  # If it's still running, forcefully kill it
+
+    if not os.path.exists("/tmp/test_passed"):
+        raise Exception("Test failed")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
