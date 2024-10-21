@@ -51,6 +51,9 @@ class MeetingBot:
 
         self.deepgram_transcriber = DeepgramTranscriber()
 
+        self.my_participant_id = None
+        self.participants_ctrl = None
+
     def cleanup(self):
         print("CLEANN")
         #self.meeting_service_event.setOnMeetingJoin(None)
@@ -115,6 +118,10 @@ class MeetingBot:
 
             self.start_raw_recording()
 
+        self.participants_ctrl = self.meeting_service.GetMeetingParticipantsController()
+        self.my_participant_id = self.participants_ctrl.GetMySelfUser().GetUserID()
+        print("my_participant_id", self.my_participant_id)
+
     def on_mic_initialize_callback(self, sender):
         print("on_mic_initialize_callback sender = ", sender)
         self.audio_raw_data_sender = sender
@@ -122,7 +129,7 @@ class MeetingBot:
     def on_mic_start_send_callback(self):
         print("CAN START SENDING STUFF!!")
 
-        with open('/tmp/python-zoom-linux-sdk/sample_program/out/test_audio_16778240.pcm', 'rb') as pcm_file:
+        with open('sample_program/input_audio/test_audio_16778240.pcm', 'rb') as pcm_file:
             chunk = pcm_file.read(64000*10)
             self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
             print("sent")
@@ -132,8 +139,8 @@ class MeetingBot:
         #print("thread_id", threading.get_native_id())
         #print("Shared Audio Raw data: ", (data.GetBufferLen() / 10), "k at ", data.GetSampleRate(), "Hz with channels =", data.GetChannelNum())
 
-
-        if node_id == 16778240:
+        #16778240
+        if node_id != self.my_participant_id:
             self.write_to_deepgram(data)      
         #self.write_to_file("out/test_audio_" + str(node_id) + ".pcm", data)      
        

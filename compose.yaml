@@ -1,8 +1,11 @@
 services:
   zoomsdk: &zoomsdk
     build: ./
-    platform: linux/arm64
     volumes:
      - .:/tmp/python-zoom-linux-sdk
     ports:
       - "3000:3000"
+    environment:
+      - ZOOM_APP_CLIENT_ID
+      - ZOOM_APP_CLIENT_SECRET
+      - MEETING_URLS

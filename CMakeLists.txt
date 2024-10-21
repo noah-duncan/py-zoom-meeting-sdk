@@ -3,6 +3,11 @@ project(zoom_meeting_sdk_python LANGUAGES CXX)
 
 set(CMAKE_BUILD_TYPE Debug)
 
+# Add rpath configuration
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 if (NOT SKBUILD)
   message(WARNING "\
   This CMake file is meant to be executed using 'scikit-build-core'.
@@ -55,10 +60,24 @@ nanobind_add_module(
 
   # Source code goes here
   src/zoom_meeting_sdk_python.cpp
+
+  src/binding/auth_service_interface_binding.cpp
+  src/binding/meeting_service_interface_binding.cpp
+  src/binding/zoom_rawdata_api_binding.cpp
+  src/binding/zoom_sdk_raw_data_def_interface_binding.cpp
+  src/binding/meeting_recording_interface_binding.cpp
+  src/binding/rawdata_audio_helper_interface_binding.cpp
+  src/binding/zoom_sdk_binding.cpp
+  src/binding/meeting_reminder_ctrl_interface_binding.cpp
+  src/binding/setting_service_interface_binding.cpp
+  src/binding/zoom_sdk_def_binding.cpp
+  src/binding/meeting_participants_ctrl_interface_binding.cpp
+
   src/m1.cpp
-  src/m2.cpp
   src/m3.cpp
   src/m4.cpp
+
+
   src/zoomsdk/h/zoom_sdk.h
   src/zoom_sample_app/events/AuthServiceEvent.cpp
   src/zoom_sample_app/events/AuthServiceEvent.h
@@ -79,8 +98,10 @@ target_link_libraries(_zoom_meeting_sdk_python_impl PRIVATE
     -L${ZOOM_SDK_LIB_DIR} -lmeetingsdk
 )
 
+# Set rpath for the target
+set_target_properties(_zoom_meeting_sdk_python_impl PROPERTIES
+    INSTALL_RPATH ${ZOOM_SDK_LIB_DIR}
+)
+
 # Install directive for scikit-build-core
 install(TARGETS _zoom_meeting_sdk_python_impl LIBRARY DESTINATION zoom_meeting_sdk_python)
-
-
-

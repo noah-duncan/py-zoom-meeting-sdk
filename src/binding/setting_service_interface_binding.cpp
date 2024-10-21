@@ -2,6 +2,8 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/trampoline.h>
 #include <nanobind/stl/function.h>
+#include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/unique_ptr.h>
 
 #include "zoom_sdk.h"
 
@@ -37,39 +39,15 @@
 
 namespace nb = nanobind;
 
-void init_m1(nb::module_ &);
-void init_m3(nb::module_ &);
-void init_m4(nb::module_ &);
+void init_setting_service_interface_binding(nb::module_ &m) {
+    nb::class_<ISettingService>(m, "ISettingService")
+        .def("GetGeneralSettings", &ZOOM_SDK_NAMESPACE::ISettingService::GetGeneralSettings, nb::rv_policy::reference)
+        .def("GetAudioSettings", &ZOOM_SDK_NAMESPACE::ISettingService::GetAudioSettings, nb::rv_policy::reference)
+        .def("GetVideoSettings", &ZOOM_SDK_NAMESPACE::ISettingService::GetVideoSettings, nb::rv_policy::reference)
+        .def("GetRecordingSettings", &ZOOM_SDK_NAMESPACE::ISettingService::GetRecordingSettings, nb::rv_policy::reference)
+        .def("GetStatisticSettings", &ZOOM_SDK_NAMESPACE::ISettingService::GetStatisticSettings, nb::rv_policy::reference)
+        .def("GetShareSettings", &ZOOM_SDK_NAMESPACE::ISettingService::GetShareSettings, nb::rv_policy::reference);
 
-void init_auth_service_interface_binding(nb::module_ &);
-void init_meeting_service_interface_binding(nb::module_ &);
-void init_zoom_rawdata_api_binding(nb::module_ &);
-void init_zoom_sdk_raw_data_def_interface_binding(nb::module_ &);
-void init_meeting_recording_interface_binding(nb::module_ &);
-void init_rawdata_audio_helper_interface_binding(nb::module_ &);
-void init_zoom_sdk_binding(nb::module_ &);
-void init_meeting_reminder_ctrl_interface_binding(nb::module_ &);
-void init_setting_service_interface_binding(nb::module_ &);
-void init_zoom_sdk_def_binding(nb::module_ &);
-void init_meeting_participants_ctrl_interface_binding(nb::module_ &);
-
-NB_MODULE(_zoom_meeting_sdk_python_impl, m) {
-    m.doc() = "Python bindings for Zoom SDK";
-    //nb::set_leak_warnings(false);
-
-    init_auth_service_interface_binding(m);
-    init_meeting_service_interface_binding(m);
-    init_zoom_rawdata_api_binding(m);
-    init_zoom_sdk_raw_data_def_interface_binding(m);
-    init_meeting_recording_interface_binding(m);
-    init_rawdata_audio_helper_interface_binding(m);
-    init_zoom_sdk_binding(m);
-    init_meeting_reminder_ctrl_interface_binding(m);
-    init_setting_service_interface_binding(m);
-    init_zoom_sdk_def_binding(m);
-    init_meeting_participants_ctrl_interface_binding(m);
-
-    init_m1(m);
-    init_m3(m);
-    init_m4(m);
+    nb::class_<IAudioSettingContext>(m, "IAudioSettingContext")
+        .def("EnableAutoJoinAudio", &IAudioSettingContext::EnableAutoJoinAudio);
 }
