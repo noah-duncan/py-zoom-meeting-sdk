@@ -84,9 +84,14 @@ class TestBot():
         result = self.auth_service.SDKAuth(auth_context)
         if result != zoom.SDKError.SDKERR_SUCCESS:
             raise Exception('SDKAuth failed!')
-
+        
     def on_join(self):
         print("on_join called")
+
+        my_user_name = self.meeting_service.GetMeetingParticipantsController().GetMySelfUser().GetUserName()
+        if my_user_name != "TestJoinBot":
+            raise Exception("Failed to get username")
+
         with open("/tmp/test_passed", 'w') as f:
             f.write('test_passed')
         GLib.timeout_add_seconds(4, self.exit_process)
@@ -101,7 +106,7 @@ class TestBot():
 
         meeting_number, password = get_random_meeting()
 
-        display_name = "TestBot"
+        display_name = "TestJoinBot"
 
         join_param = zoom.JoinParam()
         join_param.userType = zoom.SDKUserType.SDK_UT_WITHOUT_LOGIN
