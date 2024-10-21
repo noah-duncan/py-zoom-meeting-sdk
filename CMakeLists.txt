@@ -60,10 +60,23 @@ nanobind_add_module(
 
   # Source code goes here
   src/zoom_meeting_sdk_python.cpp
+
+  src/binding/auth_service_interface_binding.cpp
+  src/binding/meeting_service_interface_binding.cpp
+  src/binding/zoom_rawdata_api_binding.cpp
+  src/binding/zoom_sdk_raw_data_def_interface_binding.cpp
+  src/binding/meeting_recording_interface_binding.cpp
+  src/binding/rawdata_audio_helper_interface_binding.cpp
+  src/binding/zoom_sdk_binding.cpp
+  src/binding/meeting_reminder_ctrl_interface_binding.cpp
+  src/binding/setting_service_interface_binding.cpp
+  src/binding/zoom_sdk_def_binding.cpp
+
   src/m1.cpp
-  src/m2.cpp
   src/m3.cpp
   src/m4.cpp
+
+
   src/zoomsdk/h/zoom_sdk.h
   src/zoom_sample_app/events/AuthServiceEvent.cpp
   src/zoom_sample_app/events/AuthServiceEvent.h

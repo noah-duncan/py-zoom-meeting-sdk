@@ -132,9 +132,9 @@ class MeetingBot:
         #print("thread_id", threading.get_native_id())
         #print("Shared Audio Raw data: ", (data.GetBufferLen() / 10), "k at ", data.GetSampleRate(), "Hz with channels =", data.GetChannelNum())
 
-
-        if node_id == 16783360:
-            self.write_to_deepgram(data)      
+        #16778240
+        #if node_id == 16782336:
+        self.write_to_deepgram(data)      
         #self.write_to_file("out/test_audio_" + str(node_id) + ".pcm", data)      
        
     def write_to_deepgram(self, data):
