@@ -148,7 +148,8 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
         .def("Start", &ZOOM_SDK_NAMESPACE::IMeetingService::Start)
         .def("Leave", &ZOOM_SDK_NAMESPACE::IMeetingService::Leave, nb::call_guard<nb::gil_scoped_release>())
         .def("GetMeetingRecordingController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingRecordingController, nb::rv_policy::reference)
-        .def("GetMeetingReminderController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingReminderController, nb::rv_policy::reference);
+        .def("GetMeetingReminderController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingReminderController, nb::rv_policy::reference)
+        .def("GetMeetingParticipantsController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingParticipantsController, nb::rv_policy::reference);
 
     nb::class_<IMeetingServiceEvent>(m, "IMeetingServiceEvent")
         .def("onMeetingStatusChanged", &IMeetingServiceEvent::onMeetingStatusChanged)

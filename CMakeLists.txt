@@ -71,6 +71,7 @@ nanobind_add_module(
   src/binding/meeting_reminder_ctrl_interface_binding.cpp
   src/binding/setting_service_interface_binding.cpp
   src/binding/zoom_sdk_def_binding.cpp
+  src/binding/meeting_participants_ctrl_interface_binding.cpp
 
   src/m1.cpp
   src/m3.cpp
