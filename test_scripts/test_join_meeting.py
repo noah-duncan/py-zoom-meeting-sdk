@@ -80,7 +80,7 @@ class TestBot():
     
         # Use the auth service
         auth_context = zoom.AuthContext()
-        auth_context.jwt_token = generate_jwt(os.environ.get('ZOOM_APP_CLIENT_ID')+"s", os.environ.get('ZOOM_APP_CLIENT_SECRET'))
+        auth_context.jwt_token = generate_jwt(os.environ.get('ZOOM_APP_CLIENT_ID'), os.environ.get('ZOOM_APP_CLIENT_SECRET'))
         result = self.auth_service.SDKAuth(auth_context)
         if result != zoom.SDKError.SDKERR_SUCCESS:
             raise Exception('SDKAuth failed!')
