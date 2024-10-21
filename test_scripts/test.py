@@ -39,9 +39,6 @@ def run_and_terminate(program_path):
         print("Process still running. Killing forcefully.")
         process.kill()  # If it's still running, forcefully kill it
 
-    if not os.path.exists("/tmp/test_passed"):
-        raise Exception("Test failed")
-
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python3 test.py <path_to_program_to_run>")
@@ -49,3 +46,6 @@ if __name__ == "__main__":
     
     program_to_run = sys.argv[1]
     run_and_terminate(program_to_run)
+
+    if not os.path.exists("/tmp/test_passed"):
+        raise Exception("Test failed")
