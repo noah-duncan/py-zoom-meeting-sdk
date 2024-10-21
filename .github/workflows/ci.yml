@@ -53,6 +53,10 @@ jobs:
         cache-to: type=gha,mode=max
 
     - name: Run build script in Docker container
+      env:
+        ZOOM_APP_CLIENT_ID: ${{ secrets.ZOOM_APP_CLIENT_ID }}
+        ZOOM_APP_CLIENT_SECRET: ${{ secrets.ZOOM_APP_CLIENT_SECRET }}
+        MEETING_URLS: ${{ secrets.MEETING_URLS }}
       run: docker compose run --rm zoomsdk /bin/bash -c "source scripts/build.sh; python3 test_scripts/test.py test_scripts/test_join_meeting.py"
 
     - name: Look at more
