@@ -269,11 +269,12 @@ class MeetingBot:
         self.audio_settings.EnableAutoJoinAudio(True)
         print("MADE")
 
-    def on_auth(self):
-        print("Auth completed successfully")
-        self.join_meeting()
-        print("GRUN")
+    def auth_return(self, result):
+        if result == zoom.AUTHRET_SUCCESS:
+            print("Auth completed successfully.")
+            return self.join_meeting()
 
+        raise Exception("Failed to authorize. result = ", result)
 
     def create_services(self):
         self.meeting_service = zoom.CreateMeetingService()
@@ -288,7 +289,7 @@ class MeetingBot:
         if meeting_service_set_revent_result != zoom.SDKERR_SUCCESS:
             raise Exception("Meeting Service set event failed")
         
-        self.auth_event = zoom.AuthServiceEvent(self.on_auth)
+        self.auth_event = zoom.AuthServiceEventCallbacks(onAuthenticationReturnCallback=self.auth_return)
 
         self.auth_service = zoom.CreateAuthService()
         print("auth_service")

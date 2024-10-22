@@ -73,6 +73,8 @@ nanobind_add_module(
   src/binding/zoom_sdk_def_binding.cpp
   src/binding/meeting_participants_ctrl_interface_binding.cpp
 
+  src/auth_service_event_callbacks.cpp
+
   src/m1.cpp
   src/m3.cpp
   src/m4.cpp
