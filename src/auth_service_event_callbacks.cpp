@@ -15,25 +15,6 @@
 namespace nb = nanobind;
 using namespace std;
 
-/*
-	virtual void onAuthenticationReturn(AuthResult ret) = 0;
-
-	/// \brief Callback of login result with fail reason.
-	/// \param ret Login status. see \link LOGINSTATUS \endlink enum.
-	/// \param pAccountInfo Valid when the ret is LOGINRET_SUCCESS. Otherwise NULL.
-	/// \param reason Login fail reason. Valid when the ret is LOGIN_FAILED. Otherwise LoginFail_None. see \link LoginFailReason \endlink enum.
-	virtual void onLoginReturnWithReason(LOGINSTATUS ret, IAccountInfo* pAccountInfo, LoginFailReason reason) = 0;
-	
-	/// \brief Logout result callback.
-	virtual void onLogout() = 0;
-
-	/// \brief Zoom identity has expired, please re-login or generate a new zoom access token via REST Api.
-	virtual void onZoomIdentityExpired() = 0;
-
-	/// \brief Zoom authentication identity will be expired in 10 minutes, please re-auth.
-	virtual void onZoomAuthIdentityExpired() = 0;
-*/
-
 class AuthServiceEventCallbacks : public ZOOM_SDK_NAMESPACE::IAuthServiceEvent {
 private:
     function<void(ZOOM_SDK_NAMESPACE::AuthResult)> m_onAuthenticationReturnCallback;
@@ -80,7 +61,7 @@ public:
     }
 };
 
-void init_auto_service_event_callbacks(nb::module_ &m) {
+void init_auth_service_event_callbacks(nb::module_ &m) {
     nb::class_<AuthServiceEventCallbacks, ZOOM_SDK_NAMESPACE::IAuthServiceEvent>(m, "AuthServiceEventCallbacks")
     .def(
         nb::init<

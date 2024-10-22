@@ -74,6 +74,7 @@ nanobind_add_module(
   src/binding/meeting_participants_ctrl_interface_binding.cpp
 
   src/auth_service_event_callbacks.cpp
+  src/meeting_service_event_callbacks.cpp
 
   src/m1.cpp
   src/m3.cpp

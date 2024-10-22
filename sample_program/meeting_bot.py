@@ -275,16 +275,20 @@ class MeetingBot:
             return self.join_meeting()
 
         raise Exception("Failed to authorize. result = ", result)
+    
+    def meeting_status_changed(self, status, iResult):
+        if status == zoom.MEETING_STATUS_INMEETING:
+            return self.on_join()
+        
+        print("meeting_status_changed called. status =",status,"iResult=",iResult)
 
     def create_services(self):
         self.meeting_service = zoom.CreateMeetingService()
         
         self.setting_service = zoom.CreateSettingService()
 
-        self.meeting_service_event = zoom.MeetingServiceEvent()
-        
-        self.meeting_service_event.setOnMeetingJoin(self.on_join)
-        
+        self.meeting_service_event = zoom.MeetingServiceEventCallbacks(onMeetingStatusChangedCallback=self.meeting_status_changed)
+                
         meeting_service_set_revent_result = self.meeting_service.SetEvent(self.meeting_service_event)
         if meeting_service_set_revent_result != zoom.SDKERR_SUCCESS:
             raise Exception("Meeting Service set event failed")
