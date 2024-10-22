@@ -54,6 +54,7 @@ void init_zoom_sdk_def_binding(nb::module_ &);
 void init_meeting_participants_ctrl_interface_binding(nb::module_ &);
 void init_auth_service_event_callbacks(nb::module_ &);
 void init_meeting_service_event_callbacks(nb::module_ &);
+void init_meeting_reminder_event_callbacks(nb::module_ &);
 
 NB_MODULE(_zoom_meeting_sdk_python_impl, m) {
     m.doc() = "Python bindings for Zoom SDK";
@@ -73,6 +74,7 @@ NB_MODULE(_zoom_meeting_sdk_python_impl, m) {
 
     init_auth_service_event_callbacks(m);
     init_meeting_service_event_callbacks(m);
+    init_meeting_reminder_event_callbacks(m);
 
     init_m1(m);
     init_m3(m);

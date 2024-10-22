@@ -53,6 +53,7 @@ class MeetingBot:
 
         self.my_participant_id = None
         self.participants_ctrl = None
+        self.meeting_reminder_event = None
 
     def cleanup(self):
         print("CLEANN")
@@ -100,8 +101,9 @@ class MeetingBot:
     def on_join(self):
         print("Joined successfully ", threading.get_native_id())
 
+        self.meeting_reminder_event = zoom.MeetingReminderEventCallbacks(onReminderNotifyCallback=self.on_reminder_notify)
         self.reminder_controller = self.meeting_service.GetMeetingReminderController()
-        self.reminder_controller.SetEvent(zoom.MeetingReminderEvent())
+        self.reminder_controller.SetEvent(self.meeting_reminder_event)
 
         if self.use_raw_recording:
             self.recording_ctrl = self.meeting_service.GetMeetingRecordingController()
@@ -268,6 +270,11 @@ class MeetingBot:
         self.audio_settings = self.setting_service.GetAudioSettings()
         self.audio_settings.EnableAutoJoinAudio(True)
         print("MADE")
+
+    def on_reminder_notify(self, content, handler):
+        print("on_reminder_notify called")
+        if handler:
+            handler.accept()
 
     def auth_return(self, result):
         if result == zoom.AUTHRET_SUCCESS:

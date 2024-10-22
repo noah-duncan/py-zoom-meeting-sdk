@@ -48,4 +48,20 @@ void init_meeting_reminder_ctrl_interface_binding(nb::module_ &m) {
     // Binding for IMeetingReminderController  
     nb::class_<IMeetingReminderController>(m, "IMeetingReminderController")
         .def("SetEvent", &IMeetingReminderController::SetEvent);
+
+    // Binding for IMeetingReminderHandler  
+    nb::class_<IMeetingReminderHandler>(m, "IMeetingReminderHandler")
+        .def("Ignore", &IMeetingReminderHandler::Ignore)
+        .def("Accept", &IMeetingReminderHandler::Accept)
+        .def("Decline", &IMeetingReminderHandler::Decline)
+        .def("SetHideFeatureDisclaimers", &IMeetingReminderHandler::SetHideFeatureDisclaimers);
+
+    // Binding for IMeetingReminderContent  
+    nb::class_<IMeetingReminderContent>(m, "IMeetingReminderContent")
+        .def("GetType", &IMeetingReminderContent::GetType)
+        .def("GetTitle", &IMeetingReminderContent::GetTitle)
+        .def("GetContent", &IMeetingReminderContent::GetContent)
+        .def("IsBlocking", &IMeetingReminderContent::IsBlocking)
+        .def("GetActionType", &IMeetingReminderContent::GetActionType)
+        .def("GetMultiReminderTypes", &IMeetingReminderContent::GetMultiReminderTypes);
 }
