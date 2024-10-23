@@ -207,9 +207,7 @@ class MeetingBot:
         print(audio_helper_subscribe_result)
         print("z")
         print("more stuff")
-        self.virtual_audio_mic_event_passthrough = zoom.ZoomSDKZoomSDKVirtualAudioMicEventPassThrough()
-        self.virtual_audio_mic_event_passthrough.setOnMicInitialize(self.on_mic_initialize_callback)
-        self.virtual_audio_mic_event_passthrough.setOnMicStartSend(self.on_mic_start_send_callback)
+        self.virtual_audio_mic_event_passthrough = zoom.ZoomSDKVirtualAudioMicEventCallbacks(onMicInitializeCallback=self.on_mic_initialize_callback,onMicStartSendCallback=self.on_mic_start_send_callback)
         audio_helper_set_external_audio_source_result = self.audio_helper.setExternalAudioSource(self.virtual_audio_mic_event_passthrough)
         print("audio_helper_set_external_audio_source_result =", audio_helper_set_external_audio_source_result)
 
