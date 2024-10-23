@@ -59,8 +59,6 @@ class MeetingBot:
         print("CLEANN")
         #self.meeting_service_event.setOnMeetingJoin(None)
 
-        if self.audio_source:
-            self.audio_source.setSendOnOneWayAudioRawDataReceived(False)
         print("GOAS")
 
         if self.meeting_service:

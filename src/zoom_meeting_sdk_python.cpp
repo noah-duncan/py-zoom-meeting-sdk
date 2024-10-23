@@ -37,10 +37,6 @@
 
 namespace nb = nanobind;
 
-void init_m1(nb::module_ &);
-void init_m3(nb::module_ &);
-void init_m4(nb::module_ &);
-
 void init_auth_service_interface_binding(nb::module_ &);
 void init_meeting_service_interface_binding(nb::module_ &);
 void init_zoom_rawdata_api_binding(nb::module_ &);
@@ -79,8 +75,4 @@ NB_MODULE(_zoom_meeting_sdk_python_impl, m) {
     init_meeting_reminder_event_callbacks(m);
     init_zoom_sdk_audio_raw_data_delegate_callbacks(m);
     init_zoom_sdk_virtual_audio_mic_event_callbacks(m);
-
-    init_m1(m);
-    init_m3(m);
-    init_m4(m);
 }

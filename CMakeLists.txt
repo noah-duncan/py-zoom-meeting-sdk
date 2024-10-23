@@ -79,11 +79,6 @@ nanobind_add_module(
   src/zoom_sdk_audio_raw_data_delegate_callbacks.cpp
   src/zoom_sdk_virtual_audio_mic_event_callbacks.cpp
 
-  src/m1.cpp
-  src/m3.cpp
-  src/m4.cpp
-
-
   src/zoomsdk/h/zoom_sdk.h
   src/zoom_sample_app/events/AuthServiceEvent.cpp
   src/zoom_sample_app/events/AuthServiceEvent.h
