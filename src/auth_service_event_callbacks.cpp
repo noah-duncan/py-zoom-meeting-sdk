@@ -14,6 +14,7 @@
 
 namespace nb = nanobind;
 using namespace std;
+using namespace ZOOMSDK;
 
 class AuthServiceEventCallbacks : public ZOOM_SDK_NAMESPACE::IAuthServiceEvent {
 private:

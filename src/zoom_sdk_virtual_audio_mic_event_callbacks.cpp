@@ -6,7 +6,7 @@
 #include "zoom_sdk.h"
 #include "zoom_sdk_def.h"
 
-#include "util/SocketServer.h"
+
 #include "rawdata/rawdata_audio_helper_interface.h"
 #include "zoom_sdk_raw_data_def.h"
 #include "rawdata/zoom_rawdata_api.h"
@@ -16,6 +16,8 @@
 #include <memory>
 
 namespace nb = nanobind;
+using namespace ZOOMSDK;
+using namespace std;
 
 class ZoomSDKVirtualAudioMicEventCallbacks : public ZOOM_SDK_NAMESPACE::IZoomSDKVirtualAudioMicEvent {
 private:
