@@ -76,6 +76,7 @@ nanobind_add_module(
   src/auth_service_event_callbacks.cpp
   src/meeting_service_event_callbacks.cpp
   src/meeting_reminder_event_callbacks.cpp
+  src/zoom_sdk_audio_raw_data_delegate_callbacks.cpp
 
   src/m1.cpp
   src/m3.cpp

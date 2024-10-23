@@ -197,8 +197,7 @@ class MeetingBot:
         if self.audio_source is None:
             mixedAudio = False
             transcribe = False
-            self.audio_source = zoom.ZoomSDKAudioRawDataDelegatePassThrough()
-            self.audio_source.setOnOneWayAudioRawDataReceived(self.on_one_way_audio_raw_data_received_callback)
+            self.audio_source = zoom.ZoomSDKAudioRawDataDelegateCallbacks(onOneWayAudioRawDataReceivedCallback=self.on_one_way_audio_raw_data_received_callback)
             print("set some shit")
 
         print("self.audio_source", self.audio_source)
