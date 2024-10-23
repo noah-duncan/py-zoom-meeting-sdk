@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from typing import Callable, Optional
 import asyncio
 from meeting_bot import MeetingBot
+from dotenv import load_dotenv
 
 import signal
 import sys
@@ -53,6 +54,8 @@ def run():
         main_loop.quit()
 
 def main():
+    load_dotenv()
+
     # Set up signal handlers
     signal.signal(signal.SIGINT, on_signal)
     signal.signal(signal.SIGTERM, on_signal)

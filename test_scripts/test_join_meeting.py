@@ -69,12 +69,11 @@ class TestBot():
         if init_sdk_result != zoom.SDKERR_SUCCESS:
             raise Exception('InitSDK failed')
 
-        self.meeting_service_event = zoom.MeetingServiceEvent()
-        self.meeting_service_event.setOnMeetingJoin(self.on_join)
+        self.meeting_service_event = zoom.MeetingServiceEventCallbacks(onMeetingStatusChangedCallback=self.meeting_status_changed)
         self.meeting_service = zoom.CreateMeetingService()  
         self.meeting_service.SetEvent(self.meeting_service_event)
 
-        self.auth_event = zoom.AuthServiceEvent(self.on_auth)
+        self.auth_event = zoom.AuthServiceEventCallbacks(onAuthenticationReturnCallback=self.auth_return)
         self.auth_service = zoom.CreateAuthService()
         self.auth_service.SetEvent(self.auth_event)
     
@@ -85,43 +84,48 @@ class TestBot():
         if result != zoom.SDKError.SDKERR_SUCCESS:
             raise Exception('SDKAuth failed!')
         
-    def on_join(self):
-        print("on_join called")
+    def meeting_status_changed(self, status, iResult):
+        if status == zoom.MEETING_STATUS_INMEETING:
+            print("joined meeting")
 
-        my_user_name = self.meeting_service.GetMeetingParticipantsController().GetMySelfUser().GetUserName()
-        if my_user_name != "TestJoinBot":
-            raise Exception("Failed to get username")
+            my_user_name = self.meeting_service.GetMeetingParticipantsController().GetMySelfUser().GetUserName()
+            if my_user_name != "TestJoinBot":
+                raise Exception("Failed to get username")
 
-        with open("/tmp/test_passed", 'w') as f:
-            f.write('test_passed')
-        GLib.timeout_add_seconds(4, self.exit_process)
+            with open("/tmp/test_passed", 'w') as f:
+                f.write('test_passed')
+            GLib.timeout_add_seconds(4, self.exit_process)
 
     def exit_process(self):
         if main_loop:
             main_loop.quit()
         return False  # To stop the timeout from repeating
 
-    def on_auth(self):
-        print("on_auth called")
+    def auth_return(self, result):
+        if result == zoom.AUTHRET_SUCCESS:
+            print("Auth completed successfully.")
 
-        meeting_number, password = get_random_meeting()
+            meeting_number, password = get_random_meeting()
 
-        display_name = "TestJoinBot"
+            display_name = "TestJoinBot"
 
-        join_param = zoom.JoinParam()
-        join_param.userType = zoom.SDKUserType.SDK_UT_WITHOUT_LOGIN
+            join_param = zoom.JoinParam()
+            join_param.userType = zoom.SDKUserType.SDK_UT_WITHOUT_LOGIN
 
-        param = join_param.param
-        param.meetingNumber = meeting_number
-        param.userName = display_name
-        param.psw = password
-        param.vanityID = ""
-        param.customer_key = ""
-        param.webinarToken = ""
-        param.isVideoOff = False
-        param.isAudioOff = False
+            param = join_param.param
+            param.meetingNumber = meeting_number
+            param.userName = display_name
+            param.psw = password
+            param.vanityID = ""
+            param.customer_key = ""
+            param.webinarToken = ""
+            param.isVideoOff = False
+            param.isAudioOff = False
 
-        self.meeting_service.Join(join_param)
+            self.meeting_service.Join(join_param)
+            return
+
+        raise Exception("Failed to authorize. result = ", result)
 
     def leave(self):
         if self.meeting_service is None:

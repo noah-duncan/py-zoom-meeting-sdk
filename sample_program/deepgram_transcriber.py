@@ -1,4 +1,5 @@
 from deepgram.utils import verboselogs
+import os
 
 from deepgram import (
     DeepgramClient,
@@ -18,7 +19,7 @@ class DeepgramTranscriber:
         )
 
         # Create a websocket connection using the DEEPGRAM_API_KEY from environment variables
-        self.deepgram = DeepgramClient('1bebd5e63186cf5bcd900b93026220c9fdb15d02', config)
+        self.deepgram = DeepgramClient(os.environ.get('DEEPGRAM_API_KEY'), config)
 
         # Use the listen.live class to create the websocket connection
         self.dg_connection = self.deepgram.listen.websocket.v("1") 

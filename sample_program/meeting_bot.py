@@ -53,13 +53,12 @@ class MeetingBot:
 
         self.my_participant_id = None
         self.participants_ctrl = None
+        self.meeting_reminder_event = None
 
     def cleanup(self):
         print("CLEANN")
         #self.meeting_service_event.setOnMeetingJoin(None)
 
-        if self.audio_source:
-            self.audio_source.setSendOnOneWayAudioRawDataReceived(False)
         print("GOAS")
 
         if self.meeting_service:
@@ -100,8 +99,9 @@ class MeetingBot:
     def on_join(self):
         print("Joined successfully ", threading.get_native_id())
 
+        self.meeting_reminder_event = zoom.MeetingReminderEventCallbacks(onReminderNotifyCallback=self.on_reminder_notify)
         self.reminder_controller = self.meeting_service.GetMeetingReminderController()
-        self.reminder_controller.SetEvent(zoom.MeetingReminderEvent())
+        self.reminder_controller.SetEvent(self.meeting_reminder_event)
 
         if self.use_raw_recording:
             self.recording_ctrl = self.meeting_service.GetMeetingRecordingController()
@@ -195,8 +195,7 @@ class MeetingBot:
         if self.audio_source is None:
             mixedAudio = False
             transcribe = False
-            self.audio_source = zoom.ZoomSDKAudioRawDataDelegatePassThrough()
-            self.audio_source.setOnOneWayAudioRawDataReceived(self.on_one_way_audio_raw_data_received_callback)
+            self.audio_source = zoom.ZoomSDKAudioRawDataDelegateCallbacks(onOneWayAudioRawDataReceivedCallback=self.on_one_way_audio_raw_data_received_callback)
             print("set some shit")
 
         print("self.audio_source", self.audio_source)
@@ -206,9 +205,7 @@ class MeetingBot:
         print(audio_helper_subscribe_result)
         print("z")
         print("more stuff")
-        self.virtual_audio_mic_event_passthrough = zoom.ZoomSDKZoomSDKVirtualAudioMicEventPassThrough()
-        self.virtual_audio_mic_event_passthrough.setOnMicInitialize(self.on_mic_initialize_callback)
-        self.virtual_audio_mic_event_passthrough.setOnMicStartSend(self.on_mic_start_send_callback)
+        self.virtual_audio_mic_event_passthrough = zoom.ZoomSDKVirtualAudioMicEventCallbacks(onMicInitializeCallback=self.on_mic_initialize_callback,onMicStartSendCallback=self.on_mic_start_send_callback)
         audio_helper_set_external_audio_source_result = self.audio_helper.setExternalAudioSource(self.virtual_audio_mic_event_passthrough)
         print("audio_helper_set_external_audio_source_result =", audio_helper_set_external_audio_source_result)
 
@@ -269,26 +266,36 @@ class MeetingBot:
         self.audio_settings.EnableAutoJoinAudio(True)
         print("MADE")
 
-    def on_auth(self):
-        print("Auth completed successfully")
-        self.join_meeting()
-        print("GRUN")
+    def on_reminder_notify(self, content, handler):
+        print("on_reminder_notify called")
+        if handler:
+            handler.accept()
 
+    def auth_return(self, result):
+        if result == zoom.AUTHRET_SUCCESS:
+            print("Auth completed successfully.")
+            return self.join_meeting()
+
+        raise Exception("Failed to authorize. result = ", result)
+    
+    def meeting_status_changed(self, status, iResult):
+        if status == zoom.MEETING_STATUS_INMEETING:
+            return self.on_join()
+        
+        print("meeting_status_changed called. status =",status,"iResult=",iResult)
 
     def create_services(self):
         self.meeting_service = zoom.CreateMeetingService()
         
         self.setting_service = zoom.CreateSettingService()
 
-        self.meeting_service_event = zoom.MeetingServiceEvent()
-        
-        self.meeting_service_event.setOnMeetingJoin(self.on_join)
-        
+        self.meeting_service_event = zoom.MeetingServiceEventCallbacks(onMeetingStatusChangedCallback=self.meeting_status_changed)
+                
         meeting_service_set_revent_result = self.meeting_service.SetEvent(self.meeting_service_event)
         if meeting_service_set_revent_result != zoom.SDKERR_SUCCESS:
             raise Exception("Meeting Service set event failed")
         
-        self.auth_event = zoom.AuthServiceEvent(self.on_auth)
+        self.auth_event = zoom.AuthServiceEventCallbacks(onAuthenticationReturnCallback=self.auth_return)
 
         self.auth_service = zoom.CreateAuthService()
         print("auth_service")
