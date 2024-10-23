@@ -14,6 +14,7 @@
 
 namespace nb = nanobind;
 using namespace std;
+using namespace ZOOMSDK;
 
 /*
 class IMeetingReminderEvent

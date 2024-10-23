@@ -54,6 +54,9 @@ RUN apt-get install -y  pulseaudio pulseaudio-utils
 # Install Linux Kernel Dev
 RUN apt-get update && apt-get install -y linux-libc-dev
 
+# Install Ctags
+RUN apt-get update && apt-get install -y universal-ctags
+
 # Install pybind11
 RUN pip install pybind11 pyjwt cython gdown deepgram-sdk python-dotenv
 

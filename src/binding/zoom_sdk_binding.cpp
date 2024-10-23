@@ -25,11 +25,11 @@
 #include "meeting_service_components/meeting_waiting_room_interface.h"
 #include "meeting_service_components/meeting_webinar_interface.h"
 #include "meeting_service_components/meeting_raw_archiving_interface.h"
-#include "events/AuthServiceEvent.h"
-#include "events/MeetingServiceEvent.h"
-#include "events/MeetingReminderEvent.h"
-#include "events/MeetingRecordingCtrlEvent.h"
-#include "raw_record/ZoomSDKAudioRawDataDelegate.h"
+
+
+
+
+
 #include "rawdata/zoom_rawdata_api.h"
 #include "rawdata/rawdata_audio_helper_interface.h"
 
@@ -38,6 +38,7 @@
 #include <memory>
 
 namespace nb = nanobind;
+using namespace ZOOMSDK;
 
 void init_zoom_sdk_binding(nb::module_ &m) {
     m.def("InitSDK", [](ZOOM_SDK_NAMESPACE::InitParam& initParam) {

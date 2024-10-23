@@ -25,11 +25,11 @@
 #include "meeting_service_components/meeting_waiting_room_interface.h"
 #include "meeting_service_components/meeting_webinar_interface.h"
 #include "meeting_service_components/meeting_raw_archiving_interface.h"
-#include "events/AuthServiceEvent.h"
-#include "events/MeetingServiceEvent.h"
-#include "events/MeetingReminderEvent.h"
-#include "events/MeetingRecordingCtrlEvent.h"
-#include "raw_record/ZoomSDKAudioRawDataDelegate.h"
+
+
+
+
+
 #include "rawdata/zoom_rawdata_api.h"
 #include "rawdata/rawdata_audio_helper_interface.h"
 
@@ -38,6 +38,7 @@
 #include <memory>
 
 namespace nb = nanobind;
+using namespace ZOOMSDK;
 
 void init_meeting_recording_interface_binding(nb::module_ &m) {
    nb::class_<IMeetingRecordingCtrlEvent>(m, "IMeetingRecordingCtrlEvent")
@@ -52,20 +53,6 @@ void init_meeting_recording_interface_binding(nb::module_ &m) {
         .def("onEnableAndStartSmartRecordingRequested", &IMeetingRecordingCtrlEvent::onEnableAndStartSmartRecordingRequested)
         .def("onSmartRecordingEnableActionCallback", &IMeetingRecordingCtrlEvent::onSmartRecordingEnableActionCallback)
         .def("onTranscodingStatusChanged", &IMeetingRecordingCtrlEvent::onTranscodingStatusChanged);
-
-    nb::class_<MeetingRecordingCtrlEvent, IMeetingRecordingCtrlEvent>(m, "MeetingRecordingCtrlEvent")
-        .def(nb::init<std::function<void(bool)>>())
-        .def("onRecordingStatus", &MeetingRecordingCtrlEvent::onRecordingStatus)
-        .def("onCloudRecordingStatus", &MeetingRecordingCtrlEvent::onCloudRecordingStatus)
-        .def("onRecordPrivilegeChanged", &MeetingRecordingCtrlEvent::onRecordPrivilegeChanged)
-        .def("onLocalRecordingPrivilegeRequestStatus", &MeetingRecordingCtrlEvent::onLocalRecordingPrivilegeRequestStatus)
-        .def("onLocalRecordingPrivilegeRequested", &MeetingRecordingCtrlEvent::onLocalRecordingPrivilegeRequested)
-        .def("onCloudRecordingStorageFull", &MeetingRecordingCtrlEvent::onCloudRecordingStorageFull)
-        .def("onRequestCloudRecordingResponse", &MeetingRecordingCtrlEvent::onRequestCloudRecordingResponse)
-        .def("onStartCloudRecordingRequested", &MeetingRecordingCtrlEvent::onStartCloudRecordingRequested)
-        .def("onEnableAndStartSmartRecordingRequested", &MeetingRecordingCtrlEvent::onEnableAndStartSmartRecordingRequested)
-        .def("onSmartRecordingEnableActionCallback", &MeetingRecordingCtrlEvent::onSmartRecordingEnableActionCallback)
-        .def("onTranscodingStatusChanged", &MeetingRecordingCtrlEvent::onTranscodingStatusChanged);
 
     nb::class_<IMeetingRecordingController>(m, "IMeetingRecordingController")
         .def("SetEvent", &IMeetingRecordingController::SetEvent)

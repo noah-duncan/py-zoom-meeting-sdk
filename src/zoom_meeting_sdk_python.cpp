@@ -23,11 +23,8 @@
 #include "meeting_service_components/meeting_waiting_room_interface.h"
 #include "meeting_service_components/meeting_webinar_interface.h"
 #include "meeting_service_components/meeting_raw_archiving_interface.h"
-#include "events/AuthServiceEvent.h"
-#include "events/MeetingServiceEvent.h"
-#include "events/MeetingReminderEvent.h"
-#include "events/MeetingRecordingCtrlEvent.h"
-#include "raw_record/ZoomSDKAudioRawDataDelegate.h"
+
+
 #include "rawdata/zoom_rawdata_api.h"
 #include "rawdata/rawdata_audio_helper_interface.h"
 
@@ -53,6 +50,7 @@ void init_meeting_service_event_callbacks(nb::module_ &);
 void init_meeting_reminder_event_callbacks(nb::module_ &);
 void init_zoom_sdk_audio_raw_data_delegate_callbacks(nb::module_ &);
 void init_zoom_sdk_virtual_audio_mic_event_callbacks(nb::module_ &);
+void init_meeting_recording_ctrl_event_callbacks(nb::module_ &);
 
 NB_MODULE(_zoom_meeting_sdk_python_impl, m) {
     m.doc() = "Python bindings for Zoom SDK";
@@ -75,4 +73,5 @@ NB_MODULE(_zoom_meeting_sdk_python_impl, m) {
     init_meeting_reminder_event_callbacks(m);
     init_zoom_sdk_audio_raw_data_delegate_callbacks(m);
     init_zoom_sdk_virtual_audio_mic_event_callbacks(m);
+    init_meeting_recording_ctrl_event_callbacks(m);
 }

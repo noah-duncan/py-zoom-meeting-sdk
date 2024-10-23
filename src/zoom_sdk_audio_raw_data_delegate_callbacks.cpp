@@ -6,7 +6,7 @@
 #include "zoom_sdk.h"
 #include "zoom_sdk_def.h"
 
-#include "util/SocketServer.h"
+
 #include "rawdata/rawdata_audio_helper_interface.h"
 #include "zoom_sdk_raw_data_def.h"
 #include "rawdata/zoom_rawdata_api.h"
@@ -17,6 +17,7 @@
 
 namespace nb = nanobind;
 using namespace std;
+using namespace ZOOMSDK;
 
 /*
 class IZoomSDKAudioRawDataDelegate

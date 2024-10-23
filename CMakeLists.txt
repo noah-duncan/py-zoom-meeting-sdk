@@ -38,8 +38,7 @@ find_package(Python 3.10
 find_package(nanobind CONFIG REQUIRED)
 
 set(ZOOM_SDK src/zoomsdk/h)
-set(ZOOM_SAMPLE_APP src/zoom_sample_app)
-include_directories(${ZOOM_SDK} ${ZOOM_SAMPLE_APP})
+include_directories(${ZOOM_SDK})
 
 # Link against zoom sdk static lib
 set(ZOOM_SDK_LIB_DIR src/zoomsdk)
@@ -78,20 +77,9 @@ nanobind_add_module(
   src/meeting_reminder_event_callbacks.cpp
   src/zoom_sdk_audio_raw_data_delegate_callbacks.cpp
   src/zoom_sdk_virtual_audio_mic_event_callbacks.cpp
+  src/meeting_recording_ctrl_event_callbacks.cpp
 
   src/zoomsdk/h/zoom_sdk.h
-  src/zoom_sample_app/events/AuthServiceEvent.cpp
-  src/zoom_sample_app/events/AuthServiceEvent.h
-  src/zoom_sample_app/events/MeetingServiceEvent.cpp
-  src/zoom_sample_app/events/MeetingServiceEvent.h
-  src/zoom_sample_app/events/MeetingReminderEvent.cpp
-  src/zoom_sample_app/events/MeetingReminderEvent.h
-  src/zoom_sample_app/events/MeetingRecordingCtrlEvent.cpp
-  src/zoom_sample_app/events/MeetingRecordingCtrlEvent.h
-  src/zoom_sample_app/raw_record/ZoomSDKAudioRawDataDelegate.cpp
-  src/zoom_sample_app/raw_record/ZoomSDKAudioRawDataDelegate.h
-  src/zoom_sample_app/util/SocketServer.cpp
-  src/zoom_sample_app/util/SocketServer.h
 )
 
 target_link_libraries(_zoom_meeting_sdk_python_impl PRIVATE 

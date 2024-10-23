@@ -113,7 +113,7 @@ class MeetingBot:
                 else:
                     self.stop_raw_recording()
 
-            self.recording_event = zoom.MeetingRecordingCtrlEvent(on_recording_privilege_changed)
+            self.recording_event = zoom.MeetingRecordingCtrlEventCallbacks(onRecordPrivilegeChangedCallback=on_recording_privilege_changed)
             self.recording_ctrl.SetEvent(self.recording_event)
 
             self.start_raw_recording()

@@ -15,6 +15,7 @@
 
 namespace nb = nanobind;
 using namespace std;
+using namespace ZOOMSDK;
 
 /*
 	virtual ~IMeetingServiceEvent() {}
