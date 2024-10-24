@@ -2,6 +2,7 @@ import zoom_meeting_sdk as zoom
 import jwt
 from deepgram_transcriber import DeepgramTranscriber
 from datetime import datetime, timedelta
+import os
 
 def generate_jwt(client_id, client_secret):
     iat = datetime.utcnow()
@@ -68,6 +69,15 @@ class MeetingBot:
         print("CleanUPSDK() finished")
 
     def init(self):
+        if os.environ.get('MEETING_ID') is None:
+            raise Exception('No MEETING_ID found in environment. Please define this in a .env file located in the repository root')
+        if os.environ.get('MEETING_PWD') is None:
+            raise Exception('No MEETING_PWD found in environment. Please define this in a .env file located in the repository root')
+        if os.environ.get('ZOOM_APP_CLIENT_ID') is None:
+            raise Exception('No ZOOM_APP_CLIENT_ID found in environment. Please define this in a .env file located in the repository root')
+        if os.environ.get('ZOOM_APP_CLIENT_SECRET') is None:
+            raise Exception('No ZOOM_APP_CLIENT_SECRET found in environment. Please define this in a .env file located in the repository root')
+
         init_param = zoom.InitParam()
 
         init_param.strWebDomain = "https://zoom.us"
@@ -188,8 +198,8 @@ class MeetingBot:
 
 
     def join_meeting(self):
-        mid = "4849920355"
-        password = "22No8yGYAajAoTaz5H00RIg5HkgEWk.1"
+        mid = os.environ.get('MEETING_ID')
+        password = os.environ.get('MEETING_PWD')
         display_name = "My meeting bot"
 
         meeting_number = int(mid)
@@ -250,9 +260,7 @@ class MeetingBot:
     
         # Use the auth service
         auth_context = zoom.AuthContext()
-        client_id="C_yBC775To66EK6MhNin9A"
-        client_secret="jnLJW1BKXq4AAD7dgtjHPsUwAGYczPQZ"
-        auth_context.jwt_token = generate_jwt(client_id, client_secret)
+        auth_context.jwt_token = generate_jwt(os.environ.get('ZOOM_APP_CLIENT_ID'), os.environ.get('ZOOM_APP_CLIENT_SECRET'))
 
         result = self.auth_service.SDKAuth(auth_context)
     

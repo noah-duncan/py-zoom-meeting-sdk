@@ -53,7 +53,10 @@ class ZoomBotRunner:
         """Signal handler for SIGINT and SIGTERM"""
         print(f"\nReceived signal {signum}")
         # Schedule the exit process to run soon, but not immediately
-        GLib.timeout_add(100, self.exit_process)
+        if self.main_loop:
+            GLib.timeout_add(100, self.exit_process)
+        else:
+            self.exit_process()
 
     def on_timeout(self):
         """Regular timeout callback"""
@@ -64,7 +67,12 @@ class ZoomBotRunner:
     def run(self):
         """Main run method"""
         self.bot = MeetingBot()
-        self.bot.init()
+        try:
+            self.bot.init()
+        except Exception as e:
+            print(e)
+            self.exit_process()
+        
 
         # Create a GLib main loop
         self.main_loop = GLib.MainLoop()
