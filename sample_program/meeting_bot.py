@@ -1,14 +1,7 @@
-import zoom_meeting_sdk_python as zoom
+import zoom_meeting_sdk as zoom
 import jwt
-import threading
 from deepgram_transcriber import DeepgramTranscriber
 from datetime import datetime, timedelta
-import ctypes
-
-#from raw_audio_delegate import RawAudioDelegate
-
-def dummy_func():
-    print("yolod")
 
 def generate_jwt(client_id, client_secret):
     iat = datetime.utcnow()
@@ -56,30 +49,24 @@ class MeetingBot:
         self.meeting_reminder_event = None
 
     def cleanup(self):
-        print("CLEANN")
-        #self.meeting_service_event.setOnMeetingJoin(None)
-
-        print("GOAS")
-
         if self.meeting_service:
             zoom.DestroyMeetingService(self.meeting_service)
-            print("Destroyed meeting service")
+            print("Destroyed Meeting service")
         if self.setting_service:
             zoom.DestroySettingService(self.setting_service)
-            print("Destroyed setting service")
+            print("Destroyed Setting service")
         if self.auth_service:
             zoom.DestroyAuthService(self.auth_service)
-            print("Destroyed auth service")
+            print("Destroyed Auth service")
 
 
         if self.audio_helper:
-            print("self.audio_helper.unSubscribe()")
-            reg = self.audio_helper.unSubscribe()
-            print("self.audio_helper.unSubscribe() result = ", reg)
+            audio_helper_unsubscribe_result = self.audio_helper.unSubscribe()
+            print("audio_helper.unSubscribe() returned", audio_helper_unsubscribe_result)
 
-        print("start clean up sdk")
+        print("CleanUPSDK() called")
         zoom.CleanUPSDK()
-        print("cleaned up sdk")
+        print("CleanUPSDK() finished")
 
     def init(self):
         init_param = zoom.InitParam()
@@ -97,8 +84,6 @@ class MeetingBot:
         self.create_services()
 
     def on_join(self):
-        print("Joined successfully ", threading.get_native_id())
-
         self.meeting_reminder_event = zoom.MeetingReminderEventCallbacks(onReminderNotifyCallback=self.on_reminder_notify)
         self.reminder_controller = self.meeting_service.GetMeetingReminderController()
         self.reminder_controller.SetEvent(self.meeting_reminder_event)
@@ -107,7 +92,7 @@ class MeetingBot:
             self.recording_ctrl = self.meeting_service.GetMeetingRecordingController()
 
             def on_recording_privilege_changed(can_rec):
-                print("can_rec = ", can_rec)
+                print("on_recording_privilege_changed called. can_record =", can_rec)
                 if can_rec:
                     self.start_raw_recording()
                 else:
@@ -120,35 +105,22 @@ class MeetingBot:
 
         self.participants_ctrl = self.meeting_service.GetMeetingParticipantsController()
         self.my_participant_id = self.participants_ctrl.GetMySelfUser().GetUserID()
-        print("my_participant_id", self.my_participant_id)
 
     def on_mic_initialize_callback(self, sender):
-        print("on_mic_initialize_callback sender = ", sender)
         self.audio_raw_data_sender = sender
 
     def on_mic_start_send_callback(self):
-        print("CAN START SENDING STUFF!!")
-
         with open('sample_program/input_audio/test_audio_16778240.pcm', 'rb') as pcm_file:
             chunk = pcm_file.read(64000*10)
             self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
-            print("sent")
 
     def on_one_way_audio_raw_data_received_callback(self, data, node_id):
-        #print("node_id", node_id)
-        #print("thread_id", threading.get_native_id())
-        #print("Shared Audio Raw data: ", (data.GetBufferLen() / 10), "k at ", data.GetSampleRate(), "Hz with channels =", data.GetChannelNum())
-
-        #16778240
         if node_id != self.my_participant_id:
-            self.write_to_deepgram(data)      
-        #self.write_to_file("out/test_audio_" + str(node_id) + ".pcm", data)      
+            self.write_to_deepgram(data) 
        
     def write_to_deepgram(self, data):
         try:
-            #print("s")
-            buffer_bytes = data.GetBuffer()          
-
+            buffer_bytes = data.GetBuffer()
             self.deepgram_transcriber.send(buffer_bytes)
         except IOError as e:
             print(f"Error: failed to open or write to audio file path: {path}. Error: {e}")
@@ -171,8 +143,6 @@ class MeetingBot:
             return
 
     def start_raw_recording(self):
-        print("start_raw_recording")
-
         self.recording_ctrl = self.meeting_service.GetMeetingRecordingController()
 
         can_start_recording_result = self.recording_ctrl.CanStartRawRecording()
@@ -182,8 +152,6 @@ class MeetingBot:
             return
 
         start_raw_recording_result = self.recording_ctrl.StartRawRecording()
-        print("start_raw_recording_result")
-        print(start_raw_recording_result)
         if start_raw_recording_result != zoom.SDKERR_SUCCESS:
             print("Start raw recording failed.")
             return
@@ -191,26 +159,20 @@ class MeetingBot:
         self.audio_helper = zoom.GetAudioRawdataHelper()
         if self.audio_helper is None:
             print("audio_helper is None")
-            return "BAD"
+            return
+        
         if self.audio_source is None:
-            mixedAudio = False
-            transcribe = False
             self.audio_source = zoom.ZoomSDKAudioRawDataDelegateCallbacks(onOneWayAudioRawDataReceivedCallback=self.on_one_way_audio_raw_data_received_callback)
-            print("set some shit")
 
-        print("self.audio_source", self.audio_source)
-        print("self.audio_helper", self.audio_helper)
+
         audio_helper_subscribe_result = self.audio_helper.subscribe(self.audio_source, False)
-        print("audio_helper_subscribe_result")
-        print(audio_helper_subscribe_result)
-        print("z")
-        print("more stuff")
+        print("audio_helper_subscribe_result =",audio_helper_subscribe_result)
+
         self.virtual_audio_mic_event_passthrough = zoom.ZoomSDKVirtualAudioMicEventCallbacks(onMicInitializeCallback=self.on_mic_initialize_callback,onMicStartSendCallback=self.on_mic_start_send_callback)
         audio_helper_set_external_audio_source_result = self.audio_helper.setExternalAudioSource(self.virtual_audio_mic_event_passthrough)
         print("audio_helper_set_external_audio_source_result =", audio_helper_set_external_audio_source_result)
 
     def stop_raw_recording(self):
-        print("stop_raw_recording")
         rec_ctrl = self.meeting_service.StopRawRecording()
         if rec_ctrl.StopRawRecording() != zoom.SDKERR_SUCCESS:
             raise Exception("Error with stop raw recording")
@@ -219,23 +181,17 @@ class MeetingBot:
         if self.meeting_service is None:
             return
         
-        print("yo")
         status = self.meeting_service.GetMeetingStatus()
-        print("1")
         if status == zoom.MEETING_STATUS_IDLE:
             return
-        print("2")
-        #if self.audio_source:
-        #    self.audio_source = None
-        print("zz")
-        rez = self.meeting_service.Leave(zoom.LEAVE_MEETING)
-        print("rez", rez)
-        print("3")
+
+        self.meeting_service.Leave(zoom.LEAVE_MEETING)
+
 
     def join_meeting(self):
         mid = "4849920355"
         password = "22No8yGYAajAoTaz5H00RIg5HkgEWk.1"
-        display_name = "test bkkki"
+        display_name = "My meeting bot"
 
         meeting_number = int(mid)
 
@@ -252,22 +208,13 @@ class MeetingBot:
         param.isVideoOff = False
         param.isAudioOff = False
 
-        print(param.meetingNumber)
-        print(param.psw)
-        print(param.userName)
-
-        print("meeting_service before join")
-        print(self.meeting_service)
         join_result = self.meeting_service.Join(join_param)
-        print("join_result")
-        print(join_result)
+        print("join_result =",join_result)
 
         self.audio_settings = self.setting_service.GetAudioSettings()
         self.audio_settings.EnableAutoJoinAudio(True)
-        print("MADE")
 
     def on_reminder_notify(self, content, handler):
-        print("on_reminder_notify called")
         if handler:
             handler.accept()
 
@@ -276,7 +223,7 @@ class MeetingBot:
             print("Auth completed successfully.")
             return self.join_meeting()
 
-        raise Exception("Failed to authorize. result = ", result)
+        raise Exception("Failed to authorize. result =", result)
     
     def meeting_status_changed(self, status, iResult):
         if status == zoom.MEETING_STATUS_INMEETING:
@@ -298,24 +245,19 @@ class MeetingBot:
         self.auth_event = zoom.AuthServiceEventCallbacks(onAuthenticationReturnCallback=self.auth_return)
 
         self.auth_service = zoom.CreateAuthService()
-        print("auth_service")
-        print(self.auth_service)
+
         set_event_result = self.auth_service.SetEvent(self.auth_event)
-        print("set_event_result")
-        print(set_event_result)
+        print("set_event_result =",set_event_result)
     
         # Use the auth service
         auth_context = zoom.AuthContext()
         client_id="C_yBC775To66EK6MhNin9A"
         client_secret="jnLJW1BKXq4AAD7dgtjHPsUwAGYczPQZ"
         auth_context.jwt_token = generate_jwt(client_id, client_secret)
-        print("auth_contexts")
-        print(auth_context.jwt_token)
+
         result = self.auth_service.SDKAuth(auth_context)
     
         if result == zoom.SDKError.SDKERR_SUCCESS:
             print("Authentication successful")
-            print("098")
         else:
-            print(f"Authentication failed with errqor: {result}")
-            print(f"Authentication failed with error: {self.auth_service.GetAuthResult()}")
+            print("Authentication failed with error:", result)

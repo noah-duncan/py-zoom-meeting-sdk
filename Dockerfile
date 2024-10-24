@@ -2,7 +2,7 @@ FROM --platform=linux/amd64 ubuntu:22.04 AS base
 
 SHELL ["/bin/bash", "-c"]
 
-ENV project=python-zoom-linux-sdk
+ENV project=py-zoom-meeting-sdk
 ENV cwd=/tmp/$project
 
 WORKDIR $cwd

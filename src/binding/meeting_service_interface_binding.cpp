@@ -62,7 +62,7 @@ void printJoinParam(const JoinParam& param) {
         std::cout << "  Audio Raw Data Sampling Rate: " << np.eAudioRawdataSamplingRate << std::endl;
     } else {
         const auto& wp = param.param.withoutloginuserJoin;
-        std::cout << "zzzWithout Login User Join Parameters:" << std::endl;
+        std::cout << "Without Login User Join Parameters:" << std::endl;
         std::cout << "  Meeting Number: " << wp.meetingNumber << std::endl;
         std::cout << "  Vanity ID: " << (wp.vanityID ? wp.vanityID : "NULL") << std::endl;
         std::cout << "  User Name: " << (wp.userName ? wp.userName : "NULL") << std::endl;
@@ -76,7 +76,7 @@ void printJoinParam(const JoinParam& param) {
         std::cout << "  Join Token: " << (wp.join_token ? wp.join_token : "NULL") << std::endl;
         std::cout << "  Is My Voice In Mix: " << (wp.isMyVoiceInMix ? "Yes" : "No") << std::endl;
         std::cout << "  Is Audio Raw Data Stereo: " << (wp.isAudioRawDataStereo ? "Yes" : "No") << std::endl;
-        std::cout << "  Audio Rawqq pData Sampling Rate: " << wp.eAudioRawdataSamplingRate << std::endl;
+        std::cout << "  Audio Raw Data Sampling Rate: " << wp.eAudioRawdataSamplingRate << std::endl;
     }
 }
 

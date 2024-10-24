@@ -1,4 +1,4 @@
-import zoom_meeting_sdk_python as zoom
+import zoom_meeting_sdk as zoom
 import time
 
 import jwt
@@ -23,12 +23,10 @@ def on_signal(signum, frame):
 def on_exit():
     print("Exiting...")
     bot.leave()
-    print("cleaning...")
     bot.cleanup()
 
 def on_timeout():
     return True  # Returning True keeps the timeout active
-
 
 bot=None
 def run():
@@ -44,13 +42,11 @@ def run():
 
     # Run the main loop
     try:
-        print("STARTLOOPP")
+        print("Start main event loop")
         main_loop.run()
     except KeyboardInterrupt:
         print("Interrupted by user, shutting down...")
     finally:
-        # Cleanup code here
-        # zoom_api.cleanup()
         main_loop.quit()
 
 def main():
@@ -66,7 +62,6 @@ def main():
 
     # Run the Meeting Bot
     run()
-
 
 if __name__ == "__main__":
     main()
