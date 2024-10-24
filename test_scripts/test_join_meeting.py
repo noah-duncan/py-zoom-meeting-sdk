@@ -1,4 +1,4 @@
-import zoom_meeting_sdk_python as zoom
+import zoom_meeting_sdk as zoom
 from datetime import datetime, timedelta
 import jwt
 from dotenv import load_dotenv
@@ -196,7 +196,6 @@ def main():
 
     # Run the Meeting Bot
     run()
-
 
 if __name__ == "__main__":
     main()

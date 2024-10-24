@@ -1,8 +1,8 @@
 services:
-  zoomsdk: &zoomsdk
+  develop: &develop
     build: ./
     volumes:
-     - .:/tmp/python-zoom-linux-sdk
+     - .:/tmp/py-zoom-meeting-sdk
     ports:
       - "3000:3000"
     environment:

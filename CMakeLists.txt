@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15...3.27)
-project(zoom_meeting_sdk_python LANGUAGES CXX)
+project(zoom_meeting_sdk LANGUAGES CXX)
 
 set(CMAKE_BUILD_TYPE Debug)
 
@@ -50,7 +50,7 @@ pkg_check_modules(deps REQUIRED IMPORTED_TARGET glib-2.0 gio-2.0)
 
 nanobind_add_module(
   # Name of the extension
-  _zoom_meeting_sdk_python_impl
+  _zoom_meeting_sdk_impl
 
   # Target the stable ABI for Python 3.12+, which reduces
   # the number of binary wheels that must be built. This
@@ -58,7 +58,7 @@ nanobind_add_module(
   STABLE_ABI
 
   # Source code goes here
-  src/zoom_meeting_sdk_python.cpp
+  src/module.cpp
 
   src/binding/auth_service_interface_binding.cpp
   src/binding/meeting_service_interface_binding.cpp
@@ -82,15 +82,15 @@ nanobind_add_module(
   src/zoomsdk/h/zoom_sdk.h
 )
 
-target_link_libraries(_zoom_meeting_sdk_python_impl PRIVATE 
+target_link_libraries(_zoom_meeting_sdk_impl PRIVATE 
     PkgConfig::deps 
     -L${ZOOM_SDK_LIB_DIR} -lmeetingsdk
 )
 
 # Set rpath for the target
-set_target_properties(_zoom_meeting_sdk_python_impl PROPERTIES
+set_target_properties(_zoom_meeting_sdk_impl PROPERTIES
     INSTALL_RPATH ${ZOOM_SDK_LIB_DIR}
 )
 
 # Install directive for scikit-build-core
-install(TARGETS _zoom_meeting_sdk_python_impl LIBRARY DESTINATION zoom_meeting_sdk_python)
+install(TARGETS _zoom_meeting_sdk_impl LIBRARY DESTINATION zoom_meeting_sdk)
