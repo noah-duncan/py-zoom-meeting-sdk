@@ -1,6 +1,5 @@
-import nanobind as nb
 import inspect
-import zoom_meeting_sdk_python as zoom
+import zoom_meeting_sdk as zoom
 
 import subprocess
 import sys
