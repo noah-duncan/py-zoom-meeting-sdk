@@ -59,7 +59,6 @@ class MeetingBot:
             zoom.DestroyAuthService(self.auth_service)
             print("Destroyed Auth service")
 
-
         if self.audio_helper:
             audio_helper_unsubscribe_result = self.audio_helper.unSubscribe()
             print("audio_helper.unSubscribe() returned", audio_helper_unsubscribe_result)

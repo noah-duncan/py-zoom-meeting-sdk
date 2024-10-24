@@ -1,72 +1,98 @@
 import zoom_meeting_sdk as zoom
 import time
-
 import jwt
 from datetime import datetime, timedelta
-
 from typing import Callable, Optional
 import asyncio
 from meeting_bot import MeetingBot
 from dotenv import load_dotenv
-
 import signal
 import sys
-
 import gi
 gi.require_version('GLib', '2.0')
 from gi.repository import GLib
+import os
 
-def on_signal(signum, frame):
-    print(f"Received signal {signum}")
-    sys.exit(0)
+class ZoomBotRunner:
+    def __init__(self):
+        self.bot = None
+        self.main_loop = None
+        self.shutdown_requested = False
 
-def on_exit():
-    print("Exiting...")
-    bot.leave()
-    bot.cleanup()
+    def exit_process(self):
+        """Clean shutdown of the bot and main loop"""
+        print("Starting cleanup process...")
+        
+        # Set flag to prevent re-entry
+        if self.shutdown_requested:
+            return False
+        self.shutdown_requested = True
+        
+        try:
+            if self.bot:
+                print("Leaving meeting...")
+                self.bot.leave()
+                print("Cleaning up bot...")
+                self.bot.cleanup()
+            
+                self.force_exit()
+             
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
+            self.force_exit()
+        
+        return False
 
-def on_timeout():
-    return True  # Returning True keeps the timeout active
+    def force_exit(self):
+        """Force the process to exit"""
+        print("Forcing exit...")
+        os._exit(0)  # Use os._exit() to force immediate termination
+        return False
 
-bot=None
-def run():
-    global bot
-    bot = MeetingBot()
-    bot.init()   
-    
-    # Create a GLib main loop
-    main_loop = GLib.MainLoop()
+    def on_signal(self, signum, frame):
+        """Signal handler for SIGINT and SIGTERM"""
+        print(f"\nReceived signal {signum}")
+        # Schedule the exit process to run soon, but not immediately
+        GLib.timeout_add(100, self.exit_process)
 
-    # Add a timeout function that will be called every 100ms
-    GLib.timeout_add(100, on_timeout)
+    def on_timeout(self):
+        """Regular timeout callback"""
+        if self.shutdown_requested:
+            return False
+        return True
 
-    # Run the main loop
-    try:
-        print("Start main event loop")
-        main_loop.run()
-    except KeyboardInterrupt:
-        print("Interrupted by user, shutting down...")
-    finally:
-        main_loop.quit()
+    def run(self):
+        """Main run method"""
+        self.bot = MeetingBot()
+        self.bot.init()
+
+        # Create a GLib main loop
+        self.main_loop = GLib.MainLoop()
+
+        # Add a timeout function that will be called every 100ms
+        GLib.timeout_add(100, self.on_timeout)
+
+        try:
+            print("Starting main event loop")
+            self.main_loop.run()
+        except KeyboardInterrupt:
+            print("Interrupted by user, shutting down...")
+        except Exception as e:
+            print(f"Error in main loop: {e}")
+        finally:
+            self.exit_process()
 
 def main():
     load_dotenv()
-
+    
+    runner = ZoomBotRunner()
+    
     # Set up signal handlers
-    signal.signal(signal.SIGINT, on_signal)
-    signal.signal(signal.SIGTERM, on_signal)
-
-    # Set up exit handler
-    import atexit
-    atexit.register(on_exit)
-
+    signal.signal(signal.SIGINT, runner.on_signal)
+    signal.signal(signal.SIGTERM, runner.on_signal)
+    
     # Run the Meeting Bot
-    run()
+    runner.run()
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
