@@ -18,6 +18,36 @@ def generate_jwt(client_id, client_secret):
     token = jwt.encode(payload, client_secret, algorithm="HS256")
     return token
 
+def normalized_rms_audio(pcm_data: bytes, sample_width: int = 2) -> bool:
+    """
+    Determine if PCM audio data contains significant audio or is essentially silence.
+    
+    Args:
+        pcm_data: Bytes object containing PCM audio data in linear16 format
+        threshold: RMS amplitude threshold below which audio is considered silent (0.0 to 1.0)
+        sample_width: Number of bytes per sample (2 for linear16)
+        
+    Returns:
+        bool: True if the audio is essentially silence, False if it contains significant audio
+    """
+    if len(pcm_data) == 0:
+        return True
+        
+    # Convert bytes to 16-bit integers
+    import array
+    samples = array.array('h')  # signed short integer array
+    samples.frombytes(pcm_data)
+    
+    # Calculate RMS amplitude
+    sum_squares = sum(sample * sample for sample in samples)
+    rms = (sum_squares / len(samples)) ** 0.5
+    
+    # Normalize RMS to 0.0-1.0 range
+    # For 16-bit audio, max value is 32767
+    normalized_rms = rms / 32767.0
+    
+    return normalized_rms
+
 class MeetingBot:
     def __init__(self):
         
@@ -48,6 +78,7 @@ class MeetingBot:
         self.my_participant_id = None
         self.participants_ctrl = None
         self.meeting_reminder_event = None
+        self.audio_print_counter = 0
 
     def cleanup(self):
         if self.meeting_service:
@@ -124,6 +155,14 @@ class MeetingBot:
             self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
 
     def on_one_way_audio_raw_data_received_callback(self, data, node_id):
+        if os.environ.get('DEEPGRAM_API_KEY') is None:
+            volume = normalized_rms_audio(data.GetBuffer())
+            if self.audio_print_counter % 20 < 2 and volume > 0.01:
+                print("Received audio from user", self.participants_ctrl.GetUserByUserID(node_id).GetUserName(), "with volume", volume)
+                print("To get transcript add DEEPGRAM_API_KEY to the .env file")
+            self.audio_print_counter += 1
+            return
+
         if node_id != self.my_participant_id:
             self.write_to_deepgram(data) 
        
