@@ -60,6 +60,8 @@ RUN apt-get update && apt-get install -y universal-ctags
 # Install pybind11
 RUN pip install pybind11 pyjwt cython gdown deepgram-sdk python-dotenv
 
+# Alias python3 to python
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
 FROM base AS deps
 
@@ -80,6 +82,5 @@ RUN git clone --depth 1 https://github.com/Microsoft/vcpkg.git \
 FROM deps AS build
 
 WORKDIR $cwd
-#ENTRYPOINT ["/tini", "--", "./bin/entry.sh"]
 CMD ["/bin/bash"]
 
