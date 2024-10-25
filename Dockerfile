@@ -60,6 +60,8 @@ RUN apt-get update && apt-get install -y universal-ctags
 # Install pybind11
 RUN pip install pybind11 pyjwt cython gdown deepgram-sdk python-dotenv
 
+# Alias python3 to python
+RUN echo 'alias python=python3' >> ~/.bashrc
 
 FROM base AS deps
 
