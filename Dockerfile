@@ -61,7 +61,7 @@ RUN apt-get update && apt-get install -y universal-ctags
 RUN pip install pybind11 pyjwt cython gdown deepgram-sdk python-dotenv
 
 # Alias python3 to python
-RUN ln -sf /usr/bin/python3 /usr/bin/python
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
 FROM base AS deps
 
