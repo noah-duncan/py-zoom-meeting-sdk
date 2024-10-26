@@ -61,10 +61,8 @@ jobs:
         gdown ${{ secrets.ZOOM_SDK_GDRIVE_ID }}
         tar -xf ${{ secrets.ZOOM_SDK_FILENAME }} -C src/zoomsdk
 
-    - name: Rename the .so
-      run: |
-        LIB="src/zoomsdk/libmeetingsdk.so"
-        [[ ! -f "${LIB}.1" ]] && cp "$LIB"{,.1}
+    - name: Copy the .so
+      run: cp src/zoomsdk/libmeetingsdk.so src/zoomsdk/libmeetingsdk.so.1
 
     - uses: pypa/cibuildwheel@v2.19
 
