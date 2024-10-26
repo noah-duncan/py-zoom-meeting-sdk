@@ -64,6 +64,7 @@ jobs:
     - name: Copy and add the .so
       run: |
         cp src/zoomsdk/libmeetingsdk.so src/zoomsdk/libmeetingsdk.so.1
+        cp /home/runner/work/py-zoom-meeting-sdk/py-zoom-meeting-sdk/src/zoomsdk/libmeetingsdk.so /home/runner/work/py-zoom-meeting-sdk/py-zoom-meeting-sdk/src/zoomsdk/libmeetingsdk.so.1
         export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/src/zoomsdk/libmeetingsdk.so.1
 
     - uses: pypa/cibuildwheel@v2.19
