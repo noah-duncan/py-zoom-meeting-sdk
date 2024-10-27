@@ -12,7 +12,7 @@ def run_and_terminate(program_path):
     
     # Wait for 25 seconds or until the process terminates
     try:
-        process.wait(timeout=125)
+        process.wait(timeout=25)
         print("Process terminated on its own.")
         return
     except subprocess.TimeoutExpired:

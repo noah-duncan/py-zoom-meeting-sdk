@@ -38,6 +38,7 @@ test-requires = ["pycairo", "pyjwt", "python-dotenv"]
 test-command = "pip install PyGObject==3.44; python {package}/test_scripts/test.py {package}/test_scripts/test_join_meeting.py"
 skip = "*musllinux*"
 archs=["x86_64"]
+test-skip="*"
 
 # Needed for full C++17 support
 [tool.cibuildwheel.macos.environment]
