@@ -47,19 +47,23 @@ jobs:
     - name: Install gdown
       run: pip install gdown
 
-    - name: Download and extract
+    - name: Cache extracted files
+      id: cache-extract
+      uses: actions/cache@v4
+      with:
+        path: src/zoomsdk
+        key: ${{ runner.os }}-extract-${{ secrets.ZOOM_SDK_FILENAME }}
+
+    - name: Download and extract if cache miss
+      if: steps.cache-extract.outputs.cache-hit != 'true'
       run: |
         mkdir src/zoomsdk
         gdown ${{ secrets.ZOOM_SDK_GDRIVE_ID }}
         tar -xf ${{ secrets.ZOOM_SDK_FILENAME }} -C src/zoomsdk
-        cp src/zoomsdk/libmeetingsdk.so src/zoomsdk/libmeetingsdk.so.1
 
     - name: Copy and add the .so
       run: |
         cp src/zoomsdk/libmeetingsdk.so src/zoomsdk/libmeetingsdk.so.1
-        cp /home/runner/work/py-zoom-meeting-sdk/py-zoom-meeting-sdk/src/zoomsdk/libmeetingsdk.so /home/runner/work/py-zoom-meeting-sdk/py-zoom-meeting-sdk/src/zoomsdk/libmeetingsdk.so.1
-        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/src/zoomsdk
-        echo $LD_LIBRARY_PATH
 
     - uses: pypa/cibuildwheel@v2.19
       env:

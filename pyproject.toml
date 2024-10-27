@@ -36,7 +36,8 @@ build-verbosity = 1
 test-command = "pytest {project}/tests"
 test-requires = "pytest"
 
-# Don't test Python 3.10 wheels on macOS/arm64
+# Skip all tests for now since they require calling zoom and the .so file.
+# Will improve in the future
 test-skip="*"
 archs=["x86_64"]
 
