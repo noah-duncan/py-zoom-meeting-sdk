@@ -84,7 +84,7 @@ nanobind_add_module(
 
 target_link_libraries(_zoom_meeting_sdk_impl PRIVATE 
     PkgConfig::deps 
-    ${ZOOM_SDK_LIB_DIR}/libmeetingsdk.so
+    -L${ZOOM_SDK_LIB_DIR} -lmeetingsdk
 )
 
 # Set rpath for the target
