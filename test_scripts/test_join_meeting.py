@@ -85,6 +85,7 @@ class TestBot():
             raise Exception('SDKAuth failed!')
         
     def meeting_status_changed(self, status, iResult):
+        print("meeting_status_changed ", status)
         if status == zoom.MEETING_STATUS_INMEETING:
             print("joined meeting")
 
