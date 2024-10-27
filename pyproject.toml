@@ -39,6 +39,7 @@ test-requires = "pytest"
 # Skip all tests for now since they require calling zoom and the .so file.
 # Will improve in the future
 test-skip="*"
+skip = "*musllinux*"
 archs=["x86_64"]
 
 # Needed for full C++17 support
