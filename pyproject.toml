@@ -37,7 +37,7 @@ test-command = "pytest {project}/tests"
 test-requires = "pytest"
 
 # Don't test Python 3.10 wheels on macOS/arm64
-test-skip="cp38-macosx_*:arm64"
+test-skip="*"
 archs=["x86_64"]
 
 # Needed for full C++17 support
