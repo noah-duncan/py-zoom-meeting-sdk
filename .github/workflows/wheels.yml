@@ -70,8 +70,7 @@ jobs:
 
     - uses: pypa/cibuildwheel@v2.19
       env:
-        LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/src/zoomsdk
-        CIBW_BEFORE_ALL='echo "WTF";cp /home/runner/work/py-zoom-meeting-sdk/py-zoom-meeting-sdk/src/zoomsdk/libmeetingsdk.so.1 /usr/local/lib64'
+        CIBW_BEFORE_ALL: 'echo "WTF";cp /home/runner/work/py-zoom-meeting-sdk/py-zoom-meeting-sdk/src/zoomsdk/libmeetingsdk.so.1 /usr/local/lib64'
 
     - name: Verify clean directory
       run: git diff --exit-code
