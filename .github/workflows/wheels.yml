@@ -65,6 +65,7 @@ jobs:
       env:
         CIBW_BEFORE_ALL: 'echo "WTF"; echo $PWD; cp ./src/zoomsdk/libmeetingsdk.so ./src/zoomsdk/libmeetingsdk.so.1; cp ./src/zoomsdk/libmeetingsdk.so.1 /usr/local/lib64/; ls /usr/local/lib64'
         CIBW_BEFORE_BUILD: 'echo "WTF"; echo $PWD; cp ./src/zoomsdk/libmeetingsdk.so ./src/zoomsdk/libmeetingsdk.so.1; cp ./src/zoomsdk/libmeetingsdk.so.1 /usr/local/lib64/; ls /usr/local/lib64'
+        CIBW_REPAIR_WHEEL_COMMAND: 'auditwheel --verbose repair -w {dest_dir} {wheel}'
 
     - name: Verify clean directory
       run: git diff --exit-code
