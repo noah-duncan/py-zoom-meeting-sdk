@@ -34,7 +34,8 @@ build-verbosity = 1
 
 # Skip all tests for now since they require calling zoom and the .so file.
 # Will improve in the future
-test-command = "pip install pyjwt python-dotenv; python {package}/test_scripts/test.py {package}/test_scripts/test_join_meeting.py"
+test-requires = ["pyjwt", "python-dotenv"]
+test-command = "python {package}/test_scripts/test.py {package}/test_scripts/test_join_meeting.py"
 skip = "*musllinux*"
 archs=["x86_64"]
 
