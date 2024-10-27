@@ -32,10 +32,6 @@ wheel.py-api = "cp312"
 # Necessary to see build output from the actual compilation
 build-verbosity = 1
 
-# Run pytest to ensure that the package was correctly built
-test-command = "pytest {project}/tests"
-test-requires = "pytest"
-
 # Skip all tests for now since they require calling zoom and the .so file.
 # Will improve in the future
 test-command = "python {package}/test_scripts/test.py {package}/test_scripts/test_join_meeting.py"

@@ -68,6 +68,10 @@ jobs:
         CIBW_BEFORE_BUILD: 'yum install -y ca-certificates cmake curl gdb git libxcb-devel libxcb libatomic xcb-util-image xcb-util-image-devel xcb-util-keysyms-devel xcb-util-keysyms pkgconf tar unzip zip vim; echo "WTF"; echo $PWD; cp ./src/zoomsdk/libmeetingsdk.so ./src/zoomsdk/libmeetingsdk.so.1; cp ./src/zoomsdk/libmeetingsdk.so.1 /lib64/; cp ./src/zoomsdk/qt_libs/Qt/lib/* /lib64/;'
         CIBW_REPAIR_WHEEL_COMMAND: 'auditwheel repair -w {dest_dir} {wheel}'
         CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux_2_28'
+        ZOOM_APP_CLIENT_ID: ${{ secrets.ZOOM_APP_CLIENT_ID }}
+        ZOOM_APP_CLIENT_SECRET: ${{ secrets.ZOOM_APP_CLIENT_SECRET }}
+        MEETING_URLS: ${{ secrets.MEETING_URLS }}
+        CIBW_ENVIRONMENT_PASS_LINUX: ZOOM_APP_CLIENT_ID ZOOM_APP_CLIENT_SECRET MEETING_URLS
 
     - name: Verify clean directory
       run: git diff --exit-code
