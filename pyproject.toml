@@ -34,8 +34,8 @@ build-verbosity = 1
 
 # Skip all tests for now since they require calling zoom and the .so file.
 # Will improve in the future
-test-requires = ["pycairo", "PyGObject==3.30", "pyjwt", "python-dotenv"]
-test-command = "python {package}/test_scripts/test.py {package}/test_scripts/test_join_meeting.py"
+test-requires = ["pycairo", "pyjwt", "python-dotenv"]
+test-command = "pip install PyGObject==3.30; python {package}/test_scripts/test.py {package}/test_scripts/test_join_meeting.py"
 skip = "*musllinux*"
 archs=["x86_64"]
 
