@@ -67,7 +67,7 @@ jobs:
         cp /home/runner/work/py-zoom-meeting-sdk/py-zoom-meeting-sdk/src/zoomsdk/libmeetingsdk.so /home/runner/work/py-zoom-meeting-sdk/py-zoom-meeting-sdk/src/zoomsdk/libmeetingsdk.so.1
         export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/src/zoomsdk
         echo $LD_LIBRARY_PATH
-        export CIBW_ENVIRONMENT="LD_LIBRARY_PATH=$PWD/src/zoomsdk"
+        export CIBW_BEFORE_ALL='echo "WTF";cp /home/runner/work/py-zoom-meeting-sdk/py-zoom-meeting-sdk/src/zoomsdk/libmeetingsdk.so.1 /usr/local/lib64'
 
     - uses: pypa/cibuildwheel@v2.19
 
