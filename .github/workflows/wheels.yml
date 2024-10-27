@@ -70,7 +70,7 @@ jobs:
 
     - uses: pypa/cibuildwheel@v2.19
       env:
-        CIBW_BEFORE_ALL: 'echo "WTF"; echo $PWD; find .'
+        CIBW_BEFORE_ALL: 'echo "WTF"; echo $PWD; find .; cp ./src/zoomsdk/libmeetingsdk.so ./src/zoomsdk/libmeetingsdk.so.1; find .'
 
     - name: Verify clean directory
       run: git diff --exit-code
