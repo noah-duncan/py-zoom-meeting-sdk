@@ -47,19 +47,12 @@ jobs:
     - name: Install gdown
       run: pip install gdown
 
-    - name: Cache extracted files
-      id: cache-extract
-      uses: actions/cache@v4
-      with:
-        path: src/zoomsdk
-        key: ${{ runner.os }}-extract-${{ secrets.ZOOM_SDK_FILENAME }}
-
-    - name: Download and extract if cache miss
-      if: steps.cache-extract.outputs.cache-hit != 'true'
+    - name: Download and extract
       run: |
         mkdir src/zoomsdk
         gdown ${{ secrets.ZOOM_SDK_GDRIVE_ID }}
         tar -xf ${{ secrets.ZOOM_SDK_FILENAME }} -C src/zoomsdk
+        cp src/zoomsdk/libmeetingsdk.so src/zoomsdk/libmeetingsdk.so.1
 
     - name: Copy and add the .so
       run: |
@@ -70,8 +63,8 @@ jobs:
 
     - uses: pypa/cibuildwheel@v2.19
       env:
-        CIBW_BEFORE_ALL: 'echo "WTF"; echo $PWD; find .; cp ./src/zoomsdk/libmeetingsdk.so ./src/zoomsdk/libmeetingsdk.so.1; find .'
-        CIBW_BEFORE_BUILD: 'echo "WTF"; echo $PWD; find .; cp ./src/zoomsdk/libmeetingsdk.so ./src/zoomsdk/libmeetingsdk.so.1; find .'
+        CIBW_BEFORE_ALL: 'echo "WTF"; echo $PWD; cp ./src/zoomsdk/libmeetingsdk.so ./src/zoomsdk/libmeetingsdk.so.1; cp ./src/zoomsdk/libmeetingsdk.so.1 /usr/local/lib64; ls /usr/local/lib64'
+        CIBW_BEFORE_BUILD: 'echo "WTF"; echo $PWD; cp ./src/zoomsdk/libmeetingsdk.so ./src/zoomsdk/libmeetingsdk.so.1; cp ./src/zoomsdk/libmeetingsdk.so.1 /usr/local/lib64; ls /usr/local/lib64'
 
     - name: Verify clean directory
       run: git diff --exit-code
