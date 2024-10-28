@@ -32,13 +32,21 @@ wheel.py-api = "cp312"
 # Necessary to see build output from the actual compilation
 build-verbosity = 1
 
-# Skip all tests for now since they require calling zoom and the .so file.
-# Will improve in the future
 test-requires = ["pycairo", "pyjwt", "python-dotenv"]
 test-command = "pip install PyGObject==3.44; python {package}/test_scripts/test.py {package}/test_scripts/test_join_meeting.py"
 skip = "*musllinux*"
-archs=["x86_64"]
-test-skip="*"
+archs = ["x86_64"]
+# The tests don't work when run from cibuildwheel currently
+# so skipping all for now
+test-skip = "*"
+manylinux-x86_64-image = "manylinux_2_28"
+
+[tool.cibuildwheel.linux]
+before-all = [
+    "yum install -y ca-certificates gtk3-devel  python3-gobject-base python3-gobject pygtk2 pygtk2-devel gobject-introspection-devel python3-cairo-devel cairo-gobject-devel python3-cairo cairo-devel cmake curl gdb git libxcb-devel libxcb libatomic xcb-util-image xcb-util-image-devel xcb-util-keysyms-devel xcb-util-keysyms pkgconf", 
+    "cp ./src/zoomsdk/libmeetingsdk.so /lib64/libmeetingsdk.so.1", 
+    "cp ./src/zoomsdk/qt_libs/Qt/lib/* /lib64/"
+]
 
 # Needed for full C++17 support
 [tool.cibuildwheel.macos.environment]

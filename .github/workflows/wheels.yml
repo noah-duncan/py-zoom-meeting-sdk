@@ -54,20 +54,8 @@ jobs:
         tar -xf ${{ secrets.ZOOM_SDK_FILENAME }} -C src/zoomsdk
         cp src/zoomsdk/libmeetingsdk.so src/zoomsdk/libmeetingsdk.so.1
 
-    - name: Copy and add the .so
-      run: |
-        cp src/zoomsdk/libmeetingsdk.so src/zoomsdk/libmeetingsdk.so.1
-        cp /home/runner/work/py-zoom-meeting-sdk/py-zoom-meeting-sdk/src/zoomsdk/libmeetingsdk.so /home/runner/work/py-zoom-meeting-sdk/py-zoom-meeting-sdk/src/zoomsdk/libmeetingsdk.so.1
-        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/src/zoomsdk
-        echo $LD_LIBRARY_PATH
-
     - uses: pypa/cibuildwheel@v2.19
-      env:
-      
-        CIBW_BEFORE_ALL: 'yum install -y ca-certificates gtk3-devel  python3-gobject-base python3-gobject pygtk2 pygtk2-devel gobject-introspection-devel python3-cairo-devel cairo-gobject-devel python3-cairo cairo-devel cmake curl gdb git libxcb-devel libxcb libatomic xcb-util-image xcb-util-image-devel xcb-util-keysyms-devel xcb-util-keysyms pkgconf tar unzip zip vim; echo "WTF"; echo $PWD; cp ./src/zoomsdk/libmeetingsdk.so ./src/zoomsdk/libmeetingsdk.so.1; cp ./src/zoomsdk/libmeetingsdk.so.1 /lib64/; cp ./src/zoomsdk/qt_libs/Qt/lib/* /lib64/;'
-        CIBW_BEFORE_BUILD: 'yum install -y ca-certificates gtk3-devel python3-gobject-base python3-gobject pygtk2 pygtk2-devel gobject-introspection-devel python3-cairo-devel cairo-gobject-devel python3-cairo cairo-devel cmake curl gdb git libxcb-devel libxcb libatomic xcb-util-image xcb-util-image-devel xcb-util-keysyms-devel xcb-util-keysyms pkgconf tar unzip zip vim; echo "WTF"; echo $PWD; cp ./src/zoomsdk/libmeetingsdk.so ./src/zoomsdk/libmeetingsdk.so.1; cp ./src/zoomsdk/libmeetingsdk.so.1 /lib64/; cp ./src/zoomsdk/qt_libs/Qt/lib/* /lib64/;'
-        CIBW_REPAIR_WHEEL_COMMAND: 'auditwheel repair -w {dest_dir} {wheel}'
-        CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux_2_28'
+      env:      
         ZOOM_APP_CLIENT_ID: ${{ secrets.ZOOM_APP_CLIENT_ID }}
         ZOOM_APP_CLIENT_SECRET: ${{ secrets.ZOOM_APP_CLIENT_SECRET }}
         MEETING_URLS: ${{ secrets.MEETING_URLS }}
