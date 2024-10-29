@@ -12,5 +12,6 @@ A Dockerfile to run a suitable Linux machine is provided in the repository. Just
 
 ### Simple
 
-1. Start a Linux Machine with Python 3.10+ installed.
-2. `pip install zoom-meeting-sdk`
+1. cd to repository root
+2. `docker compose run --rm develop`
+3. `pip install zoom-meeting-sdk`
