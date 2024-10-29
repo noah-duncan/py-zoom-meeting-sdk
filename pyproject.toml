@@ -1,0 +1,53 @@
+[build-system]
+requires = ["scikit-build-core >=0.4.3", "nanobind >=2.1.0"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "zoom_meeting_sdk"
+version = "0.0.2"
+description = "Python Bindings for the Zoom Meeting SDK"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Noah Duncan", email = "nduncan@hmc.edu" },
+]
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+]
+
+[project.urls]
+Homepage = "https://github.com/noah-duncan/py-zoom-meeting-sdk"
+
+[tool.scikit-build]
+# Protect the configuration against future changes in scikit-build-core
+minimum-version = "0.4"
+
+# Setuptools-style build caching in a local directory
+build-dir = "build/{wheel_tag}"
+
+# Build stable ABI wheels for CPython 3.12+
+wheel.py-api = "cp312"
+
+[tool.cibuildwheel]
+# Necessary to see build output from the actual compilation
+build-verbosity = 1
+
+test-requires = ["pycairo", "pyjwt", "python-dotenv"]
+test-command = "pip install PyGObject==3.44; python {package}/test_scripts/test.py {package}/test_scripts/test_join_meeting.py"
+skip = "*musllinux*"
+archs = ["x86_64"]
+# The tests don't work when run from cibuildwheel currently
+# so skipping all for now
+test-skip = "*"
+manylinux-x86_64-image = "manylinux_2_28"
+
+[tool.cibuildwheel.linux]
+before-all = [
+    "yum install -y ca-certificates gtk3-devel  python3-gobject-base python3-gobject pygtk2 pygtk2-devel gobject-introspection-devel python3-cairo-devel cairo-gobject-devel python3-cairo cairo-devel cmake curl gdb git libxcb-devel libxcb libatomic xcb-util-image xcb-util-image-devel xcb-util-keysyms-devel xcb-util-keysyms pkgconf", 
+    "cp ./src/zoomsdk/libmeetingsdk.so /lib64/libmeetingsdk.so.1", 
+    "cp ./src/zoomsdk/qt_libs/Qt/lib/* /lib64/"
+]
+
+# Needed for full C++17 support
+[tool.cibuildwheel.macos.environment]
+MACOSX_DEPLOYMENT_TARGET = "10.14"
