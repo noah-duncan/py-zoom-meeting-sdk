@@ -1,4 +1,7 @@
 # PyZoomMeetingSDK
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/noah-duncan/py-zoom-meeting-sdk/ci.yml?label=tests)
+![PyPI - License](https://img.shields.io/pypi/l/zoom-meeting-sdk)
+
 
 Python bindings for the Zoom Meeting SDK for Linux.
 
