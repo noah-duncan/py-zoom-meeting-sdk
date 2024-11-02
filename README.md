@@ -1,12 +1,9 @@
-# PyZoomMeetingSDK
+# PyZoomMeetingSDK: Create Zoom Meeting Bots in Python
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/noah-duncan/py-zoom-meeting-sdk/ci.yml?label=tests)
 [![](https://img.shields.io/pypi/v/zoom-meeting-sdk.svg?color=brightgreen)](https://pypi.org/pypi/zoom-meeting-sdk/)
 ![PyPI - License](https://img.shields.io/pypi/l/zoom-meeting-sdk)
 
-
-Python bindings for the Zoom Meeting SDK for Linux. Create Zoom Meeting Bots without learning C++.
-
-The Zoom Meeting SDK lets you create bots that can join Zoom meetings and record real-time audio. It powers applications like Gong or Otter.ai. Some of the more powerful features of the Meeting SDK, such as separate audio streams per participant were only supported in the C++ versions of the SDK.
+This library creates Python bindings for the Zoom Meeting SDK for Linux. The Zoom Meeting SDK lets you create bots that can join Zoom meetings and record real-time audio. It powers applications like Gong or Otter.ai. Some of the more powerful features of the Meeting SDK, such as separate audio streams per participant were only supported in the C++ versions of the SDK. 
 
 ## Requirements
 
