@@ -14,7 +14,8 @@ lib/zoomsdk/*.so
 lib/zoomsdk/*.md
 
 # new stuff
-src/zoomsdk
+src/zoomsdk/*
+!src/zoomsdk/.gitkeep
 build
 sample_program/out
 sample_program/__pycache__

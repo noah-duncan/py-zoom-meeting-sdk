@@ -29,7 +29,6 @@ jobs:
     - name: Download and extract if cache miss
       if: steps.cache-extract.outputs.cache-hit != 'true'
       run: |
-        mkdir src/zoomsdk
         gdown ${{ secrets.ZOOM_SDK_GDRIVE_ID }}
         tar -xf ${{ secrets.ZOOM_SDK_FILENAME }} -C src/zoomsdk
 
