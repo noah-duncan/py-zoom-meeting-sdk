@@ -6,9 +6,7 @@
 
 Python bindings for the Zoom Meeting SDK for Linux.
 
-## Why?
-
-
+The Zoom Meeting SDK lets you create bots that can join Zoom meetings and record real-time audio. It powers applications like Gong or Otter.ai. Some of the more powerful features of the Meeting SDK, such as separate audio streams per participant were only supported in the C++ versions of the SDK.
 
 ## Requirements
 
@@ -54,7 +52,7 @@ DEEPGRAM_API_KEY=<your deepgram API key (optional)>
 
 ## Modifying the binds
 
-1. Download the latest version of the Zoom Meeting SDK for Linux from the Zoom Marketplace and place it in
+1. Download the latest version of the Zoom Meeting SDK for Linux from the Zoom Marketplace and and extract it into
 the [src/zoomsdk](src/zoomsdk) folder of this repository. To download the SDK, open your Zoom App in the developer portal, go to the Embed tab on the left navigation bar under Features, then select the Meeting SDK toggle. Then download the Linux SDK.
 2. cd to respository root
 3. `docker compose run --rm develop`
