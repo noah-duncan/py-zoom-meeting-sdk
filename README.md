@@ -72,3 +72,6 @@ The bindings are in the src folder. They are written in C++ and use the [nanobin
 The file structure of the bindings mirrors the file structure of the Zoom Meeting SDK headers. IE the bindings for `zoom_sdk_def.h` are in `zoom_sdf_def_bindings.cpp`. 
 
 The objects in the binding almost exactly duplicate the SDK. The one exception are the callback events. In the SDK you define callbacks by implementing an abstract class such as `IAuthServiceEvent` or `IMeetingServiceEvent`. In the bindings you define them by passing python functions into the constructor of classes such as `AuthServiceEventCallbacks` or `MeetingServiceEventCallbacks`.
+
+### Disclaimer
+This library is not related to or sponsored by Zoom Video Communications, Inc.
