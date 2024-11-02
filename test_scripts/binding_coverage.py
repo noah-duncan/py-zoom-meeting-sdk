@@ -83,3 +83,4 @@ if __name__ == "__main__":
 
     print("classes coverage = ", len(bound_classes), '/', len(classes), '=', len(bound_classes) / float(len(classes)))
     print("functions coverage = ", len(bound_functions), '/', len(functions), '=', len(bound_functions) / float(len(functions)))
+    print("combined coverage = ", (len(bound_classes)+len(bound_functions)), '/', (len(classes)+len(functions)), '=', (len(bound_classes)+len(bound_functions)) / float(len(classes)+len(functions)))
