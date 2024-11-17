@@ -57,7 +57,7 @@ jobs:
         ZOOM_APP_CLIENT_ID: ${{ secrets.ZOOM_APP_CLIENT_ID }}
         ZOOM_APP_CLIENT_SECRET: ${{ secrets.ZOOM_APP_CLIENT_SECRET }}
         MEETING_URLS: ${{ secrets.MEETING_URLS }}
-      run: docker compose run --rm develop /bin/bash -c "source scripts/build.sh; python test_scripts/test.py test_scripts/test_join_meeting.py"
+      run: docker compose run --rm develop /bin/bash -c "source scripts/build.sh; python test_scripts/test.py test_scripts/test_join_meeting.py 25"
 
     - name: Look at more
       run: ls .

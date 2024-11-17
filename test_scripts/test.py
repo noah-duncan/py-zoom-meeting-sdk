@@ -4,7 +4,7 @@ import signal
 import sys
 import os
 
-def run_and_terminate(program_path):
+def run_and_terminate(program_path, timeout):
     # Start the process
     process = subprocess.Popen(['python3', program_path])
     
@@ -45,7 +45,8 @@ if __name__ == "__main__":
         sys.exit(1)
     
     program_to_run = sys.argv[1]
-    run_and_terminate(program_to_run)
+    timeout = sys.argv[2]
+    run_and_terminate(program_to_run, timeout)
 
     if not os.path.exists("/tmp/test_passed"):
         raise Exception("Test failed")
