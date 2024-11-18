@@ -53,7 +53,7 @@ def get_random_meeting():
 class TestBot():
     def __init__(self):
         self.main_loop = None
-        
+        self.audio_helper = None
     def init(self):
         init_param = zoom.InitParam()
 
@@ -74,7 +74,7 @@ class TestBot():
         self.auth_event = zoom.AuthServiceEventCallbacks(onAuthenticationReturnCallback=self.auth_return)
         self.auth_service = zoom.CreateAuthService()
         self.auth_service.SetEvent(self.auth_event)
-    
+
         # Use the auth service
         auth_context = zoom.AuthContext()
         auth_context.jwt_token = generate_jwt(os.environ.get('ZOOM_APP_CLIENT_ID'), os.environ.get('ZOOM_APP_CLIENT_SECRET'))
@@ -82,18 +82,23 @@ class TestBot():
         if result != zoom.SDKError.SDKERR_SUCCESS:
             raise Exception('SDKAuth failed!')
         
+        self.setting_service = zoom.CreateSettingService()
+
     def meeting_status_changed(self, status, iResult):
         if status == zoom.MEETING_STATUS_INMEETING:
             print("joined meeting")
 
-            my_user_name = self.meeting_service.GetMeetingParticipantsController().GetMySelfUser().GetUserName()
-            if my_user_name != "TestJoinBot":
-                raise Exception("Failed to get username")
+            self.after_join_action()
 
-            with open("/tmp/test_passed", 'w') as f:
-                f.write('test_passed')
-            print("self.meeting_service after joined", self.meeting_service)
-            GLib.timeout_add_seconds(4, self.exit_process)
+    def after_join_action(self):
+        my_user_name = self.meeting_service.GetMeetingParticipantsController().GetMySelfUser().GetUserName()
+        if my_user_name != "TestJoinBot":
+            raise Exception("Failed to get username")
+
+        with open("/tmp/test_passed", 'w') as f:
+            f.write('test_passed')
+        print("self.meeting_service after joined", self.meeting_service)
+        GLib.timeout_add_seconds(4, self.exit_process)
 
     def exit_process(self):
         if self.main_loop:
@@ -122,6 +127,9 @@ class TestBot():
             param.isAudioOff = False
 
             self.meeting_service.Join(join_param)
+
+            self.audio_settings = self.setting_service.GetAudioSettings()
+            self.audio_settings.EnableAutoJoinAudio(True)
             return
 
         raise Exception("Failed to authorize. result = ", result)
@@ -145,6 +153,10 @@ class TestBot():
             print("DestroyAuthService")
             zoom.DestroyAuthService(self.auth_service)
             print("EndDestroyAuthService")
+
+        if self.audio_helper:
+            audio_helper_unsubscribe_result = self.audio_helper.unSubscribe()
+            print("audio_helper.unSubscribe() returned", audio_helper_unsubscribe_result)
 
         print("CleanUPSDK")
         zoom.CleanUPSDK()
@@ -176,6 +188,100 @@ class TestBot():
         finally:
             self.main_loop.quit()
 
+class PlayAudioBot(TestBot):
+    def __init__(self):
+        super().__init__()
+        self.virtual_audio_mic_event_passthrough = None
+        self.audio_raw_data_sender = None
+        self.audio_source = None
+        self.meeting_reminder_event = None
+        self.reminder_controller = None
+        self.recording_ctrl = None
+        self.recording_event = None
+        self.use_raw_recording = True
+        
+    def on_mic_initialize_callback(self, sender):
+        print("on_mic_initialize_callback")
+        self.audio_raw_data_sender = sender
+
+    def on_mic_start_send_callback(self):
+        print("on_mic_start_send_callback")
+        with open('sample_program/input_audio/test_audio_16778240.pcm', 'rb') as pcm_file:
+            chunk = pcm_file.read(64000*10)
+            self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
+    
+    def on_mic_stop_send_callback(self):
+        print("on_mic_stop_send_callback")
+
+    def on_mic_uninitialized_callback(self):
+        print("on_mic_uninitialized_callback")
+
+    def after_join_action(self):
+        self.meeting_reminder_event = zoom.MeetingReminderEventCallbacks(onReminderNotifyCallback=self.on_reminder_notify)
+        self.reminder_controller = self.meeting_service.GetMeetingReminderController()
+        self.reminder_controller.SetEvent(self.meeting_reminder_event)
+
+        if self.use_raw_recording:
+            self.recording_ctrl = self.meeting_service.GetMeetingRecordingController()
+
+            def on_recording_privilege_changed(can_rec):
+                print("on_recording_privilege_changed called. can_record =", can_rec)
+                if can_rec:
+                    self.start_raw_recording()
+                else:
+                    self.stop_raw_recording()
+
+            self.recording_event = zoom.MeetingRecordingCtrlEventCallbacks(onRecordPrivilegeChangedCallback=on_recording_privilege_changed)
+            self.recording_ctrl.SetEvent(self.recording_event)
+
+            print("start_raw_recording RAW")
+            GLib.timeout_add_seconds(1, self.start_raw_recording)
+
+        # leave after 30 seconds
+        GLib.timeout_add_seconds(20, self.exit_process)
+        
+    def start_raw_recording(self):
+        self.recording_ctrl = self.meeting_service.GetMeetingRecordingController()
+
+        # #bad
+        # can_start_recording_result = self.recording_ctrl.CanStartRawRecording()
+        # if can_start_recording_result != zoom.SDKERR_SUCCESS:
+        #     self.recording_ctrl.RequestLocalRecordingPrivilege()
+        #     print("Requesting recording privilege.")
+        #     return
+
+        # start_raw_recording_result = self.recording_ctrl.StartRawRecording()
+        # if start_raw_recording_result != zoom.SDKERR_SUCCESS:
+        #     print("Start raw recording failed.")
+        #     return
+
+        self.audio_helper = zoom.GetAudioRawdataHelper()
+        if self.audio_helper is None:
+            print("audio_helper is None")
+            return
+        
+        #if self.audio_source is None:
+         #   self.audio_source = zoom.ZoomSDKAudioRawDataDelegateCallbacks(onOneWayAudioRawDataReceivedCallback=self.on_one_way_audio_raw_data_received_callback)
+
+
+        #audio_helper_subscribe_result = self.audio_helper.subscribe(self.audio_source, False)
+        #print("audio_helper_subscribe_result =",audio_helper_subscribe_result)
+
+        self.virtual_audio_mic_event_passthrough = zoom.ZoomSDKVirtualAudioMicEventCallbacks(
+            onMicInitializeCallback=self.on_mic_initialize_callback,
+            onMicStartSendCallback=self.on_mic_start_send_callback,
+            onMicStopSendCallback=self.on_mic_stop_send_callback,
+            onMicUninitializedCallback=self.on_mic_uninitialized_callback
+        )
+        audio_helper_set_external_audio_source_result = self.audio_helper.setExternalAudioSource(self.virtual_audio_mic_event_passthrough)
+
+    def on_one_way_audio_raw_data_received_callback(self, data, node_id):
+        print("on_one_way_audio_raw_data_received_callback")
+    def on_reminder_notify(self, content, handler):
+        if handler:
+            handler.accept()
+
+
 def on_signal(signum, frame):
     print(f"Received signal {signum}")
     sys.exit(0)
@@ -205,7 +311,7 @@ def main():
             p.join()
 
 def run_bot():
-    bot = TestBot()
+    bot = PlayAudioBot()
     import atexit
     atexit.register(bot.on_exit)
     bot.run()
