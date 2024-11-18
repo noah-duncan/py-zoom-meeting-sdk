@@ -111,7 +111,7 @@ class TestBot():
 
             meeting_number, password = get_random_meeting()
 
-            display_name = "TestJoinBot"
+            display_name = self.get_display_name()
 
             join_param = zoom.JoinParam()
             join_param.userType = zoom.SDKUserType.SDK_UT_WITHOUT_LOGIN
@@ -148,7 +148,9 @@ class TestBot():
             print("DestroyMeetingService")
             zoom.DestroyMeetingService(self.meeting_service)
             print("EndDestroyMeetingService")
-
+        if self.setting_service:
+            zoom.DestroySettingService(self.setting_service)
+            print("Destroyed Setting service")
         if self.auth_service:
             print("DestroyAuthService")
             zoom.DestroyAuthService(self.auth_service)
@@ -188,12 +190,18 @@ class TestBot():
         finally:
             self.main_loop.quit()
 
+    def get_display_name(self):
+        return "TestJoinBot"
+
 class PlayAudioBot(TestBot):
     def __init__(self):
         super().__init__()
         self.virtual_audio_mic_event_passthrough = None
         self.audio_raw_data_sender = None
         self.audio_source = None
+
+    def get_display_name(self):
+        return "PlayAudioBot"
         
     def on_mic_initialize_callback(self, sender):
         print("on_mic_initialize_callback")
@@ -207,10 +215,10 @@ class PlayAudioBot(TestBot):
     
     def after_join_action(self):
         print("start_raw_recording timeout sent to run in 1 second")
-        GLib.timeout_add_seconds(1, self.start_raw_recording)
+        GLib.timeout_add_seconds(5, self.start_raw_recording)
 
-        print("leave meeting timeout sent to run in 20 seconds")
-        GLib.timeout_add_seconds(20, self.exit_process)
+        print("leave meeting timeout sent to run in 15 seconds")
+        GLib.timeout_add_seconds(15, self.exit_process)
         
     def start_raw_recording(self):
         self.audio_helper = zoom.GetAudioRawdataHelper()
@@ -220,6 +228,122 @@ class PlayAudioBot(TestBot):
             onMicStartSendCallback=self.on_mic_start_send_callback
         )
         self.audio_helper.setExternalAudioSource(self.virtual_audio_mic_event_passthrough)
+
+class RecordAudioBot(TestBot):
+    def __init__(self):
+        super().__init__()
+        self.virtual_audio_mic_event_passthrough = None
+        self.audio_raw_data_sender = None
+        self.audio_source = None
+        self.meeting_reminder_event = None
+        self.reminder_controller = None
+        self.recording_ctrl = None
+        self.recording_event = None
+        self.use_raw_recording = True
+        self.participants_ctrl = None
+        self.my_participant_id = None
+        
+        # Add new buffer storage
+        self.audio_buffers = {}  # Dictionary to store audio data per node_id
+        
+    def get_display_name(self):
+        return "RecordAudioBot"
+        
+    def after_join_action(self):
+        self.meeting_reminder_event = zoom.MeetingReminderEventCallbacks(onReminderNotifyCallback=self.on_reminder_notify)
+        self.reminder_controller = self.meeting_service.GetMeetingReminderController()
+        self.reminder_controller.SetEvent(self.meeting_reminder_event)
+
+        if self.use_raw_recording:
+            self.recording_ctrl = self.meeting_service.GetMeetingRecordingController()
+
+            def on_recording_privilege_changed(can_rec):
+                print("on_recording_privilege_changed called. can_record =", can_rec)
+                if can_rec:
+                    self.start_raw_recording()
+                else:
+                    self.stop_raw_recording()
+
+            self.recording_event = zoom.MeetingRecordingCtrlEventCallbacks(onRecordPrivilegeChangedCallback=on_recording_privilege_changed)
+            self.recording_ctrl.SetEvent(self.recording_event)
+
+            self.start_raw_recording()
+
+        # leave after 15 seconds
+        GLib.timeout_add_seconds(15, self.exit_process)
+
+        self.participants_ctrl = self.meeting_service.GetMeetingParticipantsController()
+        self.my_participant_id = self.participants_ctrl.GetMySelfUser().GetUserID()
+        
+    def start_raw_recording(self):
+        self.recording_ctrl = self.meeting_service.GetMeetingRecordingController()
+
+        can_start_recording_result = self.recording_ctrl.CanStartRawRecording()
+        if can_start_recording_result != zoom.SDKERR_SUCCESS:
+            self.recording_ctrl.RequestLocalRecordingPrivilege()
+            print("Requesting recording privilege.")
+            return
+
+        start_raw_recording_result = self.recording_ctrl.StartRawRecording()
+        if start_raw_recording_result != zoom.SDKERR_SUCCESS:
+            print("Start raw recording failed.")
+            return
+
+        self.audio_helper = zoom.GetAudioRawdataHelper()
+        if self.audio_helper is None:
+            print("audio_helper is None")
+            return
+        
+        if self.audio_source is None:
+            self.audio_source = zoom.ZoomSDKAudioRawDataDelegateCallbacks(onOneWayAudioRawDataReceivedCallback=self.on_one_way_audio_raw_data_received_callback)
+
+        audio_helper_subscribe_result = self.audio_helper.subscribe(self.audio_source, False)
+        print("audio_helper_subscribe_result =",audio_helper_subscribe_result)
+
+    def on_one_way_audio_raw_data_received_callback(self, data, node_id):
+        if node_id == self.my_participant_id:
+            return
+            
+        # Accumulate audio data for this node_id
+        if node_id not in self.audio_buffers:
+            self.audio_buffers[node_id] = bytearray()
+        self.audio_buffers[node_id].extend(data.GetBuffer())
+
+    def on_reminder_notify(self, content, handler):
+        if handler:
+            handler.accept()
+
+    def on_exit(self):
+        print("RecordAudioBot on_exit")
+        super().on_exit()
+        
+        try:
+            # Write each recorded audio buffer to a file
+            for node_id, recorded_audio in self.audio_buffers.items():
+                output_filename = f'recorded_audio_node_{node_id}.pcm'
+                print(f"trying to write  to {output_filename}")
+                with open(output_filename, 'wb') as f:
+                    f.write(recorded_audio)
+                print(f"Wrote {len(recorded_audio)} bytes to {output_filename}")
+            
+            # Original comparison code
+            with open('sample_program/input_audio/test_audio_16778240.pcm', 'rb') as f:
+                original_audio = f.read()
+                
+            for node_id, recorded_audio in self.audio_buffers.items():
+                print(f"Comparing audio from node {node_id}")
+                print(f"Original length: {len(original_audio)} bytes")
+                print(f"Recorded length: {len(recorded_audio)} bytes")
+                
+                min_length = min(len(original_audio), len(recorded_audio))
+                matches = sum(1 for i in range(min_length) if original_audio[i] == recorded_audio[i])
+                match_percentage = (matches / min_length) * 100
+                
+                print(f"Match percentage: {match_percentage:.2f}%")
+                
+        except Exception as e:
+            print(f"Error processing audio files: {e}")
+            
 
 def on_signal(signum, frame):
     print(f"Received signal {signum}")
@@ -234,9 +358,9 @@ def main():
 
     # Create and run multiple bots
     processes = []
-    for i in range(3):
-        # Create bot inside the process instead of before
-        p = Process(target=run_bot)
+    for i in range(2):
+        # Pass bot_type as an argument, not a keyword argument
+        p = Process(target=run_bot, args=(RecordAudioBot if i == 0 else PlayAudioBot,))
         p.daemon = True
         p.start()
         processes.append(p)
@@ -249,8 +373,8 @@ def main():
             p.terminate()
             p.join()
 
-def run_bot():
-    bot = PlayAudioBot()
+def run_bot(bot_type):
+    bot = bot_type()
     import atexit
     atexit.register(bot.on_exit)
     bot.run()
