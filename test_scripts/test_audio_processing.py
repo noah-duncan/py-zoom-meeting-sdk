@@ -15,6 +15,11 @@ import signal
 import sys
 from multiprocessing import Process
 
+import numpy as np
+from python_speech_features import mfcc
+from fastdtw import fastdtw
+from scipy.spatial.distance import cosine
+
 def generate_jwt(client_id, client_secret):
     iat = datetime.utcnow()
     exp = iat + timedelta(hours=24)
@@ -209,16 +214,16 @@ class PlayAudioBot(TestBot):
 
     def on_mic_start_send_callback(self):
         print("start playing audio")
-        with open('sample_program/input_audio/test_audio_16778240.pcm', 'rb') as pcm_file:
-            chunk = pcm_file.read(64000*10)
+        with open('test_scripts/manual_rec-01.raw', 'rb') as pcm_file:
+            chunk = pcm_file.read(1164160) #pcm_file.read(64000*10)
             self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
     
     def after_join_action(self):
         print("start_raw_recording timeout sent to run in 1 second")
         GLib.timeout_add_seconds(5, self.start_raw_recording)
 
-        print("leave meeting timeout sent to run in 15 seconds")
-        GLib.timeout_add_seconds(15, self.exit_process)
+        print("leave meeting timeout sent to run in 60 seconds")
+        GLib.timeout_add_seconds(60, self.exit_process)
         
     def start_raw_recording(self):
         self.audio_helper = zoom.GetAudioRawdataHelper()
@@ -245,7 +250,7 @@ class RecordAudioBot(TestBot):
         
         # Add new buffer storage
         self.audio_buffers = {}  # Dictionary to store audio data per node_id
-        
+        self.audio_buffer_counters = {}  # Dictionary to store buffer counters per node_id
     def get_display_name(self):
         return "RecordAudioBot"
         
@@ -270,7 +275,7 @@ class RecordAudioBot(TestBot):
             self.start_raw_recording()
 
         # leave after 15 seconds
-        GLib.timeout_add_seconds(15, self.exit_process)
+        GLib.timeout_add_seconds(20, self.exit_process)
 
         self.participants_ctrl = self.meeting_service.GetMeetingParticipantsController()
         self.my_participant_id = self.participants_ctrl.GetMySelfUser().GetUserID()
@@ -301,13 +306,20 @@ class RecordAudioBot(TestBot):
         print("audio_helper_subscribe_result =",audio_helper_subscribe_result)
 
     def on_one_way_audio_raw_data_received_callback(self, data, node_id):
+       
         if node_id == self.my_participant_id:
             return
             
         # Accumulate audio data for this node_id
         if node_id not in self.audio_buffers:
             self.audio_buffers[node_id] = bytearray()
+            self.audio_buffer_counters[node_id] = 0
         self.audio_buffers[node_id].extend(data.GetBuffer())
+        self.audio_buffer_counters[node_id] += 1
+        
+        current_time_ns = time.perf_counter_ns()
+        current_time_ms = current_time_ns / 1_000_000  # Convert nanoseconds to milliseconds
+        print(f"Received audio at {current_time_ms:.3f} ms from node {node_id}")
 
     def on_reminder_notify(self, content, handler):
         if handler:
@@ -315,35 +327,179 @@ class RecordAudioBot(TestBot):
 
     def on_exit(self):
         print("RecordAudioBot on_exit")
+        print("total processing time", self.audio_source.getTotalProcessingTimeMicroseconds())
+        print("num on one way audio raw data received calls", self.audio_source.getNumOnOneWayAudioRawDataReceivedCalls())
         super().on_exit()
         
         try:
             # Write each recorded audio buffer to a file
             for node_id, recorded_audio in self.audio_buffers.items():
-                output_filename = f'recorded_audio_node_{node_id}.pcm'
-                print(f"trying to write  to {output_filename}")
+                output_filename = f'recorded_audio_node_{node_id}.raw'
                 with open(output_filename, 'wb') as f:
                     f.write(recorded_audio)
                 print(f"Wrote {len(recorded_audio)} bytes to {output_filename}")
             
-            # Original comparison code
-            with open('sample_program/input_audio/test_audio_16778240.pcm', 'rb') as f:
+            # Read original audio and convert to numpy array
+            sr = 32000
+            with open('test_scripts/manual_rec-01.raw', 'rb') as f:
                 original_audio = f.read()
-                
+                original_array = np.frombuffer(original_audio, dtype=np.int16)
+                mfcc1 = mfcc(original_array, samplerate=sr, nfft=2048)
+
+            mfcc_distances = {}
             for node_id, recorded_audio in self.audio_buffers.items():
-                print(f"Comparing audio from node {node_id}")
+                print(f"Analyzing audio from node {node_id}")
                 print(f"Original length: {len(original_audio)} bytes")
                 print(f"Recorded length: {len(recorded_audio)} bytes")
                 
-                min_length = min(len(original_audio), len(recorded_audio))
-                matches = sum(1 for i in range(min_length) if original_audio[i] == recorded_audio[i])
-                match_percentage = (matches / min_length) * 100
-                
-                print(f"Match percentage: {match_percentage:.2f}%")
-                
+                # Convert recorded audio to numpy array
+                recorded_array = np.frombuffer(recorded_audio, dtype=np.int16)
+                recorded_array = recorded_array[:len(original_array)]
+
+                mfcc2 = mfcc(recorded_array, samplerate=sr, nfft=2048)
+                mfcc_distance, _ = fastdtw(mfcc1, mfcc2, dist=cosine)
+
+                print(f"MFCC distance for node {node_id}: {mfcc_distance:.4f}")
+                mfcc_distances[node_id] = mfcc_distance
+
+            print("mfcc_distances", mfcc_distances)
+            print("average mfcc distance", np.mean(list(mfcc_distances.values())))
+            print("max mfcc distance", max(mfcc_distances.values()))
+            print("min mfcc distance", min(mfcc_distances.values()))
+            print("audio_buffer_counters", self.audio_buffer_counters)
+
         except Exception as e:
             print(f"Error processing audio files: {e}")
             
+
+class RecordAudioBotBuffered(TestBot):
+    def __init__(self):
+        super().__init__()
+        self.virtual_audio_mic_event_passthrough = None
+        self.audio_raw_data_sender = None
+        self.audio_source = None
+        self.meeting_reminder_event = None
+        self.reminder_controller = None
+        self.recording_ctrl = None
+        self.recording_event = None
+        self.use_raw_recording = True
+        self.participants_ctrl = None
+        self.my_participant_id = None
+        
+        # Add new buffer storage
+        self.audio_buffers = {}  # Dictionary to store audio data per node_id
+        
+    def get_display_name(self):
+        return "RecordAudioBotBuffered"
+        
+    def after_join_action(self):
+        self.meeting_reminder_event = zoom.MeetingReminderEventCallbacks(onReminderNotifyCallback=self.on_reminder_notify)
+        self.reminder_controller = self.meeting_service.GetMeetingReminderController()
+        self.reminder_controller.SetEvent(self.meeting_reminder_event)
+
+        if self.use_raw_recording:
+            self.recording_ctrl = self.meeting_service.GetMeetingRecordingController()
+
+            def on_recording_privilege_changed(can_rec):
+                print("on_recording_privilege_changed called. can_record =", can_rec)
+                if can_rec:
+                    self.start_raw_recording()
+                else:
+                    self.stop_raw_recording()
+
+            self.recording_event = zoom.MeetingRecordingCtrlEventCallbacks(onRecordPrivilegeChangedCallback=on_recording_privilege_changed)
+            self.recording_ctrl.SetEvent(self.recording_event)
+
+            self.start_raw_recording()
+
+        # leave after 15 seconds
+        GLib.timeout_add_seconds(20, self.exit_process)
+
+        self.participants_ctrl = self.meeting_service.GetMeetingParticipantsController()
+        self.my_participant_id = self.participants_ctrl.GetMySelfUser().GetUserID()
+        
+    def start_raw_recording(self):
+        self.recording_ctrl = self.meeting_service.GetMeetingRecordingController()
+
+        can_start_recording_result = self.recording_ctrl.CanStartRawRecording()
+        if can_start_recording_result != zoom.SDKERR_SUCCESS:
+            self.recording_ctrl.RequestLocalRecordingPrivilege()
+            print("Requesting recording privilege.")
+            return
+
+        start_raw_recording_result = self.recording_ctrl.StartRawRecording()
+        if start_raw_recording_result != zoom.SDKERR_SUCCESS:
+            print("Start raw recording failed.")
+            return
+
+        self.audio_helper = zoom.GetAudioRawdataHelper()
+        if self.audio_helper is None:
+            print("audio_helper is None")
+            return
+        
+        if self.audio_source is None:
+            self.audio_source = zoom.ZoomSDKAudioRawDataDelegateBuffered()
+
+        audio_helper_subscribe_result = self.audio_helper.subscribe(self.audio_source, False)
+        print("audio_helper_subscribe_result =",audio_helper_subscribe_result)
+
+    def on_reminder_notify(self, content, handler):
+        if handler:
+            handler.accept()
+
+    def on_exit(self):
+        active_nodes = self.audio_source.getActiveNodes()
+        print("active_nodes", active_nodes)
+
+        print("total processing time", self.audio_source.getTotalProcessingTimeMicroseconds())
+        print("num on one way audio raw data received calls", self.audio_source.getNumOnOneWayAudioRawDataReceivedCalls())
+        for node_id in active_nodes:
+            if node_id not in self.audio_buffers:
+                self.audio_buffers[node_id] = bytearray()
+            self.audio_buffers[node_id].extend(self.audio_source.getBufferData(node_id))
+
+
+        print("RecordAudioBot on_exit")
+        super().on_exit()
+        
+        try:
+            # Write each recorded audio buffer to a file
+            for node_id, recorded_audio in self.audio_buffers.items():
+                output_filename = f'recorded_audio_node_{node_id}.raw'
+                with open(output_filename, 'wb') as f:
+                    f.write(recorded_audio)
+                print(f"Wrote {len(recorded_audio)} bytes to {output_filename}")
+            
+            # Read original audio and convert to numpy array
+            sr = 32000
+            with open('test_scripts/manual_rec-01.raw', 'rb') as f:
+                original_audio = f.read()
+                original_array = np.frombuffer(original_audio, dtype=np.int16)
+                mfcc1 = mfcc(original_array, samplerate=sr, nfft=2048)
+
+            mfcc_distances = {}
+            for node_id, recorded_audio in self.audio_buffers.items():
+                print(f"Analyzing audio from node {node_id}")
+                print(f"Original length: {len(original_audio)} bytes")
+                print(f"Recorded length: {len(recorded_audio)} bytes")
+                
+                # Convert recorded audio to numpy array
+                recorded_array = np.frombuffer(recorded_audio, dtype=np.int16)
+                recorded_array = recorded_array[:len(original_array)]
+
+                mfcc2 = mfcc(recorded_array, samplerate=sr, nfft=2048)
+                mfcc_distance, _ = fastdtw(mfcc1, mfcc2, dist=cosine)
+
+                print(f"MFCC distance for node {node_id}: {mfcc_distance:.4f}")
+                mfcc_distances[node_id] = mfcc_distance
+
+            print("mfcc_distances", mfcc_distances)
+            print("average mfcc distance", np.mean(list(mfcc_distances.values())))
+            print("max mfcc distance", max(mfcc_distances.values()))
+            print("min mfcc distance", min(mfcc_distances.values()))
+
+        except Exception as e:
+            print(f"Error processing audio files: {e}")
 
 def on_signal(signum, frame):
     print(f"Received signal {signum}")
@@ -382,3 +538,23 @@ def run_bot(bot_type):
 
 if __name__ == "__main__":
     main()
+
+
+# 10 ms of audio sent per callback call
+# With 3 speakers:
+
+# python:
+# total processing time 458291 microseconds
+# num on one way audio raw data received calls 3428
+# c++:
+# total processing time 89244 microseconds
+# num on one way audio raw data received calls 3428
+
+# With 1 speaker:
+# python:
+# total processing time 204227
+# num on one way audio raw data received calls 1303
+# total processing time 239766
+# num on one way audio raw data received calls 1348
+# total processing time 230297
+# num on one way audio raw data received calls 1352
