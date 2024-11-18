@@ -6,6 +6,7 @@ import os
 import time
 import random
 import urllib.parse
+import webrtcvad
 
 import gi
 gi.require_version('GLib', '2.0')
@@ -247,6 +248,7 @@ class RecordAudioBot(TestBot):
         self.use_raw_recording = True
         self.participants_ctrl = None
         self.my_participant_id = None
+        self.vad = webrtcvad.Vad()
         
         # Add new buffer storage
         self.audio_buffers = {}  # Dictionary to store audio data per node_id
@@ -314,12 +316,16 @@ class RecordAudioBot(TestBot):
         if node_id not in self.audio_buffers:
             self.audio_buffers[node_id] = bytearray()
             self.audio_buffer_counters[node_id] = 0
+        
+        if self.vad.is_speech(data.GetBuffer(), 32000):
+            pass
+
         self.audio_buffers[node_id].extend(data.GetBuffer())
         self.audio_buffer_counters[node_id] += 1
         
-        current_time_ns = time.perf_counter_ns()
-        current_time_ms = current_time_ns / 1_000_000  # Convert nanoseconds to milliseconds
-        print(f"Received audio at {current_time_ms:.3f} ms from node {node_id}")
+        #current_time_ns = time.perf_counter_ns()
+        #current_time_ms = current_time_ns / 1_000_000  # Convert nanoseconds to milliseconds
+        #print(f"Received audio at {current_time_ms:.3f} ms from node {node_id}")
 
     def on_reminder_notify(self, content, handler):
         if handler:
@@ -514,9 +520,9 @@ def main():
 
     # Create and run multiple bots
     processes = []
-    for i in range(2):
+    for i in range(8):
         # Pass bot_type as an argument, not a keyword argument
-        p = Process(target=run_bot, args=(RecordAudioBot if i == 0 else PlayAudioBot,))
+        p = Process(target=run_bot, args=(RecordAudioBotBuffered if i == 0 else PlayAudioBot,))
         p.daemon = True
         p.start()
         processes.append(p)
@@ -558,3 +564,16 @@ if __name__ == "__main__":
 # num on one way audio raw data received calls 1348
 # total processing time 230297
 # num on one way audio raw data received calls 1352
+
+# After optimized build:
+# 2bots:
+# Python:
+# total processing time 253918
+# num on one way audio raw data received calls 2406
+# 7bots:
+# Python:
+# total processing time 1045434
+# num on one way audio raw data received calls 8941
+# C++:
+# total processing time 88854
+# num on one way audio raw data received calls 8420
