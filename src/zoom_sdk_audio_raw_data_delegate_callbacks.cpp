@@ -41,8 +41,8 @@ public:
 #define PROCESSING_TIME_BIN_COUNT 200
 
 struct CallbackPerformanceData {
-    uint64_t totalProcessingTimeMicroseconds;
-    uint64_t numCalls;
+    uint64_t totalProcessingTimeMicroseconds = 0;
+    uint64_t numCalls = 0;
     uint64_t maxProcessingTimeMicroseconds = 0;
     uint64_t minProcessingTimeMicroseconds = UINT64_MAX;
     std::vector<uint64_t> processingTimeBinCounts;

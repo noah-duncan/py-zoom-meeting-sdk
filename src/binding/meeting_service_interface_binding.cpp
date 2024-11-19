@@ -113,6 +113,9 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
         .def_prop_rw("customer_key",
             [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p) { return p.customer_key ? std::string(p.customer_key) : std::string(); },
             [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p, const std::string &s) { p.customer_key = s.empty() ? nullptr : s.c_str(); })
+        .def_prop_rw("join_token",
+            [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p) { return p.join_token ? std::string(p.join_token) : std::string(); },
+            [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p, const std::string &s) { p.join_token = s.empty() ? nullptr : s.c_str(); })
         .def_prop_rw("webinarToken",
             [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p) { return p.webinarToken ? std::string(p.webinarToken) : std::string(); },
             [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p, const std::string &s) { p.webinarToken = s.empty() ? nullptr : s.c_str(); })
