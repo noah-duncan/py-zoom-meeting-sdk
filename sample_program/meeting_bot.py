@@ -76,9 +76,13 @@ class MeetingBot:
         self.deepgram_transcriber = DeepgramTranscriber()
 
         self.my_participant_id = None
+        self.other_participant_id = None
         self.participants_ctrl = None
         self.meeting_reminder_event = None
         self.audio_print_counter = 0
+
+        self.video_helper = None
+        self.renderer_delegate = None
 
     def cleanup(self):
         if self.meeting_service:
@@ -145,6 +149,14 @@ class MeetingBot:
 
         self.participants_ctrl = self.meeting_service.GetMeetingParticipantsController()
         self.my_participant_id = self.participants_ctrl.GetMySelfUser().GetUserID()
+
+        participant_ids_list = self.participants_ctrl.GetParticipantsList()
+        print("participant_ids_list", participant_ids_list)
+        for participant_id in participant_ids_list:
+            if participant_id != self.my_participant_id:
+                self.other_participant_id = participant_id
+                break
+        print("other_participant_id", self.other_participant_id)
 
     def on_mic_initialize_callback(self, sender):
         self.audio_raw_data_sender = sender
@@ -219,6 +231,16 @@ class MeetingBot:
         self.virtual_audio_mic_event_passthrough = zoom.ZoomSDKVirtualAudioMicEventCallbacks(onMicInitializeCallback=self.on_mic_initialize_callback,onMicStartSendCallback=self.on_mic_start_send_callback)
         audio_helper_set_external_audio_source_result = self.audio_helper.setExternalAudioSource(self.virtual_audio_mic_event_passthrough)
         print("audio_helper_set_external_audio_source_result =", audio_helper_set_external_audio_source_result)
+
+        self.renderer_delegate = zoom.ZoomSDKRendererDelegateCallbacks(onRawDataFrameReceivedCallback=self.on_raw_data_frame_received_callback)
+        self.video_helper = zoom.createRenderer(self.renderer_delegate)
+
+        self.video_helper.setRawDataResolution(zoom.ZoomSDKResolution_720P)
+        subscribe_result = self.video_helper.subscribe(self.other_participant_id, zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_VIDEO)
+        print("video_helper subscribe_result =", subscribe_result)
+
+    def on_raw_data_frame_received_callback(self, data):
+        print("on_raw_data_frame_received_callback called")
 
     def stop_raw_recording(self):
         rec_ctrl = self.meeting_service.StopRawRecording()
