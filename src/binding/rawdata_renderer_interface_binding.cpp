@@ -110,6 +110,11 @@ void init_rawdata_renderer_interface_binding(nb::module_ &m) {
         .value("RawData_Off", IZoomSDKRendererDelegate::RawData_Off)
         .export_values();
 
+    nb::class_<IZoomSDKRendererDelegate>(m, "IZoomSDKRendererDelegate")
+        .def("onRendererBeDestroyed", &IZoomSDKRendererDelegate::onRendererBeDestroyed)
+        .def("onRawDataFrameReceived", &IZoomSDKRendererDelegate::onRawDataFrameReceived)
+        .def("onRawDataStatusChanged", &IZoomSDKRendererDelegate::onRawDataStatusChanged);
+
     nb::class_<IZoomSDKRenderer>(m, "IZoomSDKRenderer")
         .def("setRawDataResolution", &IZoomSDKRenderer::setRawDataResolution)
         .def("subscribe", &IZoomSDKRenderer::subscribe)
