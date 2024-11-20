@@ -133,23 +133,31 @@ class MeetingBot:
         self.audio_appsrc = None
         self.audio_recording_active = False
 
+        # Add shared timestamp reference
+        self.start_time_ns = None  # Will be set on first frame/audio sample
+
     def setup_gstreamer_pipeline(self):
         """Initialize GStreamer pipeline for combined MP4 recording with audio and video"""
+        self.start_time_ns = None
+        
+# gst-launch-1.0 ximagesrc xid=$XID ! video/x-raw,framerate=30/1 ! queue ! videoconvert ! videorate ! queue ! x264enc ! queue ! avimux name=mux ! queue ! filesink location=out.avi //pulsesrc device=$DEV ! queue ! audioconvert ! queue ! lamemp3enc bitrate=192 ! queue ! mux.
+
         pipeline_str = (
-            # Video source
-            'appsrc name=video_source do-timestamp=false ! '
+            'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
+            'queue ! '
             'videoconvert ! '
-            'x264enc tune=zerolatency bitrate=2000 ! '
-            'h264parse ! '
-            'mp4mux name=muxer ! filesink location=meeting_recording.mp4 '
-            # Audio source
-            'appsrc name=audio_source do-timestamp=false ! '
+            'videorate ! '
+            'queue ! '
+            'x264enc ! '
+            'queue ! '
+            'matroskamux name=muxer ! queue ! filesink location=outputz.mkv '
+            'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
+            'queue ! '
             'audioconvert ! '
-            'audioresample ! '
-            'audio/x-raw,format=S16LE,channels=1,rate=32000 ! '
+            'queue ! '
             'lamemp3enc bitrate=128 ! '
-            'mpegaudioparse ! '
-            'muxer.'
+            'queue ! '
+            'muxer. '
         )
         
         self.pipeline = Gst.parse_launch(pipeline_str)
@@ -159,11 +167,13 @@ class MeetingBot:
         self.audio_appsrc = self.pipeline.get_by_name('audio_source')
         
         # Configure video appsrc
-        caps = Gst.Caps.from_string('video/x-raw,format=BGR,width=640,height=360,framerate=30/1')
-        self.appsrc.set_property('caps', caps)
+        video_caps = Gst.Caps.from_string('video/x-raw,format=BGR,width=640,height=360,framerate=30/1')
+        self.appsrc.set_property('caps', video_caps)
         self.appsrc.set_property('format', Gst.Format.TIME)
-        self.appsrc.set_property('block', True)
         self.appsrc.set_property('is-live', True)
+        self.appsrc.set_property('do-timestamp', False)
+        self.appsrc.set_property('stream-type', 0)  # GST_APP_STREAM_TYPE_STREAM
+        self.appsrc.set_property('block', True)  # This helps with synchronization
 
         # Configure audio appsrc
         audio_caps = Gst.Caps.from_string(
@@ -171,8 +181,10 @@ class MeetingBot:
         )
         self.audio_appsrc.set_property('caps', audio_caps)
         self.audio_appsrc.set_property('format', Gst.Format.TIME)
+        self.audio_appsrc.set_property('is-live', True)
         self.audio_appsrc.set_property('do-timestamp', False)
-        self.audio_appsrc.set_property('stream-type', 0)  # GST_APP_STREAM_TYPE_STREAM = 0
+        self.audio_appsrc.set_property('stream-type', 0)  # GST_APP_STREAM_TYPE_STREAM
+        self.audio_appsrc.set_property('block', True)  # This helps with synchronization
 
         # Set up bus
         bus = self.pipeline.get_bus()
@@ -206,11 +218,12 @@ class MeetingBot:
                 if frame is None:
                     continue
                 
-                if self.first_frame_time is None:
-                    self.first_frame_time = timestamp_ns
+                # Initialize start time if not set
+                if self.start_time_ns is None:
+                    self.start_time_ns = timestamp_ns
                 
-                # Calculate buffer timestamp relative to first frame
-                buffer_pts = timestamp_ns - self.first_frame_time
+                # Calculate buffer timestamp relative to start time
+                buffer_pts = timestamp_ns - self.start_time_ns
                 
                 # Create buffer with timestamp
                 buffer = Gst.Buffer.new_wrapped(frame.tobytes())
@@ -238,7 +251,7 @@ class MeetingBot:
         
         if hasattr(self, 'process_frames_thread') and self.process_frames_thread:
             print("Waiting for frame processing to complete...")
-            self.process_frames_thread.join(timeout=5.0)
+            self.process_frames_thread.join(timeout=60.0)
         
         # Clean up pipeline
         if self.pipeline:
@@ -350,12 +363,14 @@ class MeetingBot:
                 buffer_bytes = data.GetBuffer()
                 buffer = Gst.Buffer.new_wrapped(buffer_bytes)
                 
-                # Calculate timestamp if needed
-                if hasattr(self, 'first_audio_time') and self.first_audio_time:
-                    buffer.pts = time.time_ns() - self.first_audio_time
-                else:
-                    self.first_audio_time = time.time_ns()
-                    buffer.pts = 0
+                current_time_ns = time.time_ns()
+                
+                # Initialize start time if not set
+                if self.start_time_ns is None:
+                    self.start_time_ns = current_time_ns
+                
+                # Calculate timestamp relative to same start time as video
+                buffer.pts = current_time_ns - self.start_time_ns
                 
                 ret = self.audio_appsrc.emit('push-buffer', buffer)
                 if ret != Gst.FlowReturn.OK:
@@ -363,14 +378,6 @@ class MeetingBot:
             except Exception as e:
                 print(f"Error processing audio data: {e}")
 
-        # Existing audio processing code...
-        if os.environ.get('DEEPGRAM_API_KEY') is None:
-            volume = normalized_rms_audio(data.GetBuffer())
-            if self.audio_print_counter % 20 < 2 and volume > 0.01:
-                print("Received audio from user", self.participants_ctrl.GetUserByUserID(node_id).GetUserName(), "with volume", volume)
-                print("To get transcript add DEEPGRAM_API_KEY to the .env file")
-            self.audio_print_counter += 1
-            return
 
     def on_raw_data_frame_received_callback(self, data):
         try:
