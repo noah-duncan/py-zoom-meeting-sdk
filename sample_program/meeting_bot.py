@@ -6,6 +6,11 @@ import os
 
 import cv2
 import numpy as np
+import gi
+gi.require_version('Gst', '1.0')
+from gi.repository import Gst, GLib
+from queue import Queue
+import threading
 
 def save_yuv420_frame_as_png(frame_bytes, width, height, output_path):
     """
@@ -110,7 +115,115 @@ class MeetingBot:
         self.renderer_delegate = None
         self.video_frame_counter = 0
 
+        # Add new properties for video recording
+        self.video_frames = Queue()
+        self.pipeline = None
+        self.appsrc = None
+        self.recording_active = False
+        
+        # Initialize GStreamer
+        Gst.init(None)
+
+    def setup_gstreamer_pipeline(self):
+        """Initialize GStreamer pipeline for MP4 recording"""
+        pipeline_str = (
+            'appsrc name=source do-timestamp=true ! '
+            'videoconvert ! '
+            'x264enc tune=zerolatency bitrate=2000 ! '
+            'h264parse ! '
+            'mp4mux ! '
+            'filesink location=meeting_recording.mp4'
+        )
+        self.pipeline = Gst.parse_launch(pipeline_str)
+        self.appsrc = self.pipeline.get_by_name('source')
+        
+        # Configure appsrc
+        caps = Gst.Caps.from_string('video/x-raw,format=BGR,width=640,height=360,framerate=30/1')
+        self.appsrc.set_property('caps', caps)
+        self.appsrc.set_property('format', Gst.Format.TIME)
+        self.appsrc.set_property('block', True)
+        self.appsrc.set_property('is-live', True)
+        
+        # Set up bus to monitor pipeline events
+        bus = self.pipeline.get_bus()
+        bus.add_signal_watch()
+        bus.connect('message', self.on_pipeline_message)
+        
+        # Start pipeline
+        self.pipeline.set_state(Gst.State.PLAYING)
+        self.recording_active = True
+        
+        # Start frame processing thread
+        self.process_frames_thread = threading.Thread(target=self.process_frames)
+        self.process_frames_thread.daemon = True
+        self.process_frames_thread.start()
+
+    def on_pipeline_message(self, bus, message):
+        """Handle pipeline messages"""
+        t = message.type
+        if t == Gst.MessageType.ERROR:
+            err, debug = message.parse_error()
+            print(f"GStreamer Error: {err}, Debug: {debug}")
+        elif t == Gst.MessageType.EOS:
+            print("GStreamer pipeline reached end of stream")
+
+    def process_frames(self):
+        """Process frames from queue and push to GStreamer pipeline"""
+        timestamp = 0
+        frame_duration = int(1e9 / 30)  # Duration for 30fps in nanoseconds
+        
+        while self.recording_active or not self.video_frames.empty():
+            try:
+                frame = self.video_frames.get(timeout=1.0)
+                if frame is None:
+                    continue
+                    
+                # Create buffer with timestamp
+                buffer = Gst.Buffer.new_wrapped(frame.tobytes())
+                buffer.pts = timestamp
+                buffer.duration = frame_duration
+                
+                # Push buffer to pipeline
+                ret = self.appsrc.emit('push-buffer', buffer)
+                if ret != Gst.FlowReturn.OK:
+                    print(f"Warning: Failed to push buffer to pipeline: {ret}")
+                
+                timestamp += frame_duration
+                
+            except Exception as e:
+                print(f"Error processing frame: {e}")
+                continue
+
     def cleanup(self):
+        print("Starting cleanup...")
+        
+        # Stop video recording
+        self.recording_active = False
+        if hasattr(self, 'process_frames_thread') and self.process_frames_thread:
+            print("Waiting for frame processing to complete...")
+            self.process_frames_thread.join(timeout=5.0)
+        
+        if self.pipeline:
+            print("Shutting down GStreamer pipeline...")
+            # Send EOS and wait for it to propagate
+            self.appsrc.emit('end-of-stream')
+            
+            # Wait for EOS to propagate
+            bus = self.pipeline.get_bus()
+            msg = bus.timed_pop_filtered(
+                Gst.CLOCK_TIME_NONE,
+                Gst.MessageType.EOS | Gst.MessageType.ERROR
+            )
+            
+            if msg:
+                if msg.type == Gst.MessageType.ERROR:
+                    err, debug = msg.parse_error()
+                    print(f"Error during pipeline shutdown: {err}, {debug}")
+            
+            # Shut down pipeline
+            self.pipeline.set_state(Gst.State.NULL)
+            print("GStreamer pipeline shut down")
+        
         if self.meeting_service:
             zoom.DestroyMeetingService(self.meeting_service)
             print("Destroyed Meeting service")
@@ -265,12 +378,27 @@ class MeetingBot:
         subscribe_result = self.video_helper.subscribe(self.other_participant_id, zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_VIDEO)
         print("video_helper subscribe_result =", subscribe_result)
 
+        # Initialize GStreamer pipeline when starting recording
+        self.setup_gstreamer_pipeline()
+
     def on_raw_data_frame_received_callback(self, data):
-        print("on_raw_data_frame_received_callback called")
-        print("data.GetBufferLen() = ", data.GetBufferLen())
-        #print("data.GetBuffer() = ", data.GetBuffer())
-        save_yuv420_frame_as_png(data.GetBuffer(), 640, 360, f"output_{self.video_frame_counter:06d}.png")
-        self.video_frame_counter += 1
+        try:
+            # Convert YUV420 to BGR
+            yuv_data = np.frombuffer(data.GetBuffer(), dtype=np.uint8)
+            yuv_frame = yuv_data.reshape((360 * 3//2, 640))  # Assuming 640x360 resolution
+            bgr_frame = cv2.cvtColor(yuv_frame, cv2.COLOR_YUV2BGR_I420)
+            
+            # Verify frame is valid
+            if bgr_frame is None or bgr_frame.size == 0:
+                print("Warning: Invalid frame received")
+                return
+            
+            # Add frame to queue for processing
+            self.video_frames.put(bgr_frame)
+            
+        except Exception as e:
+            print(f"Error processing video frame: {e}")
+
     def stop_raw_recording(self):
         rec_ctrl = self.meeting_service.StopRawRecording()
         if rec_ctrl.StopRawRecording() != zoom.SDKERR_SUCCESS:
