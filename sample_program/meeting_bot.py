@@ -11,7 +11,6 @@ gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GLib
 from queue import Queue
 import threading
-import time
 
 def save_yuv420_frame_as_png(frame_bytes, width, height, output_path):
     """
@@ -119,48 +118,138 @@ class MeetingBot:
         # Add new properties for video recording
         self.video_frames = Queue()
         self.pipeline = None
-        self.appsrc = None
+        self.video_appsrc = None
+        self.audio_appsrc = None
         self.recording_active = False
         
         # Initialize GStreamer
         Gst.init(None)
 
-        self.last_frame_time = None
-        self.first_frame_time = None
 
     def setup_gstreamer_pipeline(self):
-        """Initialize GStreamer pipeline for MP4 recording"""
+        """Initialize GStreamer pipeline for MP4 recording with audio"""
         pipeline_str = (
-            'appsrc name=source do-timestamp=true ! '
+            # Video branch with simpler configuration
+            'appsrc name=video_source do-timestamp=true ! '
             'videoconvert ! '
-            'x264enc tune=zerolatency bitrate=2000 ! '
+            'video/x-raw,format=I420,width=640,height=360,framerate=30/1 ! '
+            'x264enc tune=zerolatency speed-preset=ultrafast ! '
+            'video/x-h264,profile=baseline ! '
             'h264parse ! '
-            'mp4mux ! '
+            'queue ! '
+            'mux. '
+            
+            # Audio branch with simpler configuration
+            'appsrc name=audio_source do-timestamp=true ! '
+            'audioconvert ! '
+            'audio/x-raw,format=S16LE,channels=1,rate=32000 ! '
+            'voaacenc bitrate=128000 ! '
+            'aacparse ! '
+            'queue ! '
+            'mux. '
+            
+            # MP4 muxer
+            'mp4mux name=mux ! '
             'filesink location=meeting_recording.mp4'
         )
-        self.pipeline = Gst.parse_launch(pipeline_str)
-        self.appsrc = self.pipeline.get_by_name('source')
         
-        # Configure appsrc
-        caps = Gst.Caps.from_string('video/x-raw,format=BGR,width=640,height=360,framerate=30/1')
-        self.appsrc.set_property('caps', caps)
-        self.appsrc.set_property('format', Gst.Format.TIME)
-        self.appsrc.set_property('block', True)
-        self.appsrc.set_property('is-live', True)
-        
-        # Set up bus to monitor pipeline events
-        bus = self.pipeline.get_bus()
-        bus.add_signal_watch()
-        bus.connect('message', self.on_pipeline_message)
-        
-        # Start pipeline
-        self.pipeline.set_state(Gst.State.PLAYING)
-        self.recording_active = True
-        
-        # Start frame processing thread
-        self.process_frames_thread = threading.Thread(target=self.process_frames)
-        self.process_frames_thread.daemon = True
-        self.process_frames_thread.start()
+        try:
+            print("Creating pipeline...")
+            self.pipeline = Gst.parse_launch(pipeline_str)
+            
+            print("Configuring video source...")
+            self.video_appsrc = self.pipeline.get_by_name('video_source')
+            caps = Gst.Caps.from_string(
+                'video/x-raw,format=BGR,width=640,height=360,framerate=30/1'
+            )
+            self.video_appsrc.set_property('caps', caps)
+            self.video_appsrc.set_property('format', Gst.Format.TIME)
+            self.video_appsrc.set_property('do-timestamp', True)
+            self.video_appsrc.set_property('stream-type', 0)  # GST_APP_STREAM_TYPE_STREAM = 0
+            
+            print("Configuring audio source...")
+            self.audio_appsrc = self.pipeline.get_by_name('audio_source')
+            audio_caps = Gst.Caps.from_string(
+                'audio/x-raw,format=S16LE,channels=1,rate=32000,layout=interleaved'
+            )
+            self.audio_appsrc.set_property('caps', audio_caps)
+            self.audio_appsrc.set_property('format', Gst.Format.TIME)
+            self.audio_appsrc.set_property('do-timestamp', True)
+            self.audio_appsrc.set_property('stream-type', 0)  # GST_APP_STREAM_TYPE_STREAM = 0
+
+            # Set up bus monitoring
+            bus = self.pipeline.get_bus()
+            bus.add_signal_watch()
+            bus.connect('message', self.on_pipeline_message)
+            
+            # First set pipeline to READY state
+            print("Setting pipeline to READY...")
+            ret = self.pipeline.set_state(Gst.State.READY)
+            if ret == Gst.StateChangeReturn.FAILURE:
+                raise Exception("Failed to set pipeline to READY")
+            
+            # Wait for READY state
+            timeout = 5 * Gst.SECOND
+            state_change = self.pipeline.get_state(timeout)
+            if state_change[0] == Gst.StateChangeReturn.FAILURE:
+                raise Exception("Failed to reach READY state")
+            
+            # Now set to PLAYING state
+            print("Setting pipeline to PLAYING...")
+            ret = self.pipeline.set_state(Gst.State.PLAYING)
+            
+            # Handle async state change
+            if ret == Gst.StateChangeReturn.ASYNC:
+                print("Pipeline is changing state asynchronously...")
+                # Wait for up to 5 seconds for state change
+                state_change = self.pipeline.get_state(5 * Gst.SECOND)
+                if state_change[0] == Gst.StateChangeReturn.SUCCESS:
+                    print("Pipeline successfully entered PLAYING state")
+                elif state_change[0] == Gst.StateChangeReturn.ASYNC:
+                    print("Pipeline is still changing state asynchronously, continuing anyway...")
+                else:
+                    raise Exception(f"Failed to reach PLAYING state: {state_change[0]}")
+            elif ret == Gst.StateChangeReturn.FAILURE:
+                raise Exception("Failed to set pipeline to PLAYING")
+            
+            self.recording_active = True
+            self.audio_timestamp = 0
+            
+            # Start frame processing thread
+            self.process_frames_thread = threading.Thread(target=self.process_frames)
+            self.process_frames_thread.daemon = True
+            self.process_frames_thread.start()
+            
+        except Exception as e:
+            print(f"Failed to setup GStreamer pipeline: {e}")
+            if self.pipeline:
+                # Debug info
+                print("\nPipeline state:")
+                state = self.pipeline.get_state(0)
+                print(f"Current: {state[1]}, Pending: {state[2]}")
+                
+                # Print element states
+                print("\nElement states:")
+                iterator = self.pipeline.iterate_elements()
+                while True:
+                    result = iterator.next()
+                    if result[0] == Gst.IteratorResult.DONE:
+                        break
+                    if result[0] == Gst.IteratorResult.OK:
+                        element = result[1]
+                        state = element.get_state(0)
+                        print(f"{element.get_name()}: {state[1]}")
+            
+            self.cleanup()
+            raise
+
+    def _on_video_buffer_probe(self, pad, info):
+        """Monitor video buffers for debugging"""
+        buffer = info.get_buffer()
+        if buffer:
+            print(f"Video buffer: pts={buffer.pts}, size={buffer.get_size()}")
+        return Gst.PadProbeReturn.OK
+
 
     def on_pipeline_message(self, bus, message):
         """Handle pipeline messages"""
@@ -168,87 +257,95 @@ class MeetingBot:
         if t == Gst.MessageType.ERROR:
             err, debug = message.parse_error()
             print(f"GStreamer Error: {err}, Debug: {debug}")
+            # Get element that caused the error
+            src = message.src
+            print(f"Error from element {src.get_name()}")
+            self.cleanup()
         elif t == Gst.MessageType.EOS:
             print("GStreamer pipeline reached end of stream")
+            self.cleanup()
+        elif t == Gst.MessageType.WARNING:
+            warn, debug = message.parse_warning()
+            print(f"GStreamer Warning: {warn}, Debug: {debug}")
+        elif t == Gst.MessageType.STATE_CHANGED:
+            old, new, pending = message.parse_state_changed()
+            #print(f"Element {message.src.get_name()} state changed from {old} to {new} (pending: {pending})")
 
     def process_frames(self):
         """Process frames from queue and push to GStreamer pipeline"""
+        timestamp = 0
+        frame_duration = int(1e9 / 30)  # Duration for 30fps in nanoseconds
+        
         while self.recording_active or not self.video_frames.empty():
             try:
-                frame, timestamp_ns = self.video_frames.get(timeout=1.0)
+                frame = self.video_frames.get(timeout=1.0)
                 if frame is None:
                     continue
                 
-                if self.first_frame_time is None:
-                    self.first_frame_time = timestamp_ns
+                # Ensure frame is in the correct format and size
+                if frame.dtype != np.uint8:
+                    frame = frame.astype(np.uint8)
                 
-                # Calculate buffer timestamp relative to first frame
-                buffer_pts = timestamp_ns - self.first_frame_time
+                # Ensure frame is in BGR format and correct size
+                if frame.shape != (360, 640, 3):
+                    frame = cv2.resize(frame, (640, 360))
                 
-                # Create buffer with timestamp
+                # Create buffer with proper timing information
                 buffer = Gst.Buffer.new_wrapped(frame.tobytes())
-                buffer.pts = buffer_pts
+                buffer.pts = timestamp
+                buffer.duration = frame_duration
+                buffer.dts = buffer.pts  # Ensure DTS is set for proper timing
                 
-                # Calculate duration based on time until next frame
-                # Default to 33ms (30fps) if this is the last frame
-                buffer.duration = 33 * 1000 * 1000  # 33ms in nanoseconds
+                # Push buffer to pipeline with error checking
+                if self.video_appsrc:
+                    ret = self.video_appsrc.emit('push-buffer', buffer)
+                    if ret != Gst.FlowReturn.OK:
+                        print(f"Warning: Failed to push buffer to pipeline: {ret}")
                 
-                # Push buffer to pipeline
-                ret = self.appsrc.emit('push-buffer', buffer)
-                if ret != Gst.FlowReturn.OK:
-                    print(f"Warning: Failed to push buffer to pipeline: {ret}")
+                timestamp += frame_duration
                 
             except Exception as e:
                 print(f"Error processing frame: {e}")
                 continue
 
     def cleanup(self):
+        """Cleanup resources and shutdown pipeline properly"""
         print("Starting cleanup...")
         
-        # Stop video recording
+        # Set flag to stop recording
         self.recording_active = False
-        if hasattr(self, 'process_frames_thread') and self.process_frames_thread:
-            print("Waiting for frame processing to complete...")
-            self.process_frames_thread.join(timeout=5.0)
         
-        if self.pipeline:
-            print("Shutting down GStreamer pipeline...")
-            # Send EOS and wait for it to propagate
-            self.appsrc.emit('end-of-stream')
+        try:
+            if hasattr(self, 'process_frames_thread') and self.process_frames_thread:
+                print("Waiting for frame processing to complete...")
+                self.process_frames_thread.join(timeout=5.0)
             
-            # Wait for EOS to propagate
-            bus = self.pipeline.get_bus()
-            msg = bus.timed_pop_filtered(
-                Gst.CLOCK_TIME_NONE,
-                Gst.MessageType.EOS | Gst.MessageType.ERROR
-            )
-            
-            if msg:
-                if msg.type == Gst.MessageType.ERROR:
-                    err, debug = msg.parse_error()
-                    print(f"Error during pipeline shutdown: {err}, {debug}")
-            
-            # Shut down pipeline
-            self.pipeline.set_state(Gst.State.NULL)
-            print("GStreamer pipeline shut down")
-        
-        if self.meeting_service:
-            zoom.DestroyMeetingService(self.meeting_service)
-            print("Destroyed Meeting service")
-        if self.setting_service:
-            zoom.DestroySettingService(self.setting_service)
-            print("Destroyed Setting service")
-        if self.auth_service:
-            zoom.DestroyAuthService(self.auth_service)
-            print("Destroyed Auth service")
-
-        if self.audio_helper:
-            audio_helper_unsubscribe_result = self.audio_helper.unSubscribe()
-            print("audio_helper.unSubscribe() returned", audio_helper_unsubscribe_result)
-
-        print("CleanUPSDK() called")
-        zoom.CleanUPSDK()
-        print("CleanUPSDK() finished")
+            if self.pipeline:
+                print("Shutting down GStreamer pipeline...")
+                # Send EOS events
+                if hasattr(self, 'video_appsrc'):
+                    self.video_appsrc.emit('end-of-stream')
+                if hasattr(self, 'audio_appsrc'):
+                    self.audio_appsrc.emit('end-of-stream')
+                
+                # Wait for EOS to propagate
+                self.pipeline.send_event(Gst.Event.new_eos())
+                
+                # Wait for pipeline to process remaining data (with timeout)
+                timeout = 5 * Gst.SECOND
+                self.pipeline.get_bus().timed_pop_filtered(timeout, Gst.MessageType.EOS | Gst.MessageType.ERROR)
+                
+                # Set pipeline state to NULL
+                self.pipeline.set_state(Gst.State.NULL)
+                
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
+        finally:
+            # Clear references
+            self.pipeline = None
+            self.video_appsrc = None
+            self.audio_appsrc = None
+            print("Cleanup completed")
 
     def init(self):
         if os.environ.get('MEETING_ID') is None:
@@ -320,11 +417,39 @@ class MeetingBot:
                 print("Received audio from user", self.participants_ctrl.GetUserByUserID(node_id).GetUserName(), "with volume", volume)
                 print("To get transcript add DEEPGRAM_API_KEY to the .env file")
             self.audio_print_counter += 1
-            return
+        
+        # Process audio for Deepgram if API key exists
+        if node_id != self.my_participant_id and os.environ.get('DEEPGRAM_API_KEY'):
+            self.write_to_deepgram(data)
+        
+        # Add audio to recording if recording is active
+        if self.recording_active and hasattr(self, 'audio_appsrc'):
+            try:
+                audio_data = data.GetBuffer()
+                buffer = Gst.Buffer.new_wrapped(audio_data)
+                
+                # Calculate duration based on sample rate and buffer size
+                num_samples = len(audio_data) // 2  # 16-bit = 2 bytes per sample
+                duration = num_samples * Gst.SECOND // 32000  # Convert to nanoseconds
+                
+                # Set buffer timing info
+                buffer.pts = self.audio_timestamp
+                buffer.duration = duration
+                
+                # Push buffer to pipeline with error checking
+                if self.audio_appsrc:
+                    ret = self.audio_appsrc.emit('push-buffer', buffer)
+                    if ret != Gst.FlowReturn.OK:
+                        print(f"Warning: Failed to push audio buffer to pipeline: {ret}")
+                        if ret == Gst.FlowReturn.ERROR:
+                            self.cleanup()
+                
+                self.audio_timestamp += duration
+                
+            except Exception as e:
+                print(f"Error processing audio data: {e}")
+                self.cleanup()
 
-        if node_id != self.my_participant_id:
-            self.write_to_deepgram(data) 
-       
     def write_to_deepgram(self, data):
         try:
             buffer_bytes = data.GetBuffer()
@@ -401,11 +526,8 @@ class MeetingBot:
                 print("Warning: Invalid frame received")
                 return
             
-            # Get current timestamp in nanoseconds
-            current_time_ns = time.time_ns()
-            
-            # Add frame and timestamp to queue for processing
-            self.video_frames.put((bgr_frame, current_time_ns))
+            # Add frame to queue for processing
+            self.video_frames.put(bgr_frame)
             
         except Exception as e:
             print(f"Error processing video frame: {e}")
