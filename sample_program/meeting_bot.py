@@ -150,7 +150,7 @@ class MeetingBot:
             'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'x264enc ! '
             'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
-            'matroskamux name=muxer ! queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! filesink location=output4.mkv '
+            'mp4mux name=muxer ! queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! filesink location=output9.mp4 '
             'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
             'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'audioconvert ! '
