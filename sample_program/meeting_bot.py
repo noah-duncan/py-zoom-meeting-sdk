@@ -11,6 +11,7 @@ gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GLib
 from queue import Queue
 import threading
+import time
 
 def save_yuv420_frame_as_png(frame_bytes, width, height, output_path):
     """
@@ -124,6 +125,9 @@ class MeetingBot:
         # Initialize GStreamer
         Gst.init(None)
 
+        self.last_frame_time = None
+        self.first_frame_time = None
+
     def setup_gstreamer_pipeline(self):
         """Initialize GStreamer pipeline for MP4 recording"""
         pipeline_str = (
@@ -169,26 +173,30 @@ class MeetingBot:
 
     def process_frames(self):
         """Process frames from queue and push to GStreamer pipeline"""
-        timestamp = 0
-        frame_duration = int(1e9 / 30)  # Duration for 30fps in nanoseconds
-        
         while self.recording_active or not self.video_frames.empty():
             try:
-                frame = self.video_frames.get(timeout=1.0)
+                frame, timestamp_ns = self.video_frames.get(timeout=1.0)
                 if frame is None:
                     continue
-                    
+                
+                if self.first_frame_time is None:
+                    self.first_frame_time = timestamp_ns
+                
+                # Calculate buffer timestamp relative to first frame
+                buffer_pts = timestamp_ns - self.first_frame_time
+                
                 # Create buffer with timestamp
                 buffer = Gst.Buffer.new_wrapped(frame.tobytes())
-                buffer.pts = timestamp
-                buffer.duration = frame_duration
+                buffer.pts = buffer_pts
+                
+                # Calculate duration based on time until next frame
+                # Default to 33ms (30fps) if this is the last frame
+                buffer.duration = 33 * 1000 * 1000  # 33ms in nanoseconds
                 
                 # Push buffer to pipeline
                 ret = self.appsrc.emit('push-buffer', buffer)
                 if ret != Gst.FlowReturn.OK:
                     print(f"Warning: Failed to push buffer to pipeline: {ret}")
-                
-                timestamp += frame_duration
                 
             except Exception as e:
                 print(f"Error processing frame: {e}")
@@ -393,8 +401,11 @@ class MeetingBot:
                 print("Warning: Invalid frame received")
                 return
             
-            # Add frame to queue for processing
-            self.video_frames.put(bgr_frame)
+            # Get current timestamp in nanoseconds
+            current_time_ns = time.time_ns()
+            
+            # Add frame and timestamp to queue for processing
+            self.video_frames.put((bgr_frame, current_time_ns))
             
         except Exception as e:
             print(f"Error processing video frame: {e}")
