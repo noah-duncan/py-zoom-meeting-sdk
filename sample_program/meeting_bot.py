@@ -137,7 +137,7 @@ class MeetingBot:
         """Initialize GStreamer pipelines for MP4 video and MP3 audio recording"""
         # Video pipeline (existing)
         pipeline_str = (
-            'appsrc name=source do-timestamp=true ! '
+            'appsrc name=source do-timestamp=false ! '
             'videoconvert ! '
             'x264enc tune=zerolatency bitrate=2000 ! '
             'h264parse ! '
@@ -188,6 +188,10 @@ class MeetingBot:
 
         self.recording_active = True
         self.audio_recording_active = True
+
+        self.process_frames_thread = threading.Thread(target=self.process_frames)
+        self.process_frames_thread.daemon = True
+        self.process_frames_thread.start()
 
     def on_pipeline_message(self, bus, message, pipeline_name):
         """Handle pipeline messages"""
