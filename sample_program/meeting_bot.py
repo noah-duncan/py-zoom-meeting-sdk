@@ -4,6 +4,31 @@ from deepgram_transcriber import DeepgramTranscriber
 from datetime import datetime, timedelta
 import os
 
+import cv2
+import numpy as np
+
+def save_yuv420_frame_as_png(frame_bytes, width, height, output_path):
+    """
+    Convert a raw YUV420/I420 frame to PNG and save it
+
+    Args:
+    frame_bytes: Raw frame data as bytes or bytearray
+    width: Frame width in pixels
+    height: Frame height in pixels 
+    output_path: Path to save the PNG file
+    """
+    # Convert bytes to numpy array
+    yuv_data = np.frombuffer(frame_bytes, dtype=np.uint8)
+
+    # Reshape into I420 format with U/V planes
+    yuv_frame = yuv_data.reshape((height * 3//2, width))
+
+    # Convert from YUV420 to BGR
+    bgr_frame = cv2.cvtColor(yuv_frame, cv2.COLOR_YUV2BGR_I420)
+
+    # Save as PNG
+    cv2.imwrite(output_path, bgr_frame)
+
 def generate_jwt(client_id, client_secret):
     iat = datetime.utcnow()
     exp = iat + timedelta(hours=24)
@@ -83,6 +108,7 @@ class MeetingBot:
 
         self.video_helper = None
         self.renderer_delegate = None
+        self.video_frame_counter = 0
 
     def cleanup(self):
         if self.meeting_service:
@@ -241,7 +267,10 @@ class MeetingBot:
 
     def on_raw_data_frame_received_callback(self, data):
         print("on_raw_data_frame_received_callback called")
-
+        print("data.GetBufferLen() = ", data.GetBufferLen())
+        #print("data.GetBuffer() = ", data.GetBuffer())
+        save_yuv420_frame_as_png(data.GetBuffer(), 640, 360, f"output_{self.video_frame_counter:06d}.png")
+        self.video_frame_counter += 1
     def stop_raw_recording(self):
         rec_ctrl = self.meeting_service.StopRawRecording()
         if rec_ctrl.StopRawRecording() != zoom.SDKERR_SUCCESS:
