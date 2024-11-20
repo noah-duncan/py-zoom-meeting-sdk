@@ -144,19 +144,20 @@ class MeetingBot:
 
         pipeline_str = (
             'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
-            'queue ! '
+            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'videoconvert ! '
             'videorate ! '
-            'queue ! '
+            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'x264enc ! '
-            'queue ! '
-            'matroskamux name=muxer ! queue ! filesink location=outputz.mkv '
+            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'matroskamux name=muxer ! queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! filesink location=output4.mkv '
             'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
-            'queue ! '
+            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'audioconvert ! '
-            'queue ! '
-            'lamemp3enc bitrate=128 ! '
-            'queue ! '
+            'audiorate ! '
+            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'voaacenc bitrate=128000 ! '
+            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'muxer. '
         )
         
