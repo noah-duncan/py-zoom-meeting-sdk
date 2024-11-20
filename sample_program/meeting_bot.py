@@ -134,41 +134,36 @@ class MeetingBot:
         self.audio_recording_active = False
 
     def setup_gstreamer_pipeline(self):
-        """Initialize GStreamer pipelines for MP4 video and MP3 audio recording"""
-        # Video pipeline (existing)
+        """Initialize GStreamer pipeline for combined MP4 recording with audio and video"""
         pipeline_str = (
-            'appsrc name=source do-timestamp=false ! '
+            # Video source
+            'appsrc name=video_source do-timestamp=false ! '
             'videoconvert ! '
             'x264enc tune=zerolatency bitrate=2000 ! '
             'h264parse ! '
-            'mp4mux ! '
-            'filesink location=meeting_recording.mp4'
+            'mp4mux name=muxer ! filesink location=meeting_recording.mp4 '
+            # Audio source
+            'appsrc name=audio_source do-timestamp=false ! '
+            'audioconvert ! '
+            'audioresample ! '
+            'audio/x-raw,format=S16LE,channels=1,rate=32000 ! '
+            'lamemp3enc bitrate=128 ! '
+            'mpegaudioparse ! '
+            'muxer.'
         )
-        self.pipeline = Gst.parse_launch(pipeline_str)
-        self.appsrc = self.pipeline.get_by_name('source')
         
-        # Configure video appsrc (existing code)
+        self.pipeline = Gst.parse_launch(pipeline_str)
+        
+        # Get both appsrc elements
+        self.appsrc = self.pipeline.get_by_name('video_source')
+        self.audio_appsrc = self.pipeline.get_by_name('audio_source')
+        
+        # Configure video appsrc
         caps = Gst.Caps.from_string('video/x-raw,format=BGR,width=640,height=360,framerate=30/1')
         self.appsrc.set_property('caps', caps)
         self.appsrc.set_property('format', Gst.Format.TIME)
         self.appsrc.set_property('block', True)
         self.appsrc.set_property('is-live', True)
-
-        # Add audio pipeline
-        audio_pipeline_str = (
-            'appsrc name=audio_source do-timestamp=false ! '
-            'audioconvert ! '
-            'audio/x-raw,format=S16LE,channels=1,rate=32000 ! '
-            'lamemp3enc bitrate=128 ! '
-            'filesink location=meeting_recording.mp3'
-        )
-        
-
-
-#rawaudioparse use-sink-caps=false format=pcm pcm-format=s16le sample-rate=32000 num-channels=1 ! audioconvert ! lamemp3enc ! filesink location=output.mp3
-
-        self.audio_pipeline = Gst.parse_launch(audio_pipeline_str)
-        self.audio_appsrc = self.audio_pipeline.get_by_name('audio_source')
 
         # Configure audio appsrc
         audio_caps = Gst.Caps.from_string(
@@ -179,12 +174,13 @@ class MeetingBot:
         self.audio_appsrc.set_property('do-timestamp', False)
         self.audio_appsrc.set_property('stream-type', 0)  # GST_APP_STREAM_TYPE_STREAM = 0
 
-        # Set up bus for both pipelines
-        for pipeline, name in [(self.pipeline, 'video'), (self.audio_pipeline, 'audio')]:
-            bus = pipeline.get_bus()
-            bus.add_signal_watch()
-            bus.connect('message', lambda b, m, n=name: self.on_pipeline_message(b, m, n))
-            pipeline.set_state(Gst.State.PLAYING)
+        # Set up bus
+        bus = self.pipeline.get_bus()
+        bus.add_signal_watch()
+        bus.connect('message', self.on_pipeline_message)
+        
+        # Start the pipeline
+        self.pipeline.set_state(Gst.State.PLAYING)
 
         self.recording_active = True
         self.audio_recording_active = True
@@ -193,14 +189,14 @@ class MeetingBot:
         self.process_frames_thread.daemon = True
         self.process_frames_thread.start()
 
-    def on_pipeline_message(self, bus, message, pipeline_name):
+    def on_pipeline_message(self, bus, message):
         """Handle pipeline messages"""
         t = message.type
         if t == Gst.MessageType.ERROR:
             err, debug = message.parse_error()
-            print(f"GStreamer {pipeline_name} Error: {err}, Debug: {debug}")
+            print(f"GStreamer Error: {err}, Debug: {debug}")
         elif t == Gst.MessageType.EOS:
-            print(f"GStreamer {pipeline_name} pipeline reached end of stream")
+            print(f"GStreamer pipeline reached end of stream")
 
     def process_frames(self):
         """Process frames from queue and push to GStreamer pipeline"""
@@ -236,37 +232,34 @@ class MeetingBot:
     def cleanup(self):
         print("Starting cleanup...")
         
-        # Stop both video and audio recording
+        # Stop recording
         self.recording_active = False
         self.audio_recording_active = False
         
-        # Existing video cleanup...
         if hasattr(self, 'process_frames_thread') and self.process_frames_thread:
             print("Waiting for frame processing to complete...")
             self.process_frames_thread.join(timeout=5.0)
         
-        # Clean up both pipelines
-        for pipeline, appsrc, name in [
-            (self.pipeline, self.appsrc, 'video'),
-            (self.audio_pipeline, self.audio_appsrc, 'audio')
-        ]:
-            if pipeline:
-                print(f"Shutting down GStreamer {name} pipeline...")
-                if appsrc:
-                    appsrc.emit('end-of-stream')
-                
-                bus = pipeline.get_bus()
-                msg = bus.timed_pop_filtered(
-                    Gst.CLOCK_TIME_NONE,
-                    Gst.MessageType.EOS | Gst.MessageType.ERROR
-                )
-                
-                if msg and msg.type == Gst.MessageType.ERROR:
-                    err, debug = msg.parse_error()
-                    print(f"Error during {name} pipeline shutdown: {err}, {debug}")
-                
-                pipeline.set_state(Gst.State.NULL)
-                print(f"GStreamer {name} pipeline shut down")
+        # Clean up pipeline
+        if self.pipeline:
+            print("Shutting down GStreamer pipeline...")
+            if self.appsrc:
+                self.appsrc.emit('end-of-stream')
+            if self.audio_appsrc:
+                self.audio_appsrc.emit('end-of-stream')
+            
+            bus = self.pipeline.get_bus()
+            msg = bus.timed_pop_filtered(
+                Gst.CLOCK_TIME_NONE,
+                Gst.MessageType.EOS | Gst.MessageType.ERROR
+            )
+            
+            if msg and msg.type == Gst.MessageType.ERROR:
+                err, debug = msg.parse_error()
+                print(f"Error during pipeline shutdown: {err}, {debug}")
+            
+            self.pipeline.set_state(Gst.State.NULL)
+            print("GStreamer pipeline shut down")
 
         if self.meeting_service:
             zoom.DestroyMeetingService(self.meeting_service)
