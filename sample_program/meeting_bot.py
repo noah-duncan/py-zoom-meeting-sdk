@@ -1,6 +1,7 @@
 import zoom_meeting_sdk as zoom
 import jwt
 from deepgram_transcriber import DeepgramTranscriber
+from streaming_uploader import StreamingUploader
 from datetime import datetime, timedelta
 import os
 
@@ -140,11 +141,29 @@ class MeetingBot:
         self.stats_timer = None
         self.monitoring_active = False
 
+        self.uploader = StreamingUploader(os.environ.get('AWS_RECORDING_STORAGE_BUCKET_NAME'), 'teststreamupload.mp4')
+        self.uploader.start_upload()
+    
+    def on_new_sample_from_appsink(self, sink):
+        """Handle new samples from the appsink"""
+        sample = sink.emit('pull-sample')
+        if sample:
+            buffer = sample.get_buffer()
+            data = buffer.extract_dup(0, buffer.get_size())
+            self.uploader.upload_part(data)
+            return Gst.FlowReturn.OK
+        return Gst.FlowReturn.ERROR
+
     def setup_gstreamer_pipeline(self):
         """Initialize GStreamer pipeline for combined MP4 recording with audio and video"""
         self.start_time_ns = None
         
 # gst-launch-1.0 ximagesrc xid=$XID ! video/x-raw,framerate=30/1 ! queue ! videoconvert ! videorate ! queue ! x264enc ! queue ! avimux name=mux ! queue ! filesink location=out.avi //pulsesrc device=$DEV ! queue ! audioconvert ! queue ! lamemp3enc bitrate=192 ! queue ! mux.
+
+        BUCKET_NAME = os.environ.get('AWS_RECORDING_STORAGE_BUCKET_NAME')
+        OBJECT_KEY = 'teststreamupload.mp4'
+        AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 
         pipeline_str = (
             'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
@@ -154,7 +173,8 @@ class MeetingBot:
             'queue name=q2 ! '
             'x264enc ! '
             'queue name=q3 ! '
-            'mp4mux name=muxer ! queue name=q4 ! filesink location=output9.mp4 '
+            'mp4mux name=muxer ! queue name=q4 ! '
+            'appsink name=sink emit-signals=true max-buffers=1000 drop=false '
             'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
             'queue name=q5 ! '
             'audioconvert ! '
@@ -195,6 +215,10 @@ class MeetingBot:
         bus = self.pipeline.get_bus()
         bus.add_signal_watch()
         bus.connect('message', self.on_pipeline_message)
+
+        # Connect to the sink element
+        sink = self.pipeline.get_by_name('sink')
+        sink.connect("new-sample", self.on_new_sample_from_appsink)
         
         # Start the pipeline
         self.pipeline.set_state(Gst.State.PLAYING)
@@ -246,6 +270,9 @@ class MeetingBot:
             
             self.pipeline.set_state(Gst.State.NULL)
             print("GStreamer pipeline shut down")
+
+        if self.uploader:
+            self.uploader.complete_upload()
 
         if self.meeting_service:
             zoom.DestroyMeetingService(self.meeting_service)
