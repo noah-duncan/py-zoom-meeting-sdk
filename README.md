@@ -45,7 +45,7 @@ DEEPGRAM_API_KEY=<your deepgram API key (optional)>
 - Open Zoom and start the meeting you listed in the `.env` file
 - Run `docker compose run --rm develop` to enter the docker container
 - Run `python sample_program/sample.py`
-- The bot should request to join the meeting, then request to record the meeting. Once you accept, it will start playing pre-recorded audio in the meeting and print out live transcripts of your speech in the terminal if you provided a deepgram api key. If you didn't it will print out the audio's volume.
+- The bot should request to join the meeting, then request to record the meeting. Once you accept, it will start playing pre-recorded audio in the meeting and print out live transcripts of your speech in the terminal if you provided a deepgram api key. If you didn't it will print out the audio's volume. If you turn on your video, it will also save video frames to the `sample_program/out/video_frames` folder.
 
 ## Documentation
 
