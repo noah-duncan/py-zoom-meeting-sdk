@@ -167,21 +167,23 @@ class MeetingBot:
 
         pipeline_str = (
             'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
-            'queue name=q1 ! '
+            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'videoconvert ! '
-            'videorate ! '
-            'queue name=q2 ! '
-            'x264enc ! '
-            'queue name=q3 ! '
-            'mp4mux name=muxer ! queue name=q4 ! '
-            'appsink name=sink emit-signals=true max-buffers=1000 drop=false '
+            'videoscale ! video/x-raw,width=320,height=180 ! '  # Downscale video
+            'videorate ! video/x-raw,framerate=15/1 ! '  # Reduce framerate to 15fps
+            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'x264enc tune=zerolatency speed-preset=ultrafast ! '  # Faster encoding
+            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'mp4mux name=muxer ! queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'appsink name=sink emit-signals=true sync=false drop=false '
             'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
-            'queue name=q5 ! '
+            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'audioconvert ! '
             'audiorate ! '
-            'queue name=q6 ! '
-            'voaacenc bitrate=128000 ! '
-            'queue name=q7 ! '
+            'audioresample ! audio/x-raw,rate=16000 ! '  # Reduce audio sample rate
+            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'voaacenc bitrate=64000 ! '  # Reduce audio bitrate
+            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'muxer. '
         )
         
