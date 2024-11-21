@@ -101,7 +101,8 @@ class MeetingBot:
         self.reminder_controller = None
 
         self.recording_ctrl = None
-
+        self.audio_ctrl = None
+        self.audio_ctrl_event = None
         self.audio_raw_data_sender = None
         self.virtual_audio_mic_event_passthrough = None
 
@@ -353,6 +354,16 @@ class MeetingBot:
                 self.other_participant_id = participant_id
                 break
         print("other_participant_id", self.other_participant_id)
+
+        self.audio_ctrl = self.meeting_service.GetMeetingAudioController()
+        self.audio_ctrl_event = zoom.MeetingAudioCtrlEventCallbacks(onUserAudioStatusChangeCallback=self.on_user_audio_status_change_callback, onUserActiveAudioChangeCallback=self.on_user_active_audio_change_callback)
+        self.audio_ctrl.SetEvent(self.audio_ctrl_event)
+
+    def on_user_active_audio_change_callback(self, user_ids):
+        print("on_user_active_audio_change_callback called. user_ids =", user_ids)
+
+    def on_user_audio_status_change_callback(self, user_audio_statuses, otherstuff):
+        print("on_user_audio_status_change_callback called. user_audio_statuses =", user_audio_statuses, "otherstuff =", otherstuff)
 
     def on_mic_initialize_callback(self, sender):
         self.audio_raw_data_sender = sender
