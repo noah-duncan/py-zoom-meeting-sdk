@@ -1,10 +1,7 @@
 cmake_minimum_required(VERSION 3.15...3.27)
 project(zoom_meeting_sdk LANGUAGES CXX)
 
-if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
-endif()
+set(CMAKE_BUILD_TYPE Debug)
 
 # Add rpath configuration
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
@@ -75,6 +72,7 @@ nanobind_add_module(
   src/binding/zoom_sdk_def_binding.cpp
   src/binding/meeting_participants_ctrl_interface_binding.cpp
   src/binding/rawdata_renderer_interface_binding.cpp
+  src/binding/meeting_audio_interface_binding.cpp
   src/auth_service_event_callbacks.cpp
   src/meeting_service_event_callbacks.cpp
   src/meeting_reminder_event_callbacks.cpp
@@ -82,6 +80,7 @@ nanobind_add_module(
   src/zoom_sdk_virtual_audio_mic_event_callbacks.cpp
   src/meeting_recording_ctrl_event_callbacks.cpp
   src/zoom_sdk_renderer_delegate_callbacks.cpp
+  src/meeting_audio_ctrl_event_callbacks.cpp
   src/utilities.cpp
 
   src/zoomsdk/h/zoom_sdk.h
