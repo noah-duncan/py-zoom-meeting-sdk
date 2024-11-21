@@ -136,6 +136,10 @@ class MeetingBot:
         # Add shared timestamp reference
         self.start_time_ns = None  # Will be set on first frame/audio sample
 
+        # Add new properties for monitoring
+        self.stats_timer = None
+        self.monitoring_active = False
+
     def setup_gstreamer_pipeline(self):
         """Initialize GStreamer pipeline for combined MP4 recording with audio and video"""
         self.start_time_ns = None
@@ -144,20 +148,20 @@ class MeetingBot:
 
         pipeline_str = (
             'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
-            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'queue name=q1 ! '
             'videoconvert ! '
             'videorate ! '
-            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'queue name=q2 ! '
             'x264enc ! '
-            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
-            'mp4mux name=muxer ! queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! filesink location=output9.mp4 '
+            'queue name=q3 ! '
+            'mp4mux name=muxer ! queue name=q4 ! filesink location=output9.mp4 '
             'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
-            'queue ! '
+            'queue name=q5 ! '
             'audioconvert ! '
             'audiorate ! '
-            'queue ! '
+            'queue name=q6 ! '
             'voaacenc bitrate=128000 ! '
-            'queue ! '
+            'queue name=q7 ! '
             'muxer. '
         )
         
@@ -197,6 +201,10 @@ class MeetingBot:
 
         self.recording_active = True
         self.audio_recording_active = True
+
+        # Start statistics monitoring
+        self.monitoring_active = True
+        GLib.timeout_add_seconds(30, self.monitor_pipeline_stats)
 
     def on_pipeline_message(self, bus, message):
         """Handle pipeline messages"""
@@ -256,6 +264,11 @@ class MeetingBot:
         print("CleanUPSDK() called")
         zoom.CleanUPSDK()
         print("CleanUPSDK() finished")
+
+        # Stop monitoring before cleanup
+        self.monitoring_active = False
+        if self.stats_timer:
+            self.stats_timer.join(timeout=1.0)
 
     def init(self):
         if os.environ.get('MEETING_ID') is None:
@@ -555,3 +568,43 @@ class MeetingBot:
             print("Authentication successful")
         else:
             print("Authentication failed with error:", result)
+
+    def monitor_pipeline_stats(self):
+        """Periodically print pipeline statistics"""
+        if not self.recording_active:
+            return False
+        
+        try:
+            # Get stats from all queue elements
+            for i in range(1, 8):
+                queue = self.pipeline.get_by_name(f'q{i}')
+                if queue:
+                    stats = {
+                        'current_level_buffers': queue.get_property('current-level-buffers'),
+                        'current_level_bytes': queue.get_property('current-level-bytes'),
+                        'current_level_time': queue.get_property('current-level-time') / Gst.SECOND,
+                        'max_size_buffers': queue.get_property('max-size-buffers'),
+                        'max_size_bytes': queue.get_property('max-size-bytes'),
+                        'max_size_time': queue.get_property('max-size-time') / Gst.SECOND,
+                    }
+                    
+                    print(f"\nQueue {i} Statistics:")
+                    for key, value in stats.items():
+                        print(f"  {key}: {value}")
+
+            # Get encoder stats if available
+            x264enc = self.pipeline.get_by_name('x264enc')
+            if x264enc:
+                print("\nX264 Encoder Statistics:")
+                print(f"  Bitrate: {x264enc.get_property('bitrate')} kbps")
+                
+            # Get audio encoder stats
+            voaacenc = self.pipeline.get_by_name('voaacenc')
+            if voaacenc:
+                print("\nAAC Encoder Statistics:")
+                print(f"  Bitrate: {voaacenc.get_property('bitrate')} bps")
+
+        except Exception as e:
+            print(f"Error getting pipeline stats: {e}")
+        
+        return True  # Continue timer
