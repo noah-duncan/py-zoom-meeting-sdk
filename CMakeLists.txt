@@ -79,6 +79,7 @@ nanobind_add_module(
   src/zoom_sdk_virtual_audio_mic_event_callbacks.cpp
   src/meeting_recording_ctrl_event_callbacks.cpp
   src/zoom_sdk_renderer_delegate_callbacks.cpp
+  src/utilities.cpp
 
   src/zoomsdk/h/zoom_sdk.h
 )

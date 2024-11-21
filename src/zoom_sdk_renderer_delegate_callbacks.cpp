@@ -7,29 +7,6 @@
 
 #include "zoom_sdk.h"
 
-#include "meeting_service_interface.h"
-#include "setting_service_interface.h"
-#include "auth_service_interface.h"
-#include "meeting_service_components/meeting_ai_companion_interface.h"
-#include "meeting_service_components/meeting_recording_interface.h"
-#include "meeting_service_components/meeting_audio_interface.h"
-#include "meeting_service_components/meeting_reminder_ctrl_interface.h"
-#include "meeting_service_components/meeting_breakout_rooms_interface_v2.h"
-#include "meeting_service_components/meeting_sharing_interface.h"
-#include "meeting_service_components/meeting_chat_interface.h"
-#include "meeting_service_components/meeting_smart_summary_interface.h"
-#include "meeting_service_components/meeting_configuration_interface.h"
-#include "meeting_service_components/meeting_video_interface.h"
-#include "meeting_service_components/meeting_inmeeting_encryption_interface.h"
-#include "meeting_service_components/meeting_participants_ctrl_interface.h"
-#include "meeting_service_components/meeting_waiting_room_interface.h"
-#include "meeting_service_components/meeting_webinar_interface.h"
-#include "meeting_service_components/meeting_raw_archiving_interface.h"
-
-
-
-
-
 #include "rawdata/zoom_rawdata_api.h"
 #include "rawdata/rawdata_audio_helper_interface.h"
 #include "rawdata/rawdata_renderer_interface.h"
@@ -39,6 +16,8 @@
 #include <iostream>
 #include <functional>
 #include <memory>
+
+#include "utilities.h"
 
 namespace nb = nanobind;
 using namespace std;
@@ -68,15 +47,19 @@ private:
     function<void()> m_onRendererBeDestroyedCallback;
     function<void(YUVRawDataI420*)> m_onRawDataFrameReceivedCallback;
     function<void(RawDataStatus)> m_onRawDataStatusChangedCallback;
+    bool m_collectPerformanceData;
+    CallbackPerformanceData m_performanceData;
 
 public:
     ZoomSDKRendererDelegateCallbacks(
         const function<void()>& onRendererBeDestroyedCallback = nullptr,
         const function<void(YUVRawDataI420*)>& onRawDataFrameReceivedCallback = nullptr,
-        const function<void(RawDataStatus)>& onRawDataStatusChangedCallback = nullptr
+        const function<void(RawDataStatus)>& onRawDataStatusChangedCallback = nullptr,
+        bool collectPerformanceData = false
     ) : m_onRendererBeDestroyedCallback(onRendererBeDestroyedCallback),
         m_onRawDataFrameReceivedCallback(onRawDataFrameReceivedCallback),
-        m_onRawDataStatusChangedCallback(onRawDataStatusChangedCallback) {}
+        m_onRawDataStatusChangedCallback(onRawDataStatusChangedCallback),
+        m_collectPerformanceData(collectPerformanceData) {}
 
     void onRendererBeDestroyed() override {
         if (m_onRendererBeDestroyedCallback)
@@ -84,13 +67,24 @@ public:
     }
 
     void onRawDataFrameReceived(YUVRawDataI420* data) override {
-        if (m_onRawDataFrameReceivedCallback)
+        if (m_collectPerformanceData) {
+            auto start = std::chrono::high_resolution_clock::now();
+            m_onRawDataFrameReceivedCallback(data);
+            auto end = std::chrono::high_resolution_clock::now();
+            uint64_t processingTimeMicroseconds = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+            m_performanceData.updatePerformanceData(processingTimeMicroseconds);
+        }
+        else
             m_onRawDataFrameReceivedCallback(data);
     }
 
     void onRawDataStatusChanged(RawDataStatus status) override {
         if (m_onRawDataStatusChangedCallback)
             m_onRawDataStatusChangedCallback(status);
+    }
+
+    const CallbackPerformanceData & getPerformanceData() const {
+        return m_performanceData;
     }
 };
 
@@ -99,10 +93,13 @@ void init_zoom_sdk_renderer_delegate_callbacks(nb::module_ &m) {
         .def(nb::init<
             const function<void()>&,
             const function<void(YUVRawDataI420*)>&,
-            const function<void(IZoomSDKRendererDelegate::RawDataStatus)>&
+            const function<void(IZoomSDKRendererDelegate::RawDataStatus)>&,
+            bool
         >(),
         nb::arg("onRendererBeDestroyedCallback") = nullptr,
         nb::arg("onRawDataFrameReceivedCallback") = nullptr,
-        nb::arg("onRawDataStatusChangedCallback") = nullptr
-    );    
+        nb::arg("onRawDataStatusChangedCallback") = nullptr,
+        nb::arg("collectPerformanceData") = false
+    )
+    .def("getPerformanceData", &ZoomSDKRendererDelegateCallbacks::getPerformanceData);
 }
