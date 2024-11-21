@@ -197,7 +197,7 @@ class MeetingBot:
             'queue name=q1 ! '
             'videoconvert ! '
             'videoscale ! video/x-raw,width=320,height=180 ! '  # Downscale video
-            'videorate ! video/x-raw,framerate=15/1 ! '  # Reduce framerate to 15fps
+            'videorate ! '
             'queue name=q2 ! '
             'x264enc tune=zerolatency speed-preset=ultrafast ! '
             'queue name=q3 ! '
@@ -206,9 +206,8 @@ class MeetingBot:
             'queue name=q5 ! '
             'audioconvert ! '
             'audiorate ! '
-            'audioresample ! audio/x-raw,rate=16000 ! '
             'queue name=q6 ! '
-            'voaacenc bitrate=64000 ! '
+            'voaacenc bitrate=128000 ! '
             'queue name=q7 ! '
             'muxer. '
         )
