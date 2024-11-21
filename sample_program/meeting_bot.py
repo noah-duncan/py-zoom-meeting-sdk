@@ -144,6 +144,10 @@ class MeetingBot:
 
         self.uploader = StreamingUploader(os.environ.get('AWS_RECORDING_STORAGE_BUCKET_NAME'), 'teststreamupload.mp4')
         self.uploader.start_upload()
+        
+        # Add counters for dropped buffers
+        self.queue_drops = {f'q{i}': 0 for i in range(1, 8)}
+        self.last_reported_drops = {f'q{i}': 0 for i in range(1, 8)}
     
     def on_new_sample_from_appsink(self, sink):
         """Handle new samples from the appsink"""
@@ -168,23 +172,44 @@ class MeetingBot:
 
         pipeline_str = (
             'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
-            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'queue name=q1 max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'videoconvert ! '
             'videoscale ! video/x-raw,width=320,height=180 ! '  # Downscale video
             'videorate ! video/x-raw,framerate=15/1 ! '  # Reduce framerate to 15fps
-            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'queue name=q2 max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'x264enc tune=zerolatency speed-preset=ultrafast ! '  # Faster encoding
-            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
-            'mp4mux name=muxer ! queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'queue name=q3 max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'mp4mux name=muxer ! queue name=q4 max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'appsink name=sink emit-signals=true sync=false drop=false '
             'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
-            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'queue name=q5 max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'audioconvert ! '
             'audiorate ! '
             'audioresample ! audio/x-raw,rate=16000 ! '  # Reduce audio sample rate
-            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'queue name=q6 max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'voaacenc bitrate=64000 ! '  # Reduce audio bitrate
-            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'queue name=q7 max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'muxer. '
+        )
+
+        pipeline_str = (
+            'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
+            'queue name=q1 ! '
+            'videoconvert ! '
+            'videoscale ! video/x-raw,width=320,height=180 ! '  # Downscale video
+            'videorate ! video/x-raw,framerate=15/1 ! '  # Reduce framerate to 15fps
+            'queue name=q2 ! '
+            'x264enc tune=zerolatency speed-preset=ultrafast ! '
+            'queue name=q3 ! '
+            'mp4mux name=muxer ! queue name=q4 ! appsink name=sink emit-signals=true sync=false drop=false '
+            'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
+            'queue name=q5 ! '
+            'audioconvert ! '
+            'audiorate ! '
+            'audioresample ! audio/x-raw,rate=16000 ! '
+            'queue name=q6 ! '
+            'voaacenc bitrate=64000 ! '
+            'queue name=q7 ! '
             'muxer. '
         )
         
@@ -231,7 +256,13 @@ class MeetingBot:
 
         # Start statistics monitoring
         self.monitoring_active = True
-        GLib.timeout_add_seconds(30, self.monitor_pipeline_stats)
+        GLib.timeout_add_seconds(15, self.monitor_pipeline_stats)
+
+        # Connect drop signals for all queues
+        for i in range(1, 8):
+            queue = self.pipeline.get_by_name(f'q{i}')
+            if queue:
+                queue.connect('overrun', self.on_queue_overrun, f'q{i}')
 
     def on_pipeline_message(self, bus, message):
         """Handle pipeline messages"""
@@ -615,36 +646,49 @@ class MeetingBot:
             return False
         
         try:
-            # Get stats from all queue elements
-            for i in range(1, 8):
-                queue = self.pipeline.get_by_name(f'q{i}')
-                if queue:
-                    stats = {
-                        'current_level_buffers': queue.get_property('current-level-buffers'),
-                        'current_level_bytes': queue.get_property('current-level-bytes'),
-                        'current_level_time': queue.get_property('current-level-time') / Gst.SECOND,
-                        'max_size_buffers': queue.get_property('max-size-buffers'),
-                        'max_size_bytes': queue.get_property('max-size-bytes'),
-                        'max_size_time': queue.get_property('max-size-time') / Gst.SECOND,
-                    }
+            # Print dropped buffer counts since last check
+            print("\nDropped Buffers Since Last Check:")
+            for queue_name in self.queue_drops:
+                drops = self.queue_drops[queue_name] - self.last_reported_drops[queue_name]
+                if drops > 0:
+                    print(f"  {queue_name}: {drops} buffers dropped")
+                self.last_reported_drops[queue_name] = self.queue_drops[queue_name]
+
+            # # Get stats from all queue elements
+            # for i in range(1, 8):
+            #     queue = self.pipeline.get_by_name(f'q{i}')
+            #     if queue:
+            #         stats = {
+            #             'current_level_buffers': queue.get_property('current-level-buffers'),
+            #             'current_level_bytes': queue.get_property('current-level-bytes'),
+            #             'current_level_time': queue.get_property('current-level-time') / Gst.SECOND,
+            #             'max_size_buffers': queue.get_property('max-size-buffers'),
+            #             'max_size_bytes': queue.get_property('max-size-bytes'),
+            #             'max_size_time': queue.get_property('max-size-time') / Gst.SECOND,
+            #         }
                     
-                    print(f"\nQueue {i} Statistics:")
-                    for key, value in stats.items():
-                        print(f"  {key}: {value}")
+            #         print(f"\nQueue {i} Statistics:")
+            #         for key, value in stats.items():
+            #             print(f"  {key}: {value}")
 
             # Get encoder stats if available
-            x264enc = self.pipeline.get_by_name('x264enc')
-            if x264enc:
-                print("\nX264 Encoder Statistics:")
-                print(f"  Bitrate: {x264enc.get_property('bitrate')} kbps")
+            # x264enc = self.pipeline.get_by_name('x264enc')
+            # if x264enc:
+            #     print("\nX264 Encoder Statistics:")
+            #     print(f"  Bitrate: {x264enc.get_property('bitrate')} kbps")
                 
-            # Get audio encoder stats
-            voaacenc = self.pipeline.get_by_name('voaacenc')
-            if voaacenc:
-                print("\nAAC Encoder Statistics:")
-                print(f"  Bitrate: {voaacenc.get_property('bitrate')} bps")
+            # # Get audio encoder stats
+            # voaacenc = self.pipeline.get_by_name('voaacenc')
+            # if voaacenc:
+            #     print("\nAAC Encoder Statistics:")
+            #     print(f"  Bitrate: {voaacenc.get_property('bitrate')} bps")
 
         except Exception as e:
             print(f"Error getting pipeline stats: {e}")
         
         return True  # Continue timer
+
+    def on_queue_overrun(self, queue, queue_name):
+        """Callback for when a queue drops buffers"""
+        self.queue_drops[queue_name] += 1
+        return True
