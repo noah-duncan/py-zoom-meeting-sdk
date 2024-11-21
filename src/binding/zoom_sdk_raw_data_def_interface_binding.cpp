@@ -41,7 +41,6 @@
 namespace nb = nanobind;
 using namespace ZOOMSDK;
 
-
 void init_zoom_sdk_raw_data_def_interface_binding(nb::module_ &m) {
     nb::class_<AudioRawData>(m, "AudioRawData")
     .def("GetBuffer", [](AudioRawData& self) -> nb::bytes {
@@ -50,4 +49,31 @@ void init_zoom_sdk_raw_data_def_interface_binding(nb::module_ &m) {
     .def("GetBufferLen", &AudioRawData::GetBufferLen)
     .def("GetSampleRate", &AudioRawData::GetSampleRate)
     .def("GetChannelNum", &AudioRawData::GetChannelNum);  
+
+    nb::class_<YUVRawDataI420>(m, "YUVRawDataI420")
+        .def("CanAddRef", &YUVRawDataI420::CanAddRef)
+        .def("AddRef", &YUVRawDataI420::AddRef)
+        .def("Release", &YUVRawDataI420::Release)
+        .def("GetYBuffer", [](YUVRawDataI420& self) -> nb::bytes {
+            return nb::bytes(self.GetYBuffer(), self.GetBufferLen());
+        })
+        .def("GetUBuffer", [](YUVRawDataI420& self) -> nb::bytes {
+            return nb::bytes(self.GetUBuffer(), self.GetBufferLen());
+        })
+        .def("GetVBuffer", [](YUVRawDataI420& self) -> nb::bytes {
+            return nb::bytes(self.GetVBuffer(), self.GetBufferLen());
+        })
+        .def("GetAlphaBuffer", [](YUVRawDataI420& self) -> nb::bytes {
+            return nb::bytes(self.GetAlphaBuffer(), self.GetAlphaBufferLen());
+        })
+        .def("GetBuffer", [](YUVRawDataI420& self) -> nb::bytes {
+            return nb::bytes(self.GetBuffer(), self.GetBufferLen());
+        })
+        .def("GetBufferLen", &YUVRawDataI420::GetBufferLen)
+        .def("GetAlphaBufferLen", &YUVRawDataI420::GetAlphaBufferLen)
+        .def("IsLimitedI420", &YUVRawDataI420::IsLimitedI420)
+        .def("GetStreamWidth", &YUVRawDataI420::GetStreamWidth)
+        .def("GetStreamHeight", &YUVRawDataI420::GetStreamHeight)
+        .def("GetRotation", &YUVRawDataI420::GetRotation)
+        .def("GetSourceID", &YUVRawDataI420::GetSourceID);
 }

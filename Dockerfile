@@ -57,30 +57,23 @@ RUN apt-get update && apt-get install -y linux-libc-dev
 # Install Ctags
 RUN apt-get update && apt-get install -y universal-ctags
 
-# Install pybind11
-RUN pip install pybind11 pyjwt cython gdown deepgram-sdk python-dotenv
+# Install python dependencies
+RUN pip install pyjwt cython gdown deepgram-sdk python-dotenv opencv-python numpy
 
 # Alias python3 to python
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
 FROM base AS deps
 
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh \
-    && bash nodesource_setup.sh \
-    && apt-get install -y nodejs
-
 ENV TINI_VERSION v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini
 
 WORKDIR /opt
-RUN git clone --depth 1 https://github.com/Microsoft/vcpkg.git \
-    && ./vcpkg/bootstrap-vcpkg.sh -disableMetrics \
-    && ln -s /opt/vcpkg/vcpkg /usr/local/bin/vcpkg \
-    && vcpkg install vcpkg-cmake
 
 FROM deps AS build
 
 WORKDIR $cwd
+
 CMD ["/bin/bash"]
 

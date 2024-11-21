@@ -4,6 +4,7 @@
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/unique_ptr.h>
+#include <nanobind/stl/vector.h>
 
 #include "zoom_sdk.h"
 
@@ -38,12 +39,24 @@
 #include <memory>
 
 namespace nb = nanobind;
+using namespace std;
 using namespace ZOOMSDK;
 
 void init_meeting_participants_ctrl_interface_binding(nb::module_ &m) {
     nb::class_<ZOOM_SDK_NAMESPACE::IMeetingParticipantsController>(m, "IMeetingParticipantsController")
         .def("SetEvent", &IMeetingParticipantsController::SetEvent)
-        .def("GetParticipantsList", &IMeetingParticipantsController::GetParticipantsList)
+        .def("GetParticipantsList", [](IMeetingParticipantsController& self) -> vector<unsigned int> {
+            IList<unsigned int>* list = self.GetParticipantsList();
+            vector<unsigned int> result;
+            if (list) {
+                int count = list->GetCount();
+                result.reserve(count);
+                for (int i = 0; i < count; i++) {
+                    result.push_back(list->GetItem(i));
+                }
+            }
+            return result;
+        }, "Returns a list of participant user IDs in the meeting")
         .def("GetUserByUserID", &IMeetingParticipantsController::GetUserByUserID, nb::rv_policy::reference)
         .def("GetMySelfUser", &IMeetingParticipantsController::GetMySelfUser, nb::rv_policy::reference)
         .def("LowerAllHands", &IMeetingParticipantsController::LowerAllHands)

@@ -4,6 +4,25 @@ from deepgram_transcriber import DeepgramTranscriber
 from datetime import datetime, timedelta
 import os
 
+import cv2
+import numpy as np
+
+def save_yuv420_frame_as_png(frame_bytes, width, height, output_path):
+    try:
+        # Convert bytes to numpy array
+        yuv_data = np.frombuffer(frame_bytes, dtype=np.uint8)
+
+        # Reshape into I420 format with U/V planes
+        yuv_frame = yuv_data.reshape((height * 3//2, width))
+
+        # Convert from YUV420 to BGR
+        bgr_frame = cv2.cvtColor(yuv_frame, cv2.COLOR_YUV2BGR_I420)
+
+        # Save as PNG
+        cv2.imwrite(output_path, bgr_frame)
+    except Exception as e:
+        print(f"Error saving frame to {output_path}: {e}")
+
 def generate_jwt(client_id, client_secret):
     iat = datetime.utcnow()
     exp = iat + timedelta(hours=24)
@@ -64,7 +83,8 @@ class MeetingBot:
 
         self.audio_settings = None
 
-        self.use_raw_recording = True
+        self.use_audio_recording = True
+        self.use_video_recording = os.environ.get('RECORD_VIDEO') == 'true'
 
         self.reminder_controller = None
 
@@ -76,9 +96,14 @@ class MeetingBot:
         self.deepgram_transcriber = DeepgramTranscriber()
 
         self.my_participant_id = None
+        self.other_participant_id = None
         self.participants_ctrl = None
         self.meeting_reminder_event = None
         self.audio_print_counter = 0
+
+        self.video_helper = None
+        self.renderer_delegate = None
+        self.video_frame_counter = 0
 
     def cleanup(self):
         if self.meeting_service:
@@ -94,6 +119,10 @@ class MeetingBot:
         if self.audio_helper:
             audio_helper_unsubscribe_result = self.audio_helper.unSubscribe()
             print("audio_helper.unSubscribe() returned", audio_helper_unsubscribe_result)
+
+        if self.video_helper:
+            video_helper_unsubscribe_result = self.video_helper.unSubscribe()
+            print("video_helper.unSubscribe() returned", video_helper_unsubscribe_result)
 
         print("CleanUPSDK() called")
         zoom.CleanUPSDK()
@@ -128,7 +157,7 @@ class MeetingBot:
         self.reminder_controller = self.meeting_service.GetMeetingReminderController()
         self.reminder_controller.SetEvent(self.meeting_reminder_event)
 
-        if self.use_raw_recording:
+        if self.use_audio_recording:
             self.recording_ctrl = self.meeting_service.GetMeetingRecordingController()
 
             def on_recording_privilege_changed(can_rec):
@@ -145,6 +174,14 @@ class MeetingBot:
 
         self.participants_ctrl = self.meeting_service.GetMeetingParticipantsController()
         self.my_participant_id = self.participants_ctrl.GetMySelfUser().GetUserID()
+
+        participant_ids_list = self.participants_ctrl.GetParticipantsList()
+        print("participant_ids_list", participant_ids_list)
+        for participant_id in participant_ids_list:
+            if participant_id != self.my_participant_id:
+                self.other_participant_id = participant_id
+                break
+        print("other_participant_id", self.other_participant_id)
 
     def on_mic_initialize_callback(self, sender):
         self.audio_raw_data_sender = sender
@@ -212,7 +249,6 @@ class MeetingBot:
         if self.audio_source is None:
             self.audio_source = zoom.ZoomSDKAudioRawDataDelegateCallbacks(onOneWayAudioRawDataReceivedCallback=self.on_one_way_audio_raw_data_received_callback, collectPerformanceData=True)
 
-
         audio_helper_subscribe_result = self.audio_helper.subscribe(self.audio_source, False)
         print("audio_helper_subscribe_result =",audio_helper_subscribe_result)
 
@@ -220,29 +256,26 @@ class MeetingBot:
         audio_helper_set_external_audio_source_result = self.audio_helper.setExternalAudioSource(self.virtual_audio_mic_event_passthrough)
         print("audio_helper_set_external_audio_source_result =", audio_helper_set_external_audio_source_result)
 
+        self.renderer_delegate = zoom.ZoomSDKRendererDelegateCallbacks(onRawDataFrameReceivedCallback=self.on_raw_data_frame_received_callback)
+        self.video_helper = zoom.createRenderer(self.renderer_delegate)
+
+        self.video_helper.setRawDataResolution(zoom.ZoomSDKResolution_720P)
+        subscribe_result = self.video_helper.subscribe(self.other_participant_id, zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_VIDEO)
+        print("video_helper subscribe_result =", subscribe_result)
+
+    def on_raw_data_frame_received_callback(self, data):
+        if self.video_frame_counter % 10 == 0:
+            frame_number = int(self.video_frame_counter / 10)
+            save_yuv420_frame_as_png(data.GetBuffer(), 640, 360, f"sample_program/out/video_frames/output_{frame_number:06d}.png")
+            print(f"Saved frame {frame_number} to sample_program/out/video_frames/output_{frame_number:06d}.png")
+        self.video_frame_counter += 1
+
     def stop_raw_recording(self):
         rec_ctrl = self.meeting_service.StopRawRecording()
         if rec_ctrl.StopRawRecording() != zoom.SDKERR_SUCCESS:
             raise Exception("Error with stop raw recording")
 
     def leave(self):
-        if self.audio_source:
-            performance_data = self.audio_source.getPerformanceData()
-            print("totalProcessingTimeMicroseconds =", performance_data.totalProcessingTimeMicroseconds)
-            print("numCalls =", performance_data.numCalls)
-            print("maxProcessingTimeMicroseconds =", performance_data.maxProcessingTimeMicroseconds)
-            print("minProcessingTimeMicroseconds =", performance_data.minProcessingTimeMicroseconds)
-            print("meanProcessingTimeMicroseconds =", float(performance_data.totalProcessingTimeMicroseconds) / performance_data.numCalls)
-            
-            # Print processing time distribution
-            bin_size = (performance_data.processingTimeBinMax - performance_data.processingTimeBinMin) / len(performance_data.processingTimeBinCounts)
-            print("\nProcessing time distribution (microseconds):")
-            for bin_idx, count in enumerate(performance_data.processingTimeBinCounts):
-                if count > 0:
-                    bin_start = bin_idx * bin_size
-                    bin_end = (bin_idx + 1) * bin_size
-                    print(f"{bin_start:6.0f} - {bin_end:6.0f} us: {count:5d} calls")
-
         if self.meeting_service is None:
             return
         

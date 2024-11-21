@@ -74,13 +74,15 @@ nanobind_add_module(
   src/binding/setting_service_interface_binding.cpp
   src/binding/zoom_sdk_def_binding.cpp
   src/binding/meeting_participants_ctrl_interface_binding.cpp
-
+  src/binding/rawdata_renderer_interface_binding.cpp
   src/auth_service_event_callbacks.cpp
   src/meeting_service_event_callbacks.cpp
   src/meeting_reminder_event_callbacks.cpp
   src/zoom_sdk_audio_raw_data_delegate_callbacks.cpp
   src/zoom_sdk_virtual_audio_mic_event_callbacks.cpp
   src/meeting_recording_ctrl_event_callbacks.cpp
+  src/zoom_sdk_renderer_delegate_callbacks.cpp
+  src/utilities.cpp
 
   src/zoomsdk/h/zoom_sdk.h
 )

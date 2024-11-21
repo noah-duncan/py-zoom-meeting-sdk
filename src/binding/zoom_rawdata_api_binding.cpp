@@ -32,6 +32,7 @@
 
 #include "rawdata/zoom_rawdata_api.h"
 #include "rawdata/rawdata_audio_helper_interface.h"
+#include "rawdata/rawdata_renderer_interface.h"
 
 #include <iostream>
 #include <functional>
@@ -43,5 +44,18 @@ using namespace ZOOMSDK;
 void init_zoom_rawdata_api_binding(nb::module_ &m) {
     m.def("GetAudioRawdataHelper", []() -> ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper* {
         return ZOOM_SDK_NAMESPACE::GetAudioRawdataHelper();
-    }, nb::rv_policy::take_ownership); 
+    }, nb::rv_policy::take_ownership);
+
+    m.def("createRenderer", [](IZoomSDKRendererDelegate* pDelegate) -> IZoomSDKRenderer* {
+        IZoomSDKRenderer* pRenderer = nullptr;
+        SDKError err = createRenderer(&pRenderer, pDelegate);
+        if (err != SDKERR_SUCCESS) {
+            throw std::runtime_error("Failed to create renderer");
+        }
+        return pRenderer;
+    }, nb::rv_policy::reference);
+
+    m.def("destroyRenderer", [](IZoomSDKRenderer* pRenderer) {
+        return destroyRenderer(pRenderer);
+    }, "Destroy a renderer instance");
 }
