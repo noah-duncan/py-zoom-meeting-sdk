@@ -152,12 +152,12 @@ class MeetingBot:
             'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
             'mp4mux name=muxer ! queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! filesink location=output9.mp4 '
             'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
-            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'queue ! '
             'audioconvert ! '
             'audiorate ! '
-            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'queue ! '
             'voaacenc bitrate=128000 ! '
-            'queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'queue ! '
             'muxer. '
         )
         
@@ -206,38 +206,6 @@ class MeetingBot:
             print(f"GStreamer Error: {err}, Debug: {debug}")
         elif t == Gst.MessageType.EOS:
             print(f"GStreamer pipeline reached end of stream")
-
-    def process_frames(self):
-        """Process frames from queue and push to GStreamer pipeline"""
-        while self.recording_active or not self.video_frames.empty():
-            try:
-                frame, timestamp_ns = self.video_frames.get(timeout=1.0)
-                if frame is None:
-                    continue
-                
-                # Initialize start time if not set
-                if self.start_time_ns is None:
-                    self.start_time_ns = timestamp_ns
-                
-                # Calculate buffer timestamp relative to start time
-                buffer_pts = timestamp_ns - self.start_time_ns
-                
-                # Create buffer with timestamp
-                buffer = Gst.Buffer.new_wrapped(frame.tobytes())
-                buffer.pts = buffer_pts
-                
-                # Calculate duration based on time until next frame
-                # Default to 33ms (30fps) if this is the last frame
-                buffer.duration = 33 * 1000 * 1000  # 33ms in nanoseconds
-                
-                # Push buffer to pipeline
-                ret = self.appsrc.emit('push-buffer', buffer)
-                if ret != Gst.FlowReturn.OK:
-                    print(f"Warning: Failed to push buffer to pipeline: {ret}")
-                
-            except Exception as e:
-                print(f"Error processing frame: {e}")
-                continue
 
     def cleanup(self):
         print("Starting cleanup...")
@@ -382,6 +350,10 @@ class MeetingBot:
 
         try:
             current_time_ns = time.time_ns()
+
+            if not data.IsLimitedI420():
+                print("Warning: not Limited I420 frame received")
+
             # Convert YUV420 to BGR
             yuv_data = np.frombuffer(data.GetBuffer(), dtype=np.uint8)
             yuv_frame = yuv_data.reshape((360 * 3//2, 640))  # Assuming 640x360 resolution
@@ -391,7 +363,7 @@ class MeetingBot:
             if bgr_frame is None or bgr_frame.size == 0:
                 print("Warning: Invalid frame received")
                 return
-            
+                        
             # Initialize start time if not set
             if self.start_time_ns is None:
                 self.start_time_ns = current_time_ns
