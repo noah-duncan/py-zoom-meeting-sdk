@@ -26,7 +26,7 @@ class VideoInputStream:
 
         self.renderer = zoom.createRenderer(self.renderer_delegate)
 
-        self.renderer.setRawDataResolution(zoom.ZoomSDKResolution_720P)
+        self.renderer.setRawDataResolution(zoom.ZoomSDKResolution_360P)
 
         self.renderer.subscribe(self.user_id, zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_VIDEO)
 
