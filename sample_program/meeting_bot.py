@@ -112,6 +112,7 @@ class MeetingBot:
 
         self.my_participant_id = None
         self.other_participant_id = None
+        self.active_speaker_id = None
         self.participants_ctrl = None
         self.meeting_reminder_event = None
         self.audio_print_counter = 0
@@ -397,6 +398,14 @@ class MeetingBot:
     def on_user_active_audio_change_callback(self, user_ids):
         print("on_user_active_audio_change_callback called. user_ids =", user_ids)
 
+        if self.active_speaker_id == user_ids[0]:
+            return
+
+        self.active_speaker_id = user_ids[0]
+
+        self.video_input_manager.set_mode(mode=VideoInputManager.Mode.ACTIVE_SPEAKER, active_speaker_id=self.active_speaker_id)
+
+
     def on_user_audio_status_change_callback(self, user_audio_statuses, otherstuff):
         print("on_user_audio_status_change_callback called. user_audio_statuses =", user_audio_statuses, "otherstuff =", otherstuff)
 
@@ -519,7 +528,8 @@ class MeetingBot:
         audio_helper_set_external_audio_source_result = self.audio_helper.setExternalAudioSource(self.virtual_audio_mic_event_passthrough)
         print("audio_helper_set_external_audio_source_result =", audio_helper_set_external_audio_source_result)
 
-        self.video_input_manager.set_mode(mode=VideoInputManager.Mode.ACTIVE_SPEAKER, active_speaker_id=self.other_participant_id)
+        if self.other_participant_id:
+            self.video_input_manager.set_mode(mode=VideoInputManager.Mode.ACTIVE_SPEAKER, active_speaker_id=self.other_participant_id)
 
         # Initialize GStreamer pipeline when starting recording
         self.setup_gstreamer_pipeline()
@@ -555,7 +565,6 @@ class MeetingBot:
             return
 
         self.meeting_service.Leave(zoom.LEAVE_MEETING)
-
 
     def join_meeting(self):
         mid = os.environ.get('MEETING_ID')

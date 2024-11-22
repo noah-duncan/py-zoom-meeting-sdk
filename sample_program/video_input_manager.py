@@ -31,7 +31,9 @@ class VideoInputStream:
         self.renderer.subscribe(self.user_id, zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_VIDEO)
 
     def cleanup(self):
+        print("starting cleanup input stream for user", self.user_id)
         self.renderer.unSubscribe()
+        print("finished cleanup input stream for user", self.user_id)
         self.cleaned_up = True
 
     def on_raw_video_frame_received_callback(self, data):
