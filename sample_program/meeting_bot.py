@@ -170,29 +170,27 @@ class MeetingBot:
         AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY_ID')
         AWS_SECRET_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 
-        pipeline_str = (
+        reduce_framerate_pipeline_str = (
             'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
-            'queue name=q1 max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'queue name=q1 ! '
             'videoconvert ! '
-            'videoscale ! video/x-raw,width=320,height=180 ! '  # Downscale video
-            'videorate ! video/x-raw,framerate=15/1 ! '  # Reduce framerate to 15fps
-            'queue name=q2 max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
-            'x264enc tune=zerolatency speed-preset=ultrafast ! '  # Faster encoding
-            'queue name=q3 max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
-            'mp4mux name=muxer ! queue name=q4 max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
-            'appsink name=sink emit-signals=true sync=false drop=false '
+            'videorate ! video/x-raw,framerate=15/1 ! ' # Reduce framerate to 15fps
+            'queue name=q2 ! '
+            'x264enc tune=zerolatency speed-preset=ultrafast ! '
+            'queue name=q3 ! '
+            'mp4mux name=muxer ! queue name=q4 ! appsink name=sink emit-signals=true sync=false drop=false '
             'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
-            'queue name=q5 max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'queue name=q5 ! '
             'audioconvert ! '
             'audiorate ! '
-            'audioresample ! audio/x-raw,rate=16000 ! '  # Reduce audio sample rate
-            'queue name=q6 max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
-            'voaacenc bitrate=64000 ! '  # Reduce audio bitrate
-            'queue name=q7 max-size-buffers=0 max-size-bytes=0 max-size-time=0 ! '
+            'audioresample ! audio/x-raw,rate=16000 ! '
+            'queue name=q6 ! '
+            'voaacenc bitrate=64000 ! '
+            'queue name=q7 ! '
             'muxer. '
         )
 
-        pipeline_str = (
+        reduce_video_resolution_pipeline_str = (
             'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
             'queue name=q1 ! '
             'videoconvert ! '
@@ -211,6 +209,8 @@ class MeetingBot:
             'queue name=q7 ! '
             'muxer. '
         )
+
+        pipeline_str = reduce_video_resolution_pipeline_str
         
         self.pipeline = Gst.parse_launch(pipeline_str)
         
