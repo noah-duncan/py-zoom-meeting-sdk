@@ -1,6 +1,7 @@
 import zoom_meeting_sdk as zoom
 import jwt
 from deepgram_transcriber import DeepgramTranscriber
+from video_input_manager import VideoInputManager
 from streaming_uploader import StreamingUploader
 from datetime import datetime, timedelta
 import os
@@ -107,6 +108,7 @@ class MeetingBot:
         self.virtual_audio_mic_event_passthrough = None
 
         self.deepgram_transcriber = DeepgramTranscriber()
+        self.video_input_manager = VideoInputManager(new_frame_callback=self.on_new_video_frame, wants_any_frames_callback=self.wants_any_video_frames)
 
         self.my_participant_id = None
         self.other_participant_id = None
@@ -321,6 +323,9 @@ class MeetingBot:
             audio_helper_unsubscribe_result = self.audio_helper.unSubscribe()
             print("audio_helper.unSubscribe() returned", audio_helper_unsubscribe_result)
 
+        if self.video_input_manager:
+            self.video_input_manager.cleanup()
+
         print("CleanUPSDK() called")
         zoom.CleanUPSDK()
         print("CleanUPSDK() finished")
@@ -427,25 +432,15 @@ class MeetingBot:
             print(f"Error processing audio data: {e}")
 
 
-    def on_raw_video_frame_received_callback(self, data):
+    def wants_any_video_frames(self):
         if not self.audio_recording_active or not self.audio_appsrc or not self.recording_active or not self.appsrc:
-            return
+            return False
 
+        return True
+    
+    def on_new_video_frame(self, frame):
         try:
             current_time_ns = time.time_ns()
-
-            if not data.IsLimitedI420():
-                print("Warning: not Limited I420 frame received")
-
-            # Convert YUV420 to BGR
-            yuv_data = np.frombuffer(data.GetBuffer(), dtype=np.uint8)
-            yuv_frame = yuv_data.reshape((360 * 3//2, 640))  # Assuming 640x360 resolution
-            bgr_frame = cv2.cvtColor(yuv_frame, cv2.COLOR_YUV2BGR_I420)
-            
-            # Verify frame is valid
-            if bgr_frame is None or bgr_frame.size == 0:
-                print("Warning: Invalid frame received")
-                return
                         
             # Initialize start time if not set
             if self.start_time_ns is None:
@@ -455,7 +450,7 @@ class MeetingBot:
             buffer_pts = current_time_ns - self.start_time_ns
             
             # Create buffer with timestamp
-            buffer = Gst.Buffer.new_wrapped(bgr_frame.tobytes())
+            buffer = Gst.Buffer.new_wrapped(frame.tobytes())
             buffer.pts = buffer_pts
             
             # Calculate duration based on time until next frame
@@ -524,12 +519,7 @@ class MeetingBot:
         audio_helper_set_external_audio_source_result = self.audio_helper.setExternalAudioSource(self.virtual_audio_mic_event_passthrough)
         print("audio_helper_set_external_audio_source_result =", audio_helper_set_external_audio_source_result)
 
-        self.renderer_delegate = zoom.ZoomSDKRendererDelegateCallbacks(onRawDataFrameReceivedCallback=self.on_raw_video_frame_received_callback)
-        self.video_helper = zoom.createRenderer(self.renderer_delegate)
-
-        self.video_helper.setRawDataResolution(zoom.ZoomSDKResolution_720P)
-        subscribe_result = self.video_helper.subscribe(self.other_participant_id, zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_VIDEO)
-        print("video_helper subscribe_result =", subscribe_result)
+        self.video_input_manager.set_mode(mode=VideoInputManager.Mode.ACTIVE_SPEAKER, active_speaker_id=self.other_participant_id)
 
         # Initialize GStreamer pipeline when starting recording
         self.setup_gstreamer_pipeline()
