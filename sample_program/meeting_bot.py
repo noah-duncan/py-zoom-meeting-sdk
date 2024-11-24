@@ -378,7 +378,8 @@ class MeetingBot:
 
         self.active_speaker_id = user_ids[0]
 
-        self.video_input_manager.set_mode(mode=VideoInputManager.Mode.ACTIVE_SPEAKER, active_speaker_id=self.active_speaker_id)
+        if self.pipeline.wants_any_video_frames():
+            self.video_input_manager.set_mode(mode=VideoInputManager.Mode.ACTIVE_SPEAKER, active_speaker_id=self.active_speaker_id)
 
 
     def on_user_audio_status_change_callback(self, user_audio_statuses, otherstuff):
