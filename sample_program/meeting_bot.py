@@ -3,6 +3,7 @@ import jwt
 from deepgram_transcriber import DeepgramTranscriber
 from video_input_manager import VideoInputManager
 from streaming_uploader import StreamingUploader
+from gstreamer_pipeline import GstreamerPipeline
 from datetime import datetime, timedelta
 import os
 
@@ -108,172 +109,163 @@ class MeetingBot:
         self.virtual_audio_mic_event_passthrough = None
 
         self.deepgram_transcriber = DeepgramTranscriber()
-        self.video_input_manager = VideoInputManager(new_frame_callback=self.on_new_video_frame, wants_any_frames_callback=self.wants_any_video_frames)
 
         self.my_participant_id = None
         self.other_participant_id = None
         self.active_speaker_id = None
         self.participants_ctrl = None
         self.meeting_reminder_event = None
-        self.audio_print_counter = 0
 
-        self.video_helper = None
-        self.renderer_delegate = None
-        self.video_frame_counter = 0
+        self.pipeline = GstreamerPipeline(on_new_sample_callback = self.on_new_sample_from_pipeline)
+        self.video_input_manager = VideoInputManager(new_frame_callback=self.pipeline.on_new_video_frame, wants_any_frames_callback=self.pipeline.wants_any_video_frames)
 
         # Add new properties for video recording
-        self.video_frames = Queue()
-        self.pipeline = None
-        self.appsrc = None
-        self.recording_active = False
+        # self.pipeline = None
+        # self.appsrc = None
+        # self.recording_active = False
         
         # Initialize GStreamer
-        Gst.init(None)
-
-        self.last_frame_time = None
-        self.first_frame_time = None
+        # Gst.init(None)
 
         # Add new properties for audio recording
-        self.audio_pipeline = None
-        self.audio_appsrc = None
-        self.audio_recording_active = False
+        # self.audio_appsrc = None
+        # self.audio_recording_active = False
 
         # Add shared timestamp reference
-        self.start_time_ns = None  # Will be set on first frame/audio sample
-
-        # Add new properties for monitoring
-        self.stats_timer = None
-        self.monitoring_active = False
+        # self.start_time_ns = None  # Will be set on first frame/audio sample
 
         self.uploader = StreamingUploader(os.environ.get('AWS_RECORDING_STORAGE_BUCKET_NAME'), 'teststreamupload.mp4')
         self.uploader.start_upload()
         
         # Add counters for dropped buffers
-        self.queue_drops = {f'q{i}': 0 for i in range(1, 8)}
-        self.last_reported_drops = {f'q{i}': 0 for i in range(1, 8)}
+        # self.queue_drops = {f'q{i}': 0 for i in range(1, 8)}
+        # self.last_reported_drops = {f'q{i}': 0 for i in range(1, 8)}
     
-    def on_new_sample_from_appsink(self, sink):
-        """Handle new samples from the appsink"""
-        sample = sink.emit('pull-sample')
-        if sample:
-            buffer = sample.get_buffer()
-            data = buffer.extract_dup(0, buffer.get_size())
-            self.uploader.upload_part(data)
-            return Gst.FlowReturn.OK
-        return Gst.FlowReturn.ERROR
+    def on_new_sample_from_pipeline(self, data):
+        self.uploader.upload_part(data)
+    
+    # def on_new_sample_from_appsink(self, sink):
+    #     """Handle new samples from the appsink"""
+    #     sample = sink.emit('pull-sample')
+    #     if sample:
+    #         buffer = sample.get_buffer()
+    #         data = buffer.extract_dup(0, buffer.get_size())
+    #         self.uploader.upload_part(data)
+    #         return Gst.FlowReturn.OK
+    #     return Gst.FlowReturn.ERROR
 
-    def setup_gstreamer_pipeline(self):
-        """Initialize GStreamer pipeline for combined MP4 recording with audio and video"""
-        self.start_time_ns = None
+#     def setup_gstreamer_pipeline(self):
+#         """Initialize GStreamer pipeline for combined MP4 recording with audio and video"""
+#         self.start_time_ns = None
         
-# gst-launch-1.0 ximagesrc xid=$XID ! video/x-raw,framerate=30/1 ! queue ! videoconvert ! videorate ! queue ! x264enc ! queue ! avimux name=mux ! queue ! filesink location=out.avi //pulsesrc device=$DEV ! queue ! audioconvert ! queue ! lamemp3enc bitrate=192 ! queue ! mux.
+# # gst-launch-1.0 ximagesrc xid=$XID ! video/x-raw,framerate=30/1 ! queue ! videoconvert ! videorate ! queue ! x264enc ! queue ! avimux name=mux ! queue ! filesink location=out.avi //pulsesrc device=$DEV ! queue ! audioconvert ! queue ! lamemp3enc bitrate=192 ! queue ! mux.
 
-        BUCKET_NAME = os.environ.get('AWS_RECORDING_STORAGE_BUCKET_NAME')
-        OBJECT_KEY = 'teststreamupload.mp4'
-        AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY_ID')
-        AWS_SECRET_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+#         BUCKET_NAME = os.environ.get('AWS_RECORDING_STORAGE_BUCKET_NAME')
+#         OBJECT_KEY = 'teststreamupload.mp4'
+#         AWS_ACCESS_KEY = os.environ.get('AWS_ACCESS_KEY_ID')
+#         AWS_SECRET_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 
-        reduce_framerate_pipeline_str = (
-            'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
-            'queue name=q1 ! '
-            'videoconvert ! '
-            'videorate ! video/x-raw,framerate=15/1 ! ' # Reduce framerate to 15fps
-            'queue name=q2 ! '
-            'x264enc tune=zerolatency speed-preset=ultrafast ! '
-            'queue name=q3 ! '
-            'mp4mux name=muxer ! queue name=q4 ! appsink name=sink emit-signals=true sync=false drop=false '
-            'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
-            'queue name=q5 ! '
-            'audioconvert ! '
-            'audiorate ! '
-            'audioresample ! audio/x-raw,rate=16000 ! '
-            'queue name=q6 ! '
-            'voaacenc bitrate=64000 ! '
-            'queue name=q7 ! '
-            'muxer. '
-        )
+#         reduce_framerate_pipeline_str = (
+#             'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
+#             'queue name=q1 ! '
+#             'videoconvert ! '
+#             'videorate ! video/x-raw,framerate=15/1 ! ' # Reduce framerate to 15fps
+#             'queue name=q2 ! '
+#             'x264enc tune=zerolatency speed-preset=ultrafast ! '
+#             'queue name=q3 ! '
+#             'mp4mux name=muxer ! queue name=q4 ! appsink name=sink emit-signals=true sync=false drop=false '
+#             'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
+#             'queue name=q5 ! '
+#             'audioconvert ! '
+#             'audiorate ! '
+#             'audioresample ! audio/x-raw,rate=16000 ! '
+#             'queue name=q6 ! '
+#             'voaacenc bitrate=64000 ! '
+#             'queue name=q7 ! '
+#             'muxer. '
+#         )
 
-        reduce_video_resolution_pipeline_str = (
-            'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
-            'queue name=q1 ! '
-            'videoconvert ! '
-            'videoscale ! video/x-raw,width=320,height=180 ! '  # Downscale video
-            'videorate ! '
-            'queue name=q2 ! '
-            'x264enc tune=zerolatency speed-preset=ultrafast ! '
-            'queue name=q3 ! '
-            'mp4mux name=muxer ! queue name=q4 ! appsink name=sink emit-signals=true sync=false drop=false '
-            'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
-            'queue name=q5 ! '
-            'audioconvert ! '
-            'audiorate ! '
-            'queue name=q6 ! '
-            'voaacenc bitrate=128000 ! '
-            'queue name=q7 ! '
-            'muxer. '
-        )
+#         reduce_video_resolution_pipeline_str = (
+#             'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
+#             'queue name=q1 ! '
+#             'videoconvert ! '
+#             'videoscale ! video/x-raw,width=320,height=180 ! '  # Downscale video
+#             'videorate ! '
+#             'queue name=q2 ! '
+#             'x264enc tune=zerolatency speed-preset=ultrafast ! '
+#             'queue name=q3 ! '
+#             'mp4mux name=muxer ! queue name=q4 ! appsink name=sink emit-signals=true sync=false drop=false '
+#             'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
+#             'queue name=q5 ! '
+#             'audioconvert ! '
+#             'audiorate ! '
+#             'queue name=q6 ! '
+#             'voaacenc bitrate=128000 ! '
+#             'queue name=q7 ! '
+#             'muxer. '
+#         )
 
-        pipeline_str = reduce_video_resolution_pipeline_str
+#         pipeline_str = reduce_video_resolution_pipeline_str
         
-        self.pipeline = Gst.parse_launch(pipeline_str)
+#         self.pipeline = Gst.parse_launch(pipeline_str)
         
-        # Get both appsrc elements
-        self.appsrc = self.pipeline.get_by_name('video_source')
-        self.audio_appsrc = self.pipeline.get_by_name('audio_source')
+#         # Get both appsrc elements
+#         self.appsrc = self.pipeline.get_by_name('video_source')
+#         self.audio_appsrc = self.pipeline.get_by_name('audio_source')
         
-        # Configure video appsrc
-        video_caps = Gst.Caps.from_string('video/x-raw,format=BGR,width=640,height=360,framerate=30/1')
-        self.appsrc.set_property('caps', video_caps)
-        self.appsrc.set_property('format', Gst.Format.TIME)
-        self.appsrc.set_property('is-live', True)
-        self.appsrc.set_property('do-timestamp', False)
-        self.appsrc.set_property('stream-type', 0)  # GST_APP_STREAM_TYPE_STREAM
-        self.appsrc.set_property('block', True)  # This helps with synchronization
+#         # Configure video appsrc
+#         video_caps = Gst.Caps.from_string('video/x-raw,format=BGR,width=640,height=360,framerate=30/1')
+#         self.appsrc.set_property('caps', video_caps)
+#         self.appsrc.set_property('format', Gst.Format.TIME)
+#         self.appsrc.set_property('is-live', True)
+#         self.appsrc.set_property('do-timestamp', False)
+#         self.appsrc.set_property('stream-type', 0)  # GST_APP_STREAM_TYPE_STREAM
+#         self.appsrc.set_property('block', True)  # This helps with synchronization
 
-        # Configure audio appsrc
-        audio_caps = Gst.Caps.from_string(
-            'audio/x-raw,format=S16LE,channels=1,rate=32000,layout=interleaved'
-        )
-        self.audio_appsrc.set_property('caps', audio_caps)
-        self.audio_appsrc.set_property('format', Gst.Format.TIME)
-        self.audio_appsrc.set_property('is-live', True)
-        self.audio_appsrc.set_property('do-timestamp', False)
-        self.audio_appsrc.set_property('stream-type', 0)  # GST_APP_STREAM_TYPE_STREAM
-        self.audio_appsrc.set_property('block', True)  # This helps with synchronization
+#         # Configure audio appsrc
+#         audio_caps = Gst.Caps.from_string(
+#             'audio/x-raw,format=S16LE,channels=1,rate=32000,layout=interleaved'
+#         )
+#         self.audio_appsrc.set_property('caps', audio_caps)
+#         self.audio_appsrc.set_property('format', Gst.Format.TIME)
+#         self.audio_appsrc.set_property('is-live', True)
+#         self.audio_appsrc.set_property('do-timestamp', False)
+#         self.audio_appsrc.set_property('stream-type', 0)  # GST_APP_STREAM_TYPE_STREAM
+#         self.audio_appsrc.set_property('block', True)  # This helps with synchronization
 
-        # Set up bus
-        bus = self.pipeline.get_bus()
-        bus.add_signal_watch()
-        bus.connect('message', self.on_pipeline_message)
+#         # Set up bus
+#         bus = self.pipeline.get_bus()
+#         bus.add_signal_watch()
+#         bus.connect('message', self.on_pipeline_message)
 
-        # Connect to the sink element
-        sink = self.pipeline.get_by_name('sink')
-        sink.connect("new-sample", self.on_new_sample_from_appsink)
+#         # Connect to the sink element
+#         sink = self.pipeline.get_by_name('sink')
+#         sink.connect("new-sample", self.on_new_sample_from_appsink)
         
-        # Start the pipeline
-        self.pipeline.set_state(Gst.State.PLAYING)
+#         # Start the pipeline
+#         self.pipeline.set_state(Gst.State.PLAYING)
 
-        self.recording_active = True
-        self.audio_recording_active = True
+#         self.recording_active = True
+#         self.audio_recording_active = True
 
-        # Start statistics monitoring
-        self.monitoring_active = True
-        GLib.timeout_add_seconds(15, self.monitor_pipeline_stats)
+#         # Start statistics monitoring
+#         self.monitoring_active = True
+#         GLib.timeout_add_seconds(15, self.monitor_pipeline_stats)
 
-        # Connect drop signals for all queues
-        for i in range(1, 8):
-            queue = self.pipeline.get_by_name(f'q{i}')
-            if queue:
-                queue.connect('overrun', self.on_queue_overrun, f'q{i}')
+#         # Connect drop signals for all queues
+#         for i in range(1, 8):
+#             queue = self.pipeline.get_by_name(f'q{i}')
+#             if queue:
+#                 queue.connect('overrun', self.on_queue_overrun, f'q{i}')
 
-    def on_pipeline_message(self, bus, message):
-        """Handle pipeline messages"""
-        t = message.type
-        if t == Gst.MessageType.ERROR:
-            err, debug = message.parse_error()
-            print(f"GStreamer Error: {err}, Debug: {debug}")
-        elif t == Gst.MessageType.EOS:
-            print(f"GStreamer pipeline reached end of stream")
+    # def on_pipeline_message(self, bus, message):
+    #     """Handle pipeline messages"""
+    #     t = message.type
+    #     if t == Gst.MessageType.ERROR:
+    #         err, debug = message.parse_error()
+    #         print(f"GStreamer Error: {err}, Debug: {debug}")
+    #     elif t == Gst.MessageType.EOS:
+    #         print(f"GStreamer pipeline reached end of stream")
 
     def cleanup(self):
         print("Starting cleanup...")
@@ -288,24 +280,7 @@ class MeetingBot:
         
         # Clean up pipeline
         if self.pipeline:
-            print("Shutting down GStreamer pipeline...")
-            if self.appsrc:
-                self.appsrc.emit('end-of-stream')
-            if self.audio_appsrc:
-                self.audio_appsrc.emit('end-of-stream')
-            
-            bus = self.pipeline.get_bus()
-            msg = bus.timed_pop_filtered(
-                Gst.CLOCK_TIME_NONE,
-                Gst.MessageType.EOS | Gst.MessageType.ERROR
-            )
-            
-            if msg and msg.type == Gst.MessageType.ERROR:
-                err, debug = msg.parse_error()
-                print(f"Error during pipeline shutdown: {err}, {debug}")
-            
-            self.pipeline.set_state(Gst.State.NULL)
-            print("GStreamer pipeline shut down")
+            self.pipeline.cleanup()
 
         if self.uploader:
             self.uploader.complete_upload()
@@ -332,9 +307,9 @@ class MeetingBot:
         print("CleanUPSDK() finished")
 
         # Stop monitoring before cleanup
-        self.monitoring_active = False
-        if self.stats_timer:
-            self.stats_timer.join(timeout=1.0)
+        #self.monitoring_active = False
+        #if self.stats_timer:
+        #    self.stats_timer.join(timeout=1.0)
 
     def init(self):
         if os.environ.get('MEETING_ID') is None:
@@ -417,63 +392,7 @@ class MeetingBot:
         with open('sample_program/input_audio/test_audio_16778240.pcm', 'rb') as pcm_file:
             chunk = pcm_file.read(64000*10)
             self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
-
-    def on_mixed_audio_raw_data_received_callback(self, data):
-        if not self.audio_recording_active or not self.audio_appsrc or not self.recording_active or not self.appsrc:
-            return
-
-        try:
-            current_time_ns = time.time_ns()
-            buffer_bytes = data.GetBuffer()
-            buffer = Gst.Buffer.new_wrapped(buffer_bytes)
-            
-            # Initialize start time if not set
-            if self.start_time_ns is None:
-                self.start_time_ns = current_time_ns
-            
-            # Calculate timestamp relative to same start time as video
-            buffer.pts = current_time_ns - self.start_time_ns
-            
-            ret = self.audio_appsrc.emit('push-buffer', buffer)
-            if ret != Gst.FlowReturn.OK:
-                print(f"Warning: Failed to push audio buffer to pipeline: {ret}")
-        except Exception as e:
-            print(f"Error processing audio data: {e}")
-
-
-    def wants_any_video_frames(self):
-        if not self.audio_recording_active or not self.audio_appsrc or not self.recording_active or not self.appsrc:
-            return False
-
-        return True
     
-    def on_new_video_frame(self, frame):
-        try:
-            current_time_ns = time.time_ns()
-                        
-            # Initialize start time if not set
-            if self.start_time_ns is None:
-                self.start_time_ns = current_time_ns
-
-            # Calculate buffer timestamp relative to start time
-            buffer_pts = current_time_ns - self.start_time_ns
-            
-            # Create buffer with timestamp
-            buffer = Gst.Buffer.new_wrapped(frame.tobytes())
-            buffer.pts = buffer_pts
-            
-            # Calculate duration based on time until next frame
-            # Default to 33ms (30fps) if this is the last frame
-            buffer.duration = 33 * 1000 * 1000  # 33ms in nanoseconds
-            
-            # Push buffer to pipeline
-            ret = self.appsrc.emit('push-buffer', buffer)
-            if ret != Gst.FlowReturn.OK:
-                print(f"Warning: Failed to push buffer to pipeline: {ret}")
-                
-        except Exception as e:
-            print(f"Error processing video frame: {e}")
-
     def write_to_deepgram(self, data):
         try:
             buffer_bytes = data.GetBuffer()
@@ -518,7 +437,7 @@ class MeetingBot:
             return
         
         if self.audio_source is None:
-            self.audio_source = zoom.ZoomSDKAudioRawDataDelegateCallbacks(onMixedAudioRawDataReceivedCallback=self.on_mixed_audio_raw_data_received_callback, collectPerformanceData=True)
+            self.audio_source = zoom.ZoomSDKAudioRawDataDelegateCallbacks(onMixedAudioRawDataReceivedCallback=self.pipeline.on_mixed_audio_raw_data_received_callback, collectPerformanceData=True)
 
 
         audio_helper_subscribe_result = self.audio_helper.subscribe(self.audio_source, False)
@@ -532,7 +451,7 @@ class MeetingBot:
             self.video_input_manager.set_mode(mode=VideoInputManager.Mode.ACTIVE_SPEAKER, active_speaker_id=self.other_participant_id)
 
         # Initialize GStreamer pipeline when starting recording
-        self.setup_gstreamer_pipeline()
+        self.pipeline.setup_gstreamer_pipeline()
 
     def stop_raw_recording(self):
         rec_ctrl = self.meeting_service.StopRawRecording()
@@ -638,55 +557,55 @@ class MeetingBot:
         else:
             print("Authentication failed with error:", result)
 
-    def monitor_pipeline_stats(self):
-        """Periodically print pipeline statistics"""
-        if not self.recording_active:
-            return False
+    # def monitor_pipeline_stats(self):
+    #     """Periodically print pipeline statistics"""
+    #     if not self.recording_active:
+    #         return False
         
-        try:
-            # Print dropped buffer counts since last check
-            print("\nDropped Buffers Since Last Check:")
-            for queue_name in self.queue_drops:
-                drops = self.queue_drops[queue_name] - self.last_reported_drops[queue_name]
-                if drops > 0:
-                    print(f"  {queue_name}: {drops} buffers dropped")
-                self.last_reported_drops[queue_name] = self.queue_drops[queue_name]
+    #     try:
+    #         # Print dropped buffer counts since last check
+    #         print("\nDropped Buffers Since Last Check:")
+    #         for queue_name in self.queue_drops:
+    #             drops = self.queue_drops[queue_name] - self.last_reported_drops[queue_name]
+    #             if drops > 0:
+    #                 print(f"  {queue_name}: {drops} buffers dropped")
+    #             self.last_reported_drops[queue_name] = self.queue_drops[queue_name]
 
-            # # Get stats from all queue elements
-            # for i in range(1, 8):
-            #     queue = self.pipeline.get_by_name(f'q{i}')
-            #     if queue:
-            #         stats = {
-            #             'current_level_buffers': queue.get_property('current-level-buffers'),
-            #             'current_level_bytes': queue.get_property('current-level-bytes'),
-            #             'current_level_time': queue.get_property('current-level-time') / Gst.SECOND,
-            #             'max_size_buffers': queue.get_property('max-size-buffers'),
-            #             'max_size_bytes': queue.get_property('max-size-bytes'),
-            #             'max_size_time': queue.get_property('max-size-time') / Gst.SECOND,
-            #         }
+    #         # # Get stats from all queue elements
+    #         # for i in range(1, 8):
+    #         #     queue = self.pipeline.get_by_name(f'q{i}')
+    #         #     if queue:
+    #         #         stats = {
+    #         #             'current_level_buffers': queue.get_property('current-level-buffers'),
+    #         #             'current_level_bytes': queue.get_property('current-level-bytes'),
+    #         #             'current_level_time': queue.get_property('current-level-time') / Gst.SECOND,
+    #         #             'max_size_buffers': queue.get_property('max-size-buffers'),
+    #         #             'max_size_bytes': queue.get_property('max-size-bytes'),
+    #         #             'max_size_time': queue.get_property('max-size-time') / Gst.SECOND,
+    #         #         }
                     
-            #         print(f"\nQueue {i} Statistics:")
-            #         for key, value in stats.items():
-            #             print(f"  {key}: {value}")
+    #         #         print(f"\nQueue {i} Statistics:")
+    #         #         for key, value in stats.items():
+    #         #             print(f"  {key}: {value}")
 
-            # Get encoder stats if available
-            # x264enc = self.pipeline.get_by_name('x264enc')
-            # if x264enc:
-            #     print("\nX264 Encoder Statistics:")
-            #     print(f"  Bitrate: {x264enc.get_property('bitrate')} kbps")
+    #         # Get encoder stats if available
+    #         # x264enc = self.pipeline.get_by_name('x264enc')
+    #         # if x264enc:
+    #         #     print("\nX264 Encoder Statistics:")
+    #         #     print(f"  Bitrate: {x264enc.get_property('bitrate')} kbps")
                 
-            # # Get audio encoder stats
-            # voaacenc = self.pipeline.get_by_name('voaacenc')
-            # if voaacenc:
-            #     print("\nAAC Encoder Statistics:")
-            #     print(f"  Bitrate: {voaacenc.get_property('bitrate')} bps")
+    #         # # Get audio encoder stats
+    #         # voaacenc = self.pipeline.get_by_name('voaacenc')
+    #         # if voaacenc:
+    #         #     print("\nAAC Encoder Statistics:")
+    #         #     print(f"  Bitrate: {voaacenc.get_property('bitrate')} bps")
 
-        except Exception as e:
-            print(f"Error getting pipeline stats: {e}")
+    #     except Exception as e:
+    #         print(f"Error getting pipeline stats: {e}")
         
-        return True  # Continue timer
+    #     return True  # Continue timer
 
-    def on_queue_overrun(self, queue, queue_name):
-        """Callback for when a queue drops buffers"""
-        self.queue_drops[queue_name] += 1
-        return True
+    # def on_queue_overrun(self, queue, queue_name):
+    #     """Callback for when a queue drops buffers"""
+    #     self.queue_drops[queue_name] += 1
+    #     return True
