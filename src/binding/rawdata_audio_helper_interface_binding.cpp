@@ -49,8 +49,8 @@ void init_rawdata_audio_helper_interface_binding(nb::module_ &m) {
         .def("onOneWayInterpreterAudioRawDataReceived", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataDelegate::onOneWayInterpreterAudioRawDataReceived);
 
     nb::class_<ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper>(m, "IZoomSDKAudioRawDataHelper")
-        .def("subscribe", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::subscribe)
-        .def("unSubscribe", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::unSubscribe)
+        .def("subscribe", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::subscribe, nb::call_guard<nb::gil_scoped_release>())
+        .def("unSubscribe", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::unSubscribe, nb::call_guard<nb::gil_scoped_release>())
         .def("setExternalAudioSource", &ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper::setExternalAudioSource);
 
     nb::class_<ZOOM_SDK_NAMESPACE::IZoomSDKVirtualAudioMicEvent>(m, "IZoomSDKVirtualAudioMicEvent")
