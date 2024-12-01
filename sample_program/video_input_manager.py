@@ -2,6 +2,8 @@ import zoom_meeting_sdk as zoom
 import numpy as np
 import cv2
 import time
+from gi.repository import GLib
+
 def convert_yuv420_frame_to_bgr(frame_bytes, width, height):
     # Convert bytes to numpy array
     yuv_data = np.frombuffer(frame_bytes, dtype=np.uint8)
@@ -19,19 +21,39 @@ class VideoInputStream:
         self.video_input_manager = video_input_manager
         self.user_id = user_id
         self.cleaned_up = False
+        self.last_frame_time = time.time()
+        self.black_frame_timer_id = None
 
         self.renderer_delegate = zoom.ZoomSDKRendererDelegateCallbacks(
-            onRawDataFrameReceivedCallback=self.on_raw_video_frame_received_callback
+            onRawDataFrameReceivedCallback=self.on_raw_video_frame_received_callback,
+            onRawDataStatusChangedCallback=self.on_raw_data_status_changed_callback
         )
 
         self.renderer = zoom.createRenderer(self.renderer_delegate)
-
         self.renderer.setRawDataResolution(zoom.ZoomSDKResolution_360P)
-
         self.renderer.subscribe(self.user_id, zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_VIDEO)
+        self.raw_data_status = zoom.RawData_Off
+        
+        # Start the black frame timer (80ms = 80000 microseconds)
+        self.black_frame_timer_id = GLib.timeout_add(80, self.send_black_frame)
+
+    def send_black_frame(self):
+        if self.cleaned_up:
+            return False
+            
+        current_time = time.time()
+        if current_time - self.last_frame_time >= 0.08 and self.raw_data_status == zoom.RawData_Off:
+            # Create a black frame of the same dimensions
+            black_frame = np.zeros((360, 640, 3), dtype=np.uint8)  # BGR format
+            self.video_input_manager.new_frame_callback(black_frame)
+            
+        return not self.cleaned_up  # Continue timer if not cleaned up
 
     def cleanup(self):
         print("starting cleanup input stream for user", self.user_id)
+        if self.black_frame_timer_id is not None:
+            GLib.source_remove(self.black_frame_timer_id)
+            self.black_frame_timer_id = None
         self.renderer.unSubscribe()
         print("finished cleanup input stream for user", self.user_id)
         self.cleaned_up = True
@@ -43,6 +65,7 @@ class VideoInputStream:
         if not self.video_input_manager.wants_frames_for_user(self.user_id):
             return
 
+        self.last_frame_time = time.time()
         bgr_frame = convert_yuv420_frame_to_bgr(data.GetBuffer(), data.GetStreamWidth(), data.GetStreamHeight())
 
         if bgr_frame is None or bgr_frame.size == 0:
@@ -51,6 +74,9 @@ class VideoInputStream:
 
         self.video_input_manager.new_frame_callback(bgr_frame)
 
+    def on_raw_data_status_changed_callback(self, status):
+        self.raw_data_status = status
+    
 class VideoInputManager:
     class Mode:
         ACTIVE_SPEAKER = 1
