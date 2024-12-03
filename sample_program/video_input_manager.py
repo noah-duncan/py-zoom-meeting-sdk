@@ -5,16 +5,41 @@ import time
 from gi.repository import GLib
 
 def convert_yuv420_frame_to_bgr(frame_bytes, width, height):
-    # Convert bytes to numpy array
-    yuv_data = np.frombuffer(frame_bytes, dtype=np.uint8)
-
-    # Reshape into I420 format with U/V planes
-    yuv_frame = yuv_data.reshape((height * 3//2, width))
-
-    # Convert from YUV420 to BGR
-    bgr_frame = cv2.cvtColor(yuv_frame, cv2.COLOR_YUV2BGR_I420)
-
-    return bgr_frame
+    # Allocate a buffer for the complete YUV420 data
+    total_size = height * width * 3 // 2
+    yuv_data = np.empty((total_size,), dtype=np.uint8)
+    
+    # Get the separate Y, U, V buffers from the input
+    y_buffer = frame_bytes.GetYBuffer()
+    u_buffer = frame_bytes.GetUBuffer()
+    v_buffer = frame_bytes.GetVBuffer()
+    
+    # Copy Y buffer
+    y_size = height * width
+    yuv_data[0:y_size] = np.frombuffer(y_buffer, dtype=np.uint8)
+    
+    # Copy U buffer
+    u_size = height * width // 4
+    yuv_data[y_size:y_size + u_size] = np.frombuffer(u_buffer, dtype=np.uint8)
+    
+    # Copy V buffer
+    yuv_data[y_size + u_size:] = np.frombuffer(v_buffer, dtype=np.uint8)
+    
+    # Write YUV data to file (matching C++ implementation)
+    try:
+        with open('output.yuv', 'ab') as f:  # 'ab' for append binary mode
+            f.write(yuv_data.tobytes())
+            f.flush()
+    except IOError as e:
+        print(f"Error opening or writing to file: {e}")
+    
+    # Now convert YUV420 to BGR using OpenCV
+    yuv_image = yuv_data.reshape((height * 3 // 2, width))
+    bgr_image = cv2.cvtColor(yuv_image, cv2.COLOR_YUV2BGR_I420)
+    bgr_image_scaled = cv2.resize(bgr_image, (640, 360), interpolation=cv2.INTER_LINEAR)
+    cv2.imwrite('outputfres.png', bgr_image_scaled)
+    
+    return bgr_image_scaled
 
 class VideoInputStream:
     def __init__(self, video_input_manager, user_id):
@@ -31,7 +56,7 @@ class VideoInputStream:
 
         self.renderer = zoom.createRenderer(self.renderer_delegate)
         self.renderer.setRawDataResolution(zoom.ZoomSDKResolution_360P)
-        self.renderer.subscribe(self.user_id, zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_VIDEO)
+        self.renderer.subscribe(self.user_id, zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_SHARE)
         self.raw_data_status = zoom.RawData_Off
         
         # Start the black frame timer (80ms = 80000 microseconds)
@@ -59,6 +84,7 @@ class VideoInputStream:
         self.cleaned_up = True
 
     def on_raw_video_frame_received_callback(self, data):
+        print("GOT SHARE FRAME2")
         if self.cleaned_up:
             return
         
@@ -66,12 +92,13 @@ class VideoInputStream:
             return
 
         self.last_frame_time = time.time()
-        bgr_frame = convert_yuv420_frame_to_bgr(data.GetBuffer(), data.GetStreamWidth(), data.GetStreamHeight())
+        bgr_frame = convert_yuv420_frame_to_bgr(data, data.GetStreamWidth(), data.GetStreamHeight())
 
         if bgr_frame is None or bgr_frame.size == 0:
             print("Warning: Invalid frame received")
             return
 
+        print("GOT SHARE FRAME44 buffer len", len(data.GetBuffer()), "width", data.GetStreamWidth(), "height", data.GetStreamHeight(), "is limited", data.IsLimitedI420())
         self.video_input_manager.new_frame_callback(bgr_frame)
 
     def on_raw_data_status_changed_callback(self, status):
