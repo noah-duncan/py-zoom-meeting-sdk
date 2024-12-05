@@ -117,8 +117,8 @@ void init_rawdata_renderer_interface_binding(nb::module_ &m) {
 
     nb::class_<IZoomSDKRenderer>(m, "IZoomSDKRenderer")
         .def("setRawDataResolution", &IZoomSDKRenderer::setRawDataResolution)
-        .def("subscribe", &IZoomSDKRenderer::subscribe)
-        .def("unSubscribe", &IZoomSDKRenderer::unSubscribe)
+        .def("subscribe", &IZoomSDKRenderer::subscribe, nb::call_guard<nb::gil_scoped_release>())
+        .def("unSubscribe", &IZoomSDKRenderer::unSubscribe, nb::call_guard<nb::gil_scoped_release>())
         .def("getResolution", &IZoomSDKRenderer::getResolution)
         .def("getRawDataType", &IZoomSDKRenderer::getRawDataType)
         .def("getUserId", &IZoomSDKRenderer::getUserId);     

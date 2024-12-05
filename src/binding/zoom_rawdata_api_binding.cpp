@@ -50,7 +50,7 @@ void init_zoom_rawdata_api_binding(nb::module_ &m) {
         IZoomSDKRenderer* pRenderer = nullptr;
         SDKError err = createRenderer(&pRenderer, pDelegate);
         if (err != SDKERR_SUCCESS) {
-            throw std::runtime_error("Failed to create renderer");
+            throw std::runtime_error("Failed to create renderer: " + std::to_string(err));
         }
         return pRenderer;
     }, nb::rv_policy::reference);
