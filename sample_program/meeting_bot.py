@@ -153,6 +153,9 @@ class MeetingBot:
         
         self.create_services()
 
+    def on_user_join_callback(self, joined_user_ids, user_name):
+        print("on_user_join_callback called. joined_user_ids =", joined_user_ids, "user_name =", user_name)
+
     def on_join(self):
         self.meeting_reminder_event = zoom.MeetingReminderEventCallbacks(onReminderNotifyCallback=self.on_reminder_notify)
         self.reminder_controller = self.meeting_service.GetMeetingReminderController()
@@ -174,6 +177,8 @@ class MeetingBot:
             self.start_raw_recording()
 
         self.participants_ctrl = self.meeting_service.GetMeetingParticipantsController()
+        self.participants_ctrl_event = zoom.MeetingParticipantsCtrlEventCallbacks(onUserJoinCallback=self.on_user_join_callback)
+        self.participants_ctrl.SetEvent(self.participants_ctrl_event)
         self.my_participant_id = self.participants_ctrl.GetMySelfUser().GetUserID()
 
         participant_ids_list = self.participants_ctrl.GetParticipantsList()

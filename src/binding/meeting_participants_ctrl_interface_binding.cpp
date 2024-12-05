@@ -43,6 +43,27 @@ using namespace std;
 using namespace ZOOMSDK;
 
 void init_meeting_participants_ctrl_interface_binding(nb::module_ &m) {
+    nb::class_<IMeetingParticipantsCtrlEvent>(m, "IMeetingParticipantsCtrlEvent")
+        .def("onUserJoin", &IMeetingParticipantsCtrlEvent::onUserJoin)
+        .def("onUserLeft", &IMeetingParticipantsCtrlEvent::onUserLeft)
+        .def("onHostChangeNotification", &IMeetingParticipantsCtrlEvent::onHostChangeNotification)
+        .def("onLowOrRaiseHandStatusChanged", &IMeetingParticipantsCtrlEvent::onLowOrRaiseHandStatusChanged)
+        .def("onUserNamesChanged", &IMeetingParticipantsCtrlEvent::onUserNamesChanged)
+        .def("onCoHostChangeNotification", &IMeetingParticipantsCtrlEvent::onCoHostChangeNotification)
+        .def("onInvalidReclaimHostkey", &IMeetingParticipantsCtrlEvent::onInvalidReclaimHostkey)
+        .def("onAllHandsLowered", &IMeetingParticipantsCtrlEvent::onAllHandsLowered)
+        .def("onLocalRecordingStatusChanged", &IMeetingParticipantsCtrlEvent::onLocalRecordingStatusChanged)
+        .def("onAllowParticipantsRenameNotification", &IMeetingParticipantsCtrlEvent::onAllowParticipantsRenameNotification)
+        .def("onAllowParticipantsUnmuteSelfNotification", &IMeetingParticipantsCtrlEvent::onAllowParticipantsUnmuteSelfNotification)
+        .def("onAllowParticipantsStartVideoNotification", &IMeetingParticipantsCtrlEvent::onAllowParticipantsStartVideoNotification)
+        .def("onAllowParticipantsShareWhiteBoardNotification", &IMeetingParticipantsCtrlEvent::onAllowParticipantsShareWhiteBoardNotification)
+        .def("onRequestLocalRecordingPrivilegeChanged", &IMeetingParticipantsCtrlEvent::onRequestLocalRecordingPrivilegeChanged)
+        .def("onAllowParticipantsRequestCloudRecording", &IMeetingParticipantsCtrlEvent::onAllowParticipantsRequestCloudRecording)
+        .def("onInMeetingUserAvatarPathUpdated", &IMeetingParticipantsCtrlEvent::onInMeetingUserAvatarPathUpdated)
+        .def("onParticipantProfilePictureStatusChange", &IMeetingParticipantsCtrlEvent::onParticipantProfilePictureStatusChange)
+        .def("onFocusModeStateChanged", &IMeetingParticipantsCtrlEvent::onFocusModeStateChanged)
+        .def("onFocusModeShareTypeChanged", &IMeetingParticipantsCtrlEvent::onFocusModeShareTypeChanged);
+
     nb::class_<ZOOM_SDK_NAMESPACE::IMeetingParticipantsController>(m, "IMeetingParticipantsController")
         .def("SetEvent", &IMeetingParticipantsController::SetEvent)
         .def("GetParticipantsList", [](IMeetingParticipantsController& self) -> vector<unsigned int> {
