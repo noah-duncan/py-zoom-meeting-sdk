@@ -6,7 +6,9 @@ import os
 
 import cv2
 import numpy as np
-
+import gi
+gi.require_version('GLib', '2.0')
+from gi.repository import GLib
 def save_yuv420_frame_as_png(frame_bytes, width, height, output_path):
     try:
         # Convert bytes to numpy array
@@ -67,6 +69,17 @@ def normalized_rms_audio(pcm_data: bytes, sample_width: int = 2) -> bool:
     
     return normalized_rms
 
+def create_red_yuv420_frame(width=640, height=360):
+    # Create BGR frame (red is [0,0,255] in BGR)
+    bgr_frame = np.zeros((height, width, 3), dtype=np.uint8)
+    bgr_frame[:, :] = [0, 0, 255]  # Pure red in BGR
+    
+    # Convert BGR to YUV420 (I420)
+    yuv_frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2YUV_I420)
+    
+    # Return as bytes
+    return yuv_frame.tobytes()
+
 class MeetingBot:
     def __init__(self):
         
@@ -105,6 +118,11 @@ class MeetingBot:
         self.video_helper = None
         self.renderer_delegate = None
         self.video_frame_counter = 0
+
+        self.meeting_video_controller = None
+        self.video_sender = None
+        self.virtual_camera_video_source = None
+        self.video_source_helper = None
 
     def cleanup(self):
         if self.meeting_service:
@@ -167,14 +185,14 @@ class MeetingBot:
             def on_recording_privilege_changed(can_rec):
                 print("on_recording_privilege_changed called. can_record =", can_rec)
                 if can_rec:
-                    self.start_raw_recording()
+                    GLib.timeout_add_seconds(1, self.start_raw_recording)
                 else:
                     self.stop_raw_recording()
 
             self.recording_event = zoom.MeetingRecordingCtrlEventCallbacks(onRecordPrivilegeChangedCallback=on_recording_privilege_changed)
             self.recording_ctrl.SetEvent(self.recording_event)
 
-            self.start_raw_recording()
+            GLib.timeout_add_seconds(1, self.start_raw_recording)
 
         self.participants_ctrl = self.meeting_service.GetMeetingParticipantsController()
         self.participants_ctrl_event = zoom.MeetingParticipantsCtrlEventCallbacks(onUserJoinCallback=self.on_user_join_callback)
@@ -200,9 +218,11 @@ class MeetingBot:
         print("on_user_audio_status_change_callback called. user_audio_statuses =", user_audio_statuses, "otherstuff =", otherstuff)
 
     def on_mic_initialize_callback(self, sender):
+        print("on_mic_initialize_callback called")
         self.audio_raw_data_sender = sender
 
     def on_mic_start_send_callback(self):
+        print("on_mic_start_send_callback called")
         with open('sample_program/input_audio/test_audio_16778240.pcm', 'rb') as pcm_file:
             chunk = pcm_file.read(64000*10)
             self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
@@ -278,6 +298,32 @@ class MeetingBot:
         self.video_helper.setRawDataResolution(zoom.ZoomSDKResolution_720P)
         subscribe_result = self.video_helper.subscribe(self.other_participant_id, zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_VIDEO)
         print("video_helper subscribe_result =", subscribe_result)
+
+        self.virtual_camera_video_source = zoom.ZoomSDKVideoSourceCallbacks(onInitializeCallback=self.on_virtual_camera_initialize_callback, onStartSendCallback=self.on_virtual_camera_start_send_callback)
+        self.video_source_helper = zoom.GetRawdataVideoSourceHelper()
+        if self.video_source_helper:
+            print("video_source_helper is not None")
+            set_external_video_source_result = self.video_source_helper.setExternalVideoSource(self.virtual_camera_video_source)
+            print("set_external_video_source_result =", set_external_video_source_result)
+            if set_external_video_source_result == zoom.SDKERR_SUCCESS:
+                print("starting video")
+                self.meeting_video_controller = self.meeting_service.GetMeetingVideoController()
+                print("meeting_video_controller =", self.meeting_video_controller)
+                print("unmuting video")
+                self.meeting_video_controller.UnmuteVideo()
+                print("unmuted video")
+        else:
+            print("video_source_helper is None")
+
+    def on_virtual_camera_start_send_callback(self):
+        print("on_virtual_camera_start_send_callback called")
+        if self.video_sender:
+            red_frame = create_red_yuv420_frame(640, 360)
+            self.video_sender.sendVideoFrame(red_frame, 640, 360, 0, zoom.FrameDataFormat_I420_FULL)
+
+    def on_virtual_camera_initialize_callback(self, video_sender, support_cap_list, suggest_cap):
+        print("on_virtual_camera_initialize_callback called")
+        self.video_sender = video_sender
 
     def on_raw_data_frame_received_callback(self, data):
         if self.video_frame_counter % 10 == 0:
