@@ -2,7 +2,7 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/trampoline.h>
 #include <nanobind/stl/function.h>
-
+#include <nanobind/stl/vector.h>
 #include "zoom_sdk.h"
 #include "zoom_sdk_def.h"
 #include "rawdata/rawdata_video_source_helper_interface.h"
