@@ -32,6 +32,7 @@
 
 #include "rawdata/zoom_rawdata_api.h"
 #include "rawdata/rawdata_audio_helper_interface.h"
+#include "rawdata/rawdata_video_source_helper_interface.h"
 #include "rawdata/rawdata_renderer_interface.h"
 
 #include <iostream>
@@ -44,6 +45,10 @@ using namespace ZOOMSDK;
 void init_zoom_rawdata_api_binding(nb::module_ &m) {
     m.def("GetAudioRawdataHelper", []() -> ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper* {
         return ZOOM_SDK_NAMESPACE::GetAudioRawdataHelper();
+    }, nb::rv_policy::take_ownership);
+
+    m.def("GetRawdataVideoSourceHelper", []() -> ZOOM_SDK_NAMESPACE::IZoomSDKVideoSourceHelper* {
+        return ZOOM_SDK_NAMESPACE::GetRawdataVideoSourceHelper();
     }, nb::rv_policy::take_ownership);
 
     m.def("createRenderer", [](IZoomSDKRendererDelegate* pDelegate) -> IZoomSDKRenderer* {

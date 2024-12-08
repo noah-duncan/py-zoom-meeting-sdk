@@ -101,4 +101,9 @@ void init_zoom_sdk_def_binding(nb::module_ &m) {
         .value("ZoomSDKAudioChannel_Mono", ZOOM_SDK_NAMESPACE::ZoomSDKAudioChannel_Mono)
         .value("ZoomSDKAudioChannel_Stereo", ZOOM_SDK_NAMESPACE::ZoomSDKAudioChannel_Stereo)
         .export_values();
+
+    nb::enum_<ZOOM_SDK_NAMESPACE::FrameDataFormat>(m, "FrameDataFormat")
+        .value("FrameDataFormat_I420_LIMITED", ZOOM_SDK_NAMESPACE::FrameDataFormat_I420_LIMITED)
+        .value("FrameDataFormat_I420_FULL", ZOOM_SDK_NAMESPACE::FrameDataFormat_I420_FULL)
+        .export_values();
 }
