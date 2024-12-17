@@ -4,6 +4,7 @@
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/unique_ptr.h>
+#include <nanobind/stl/vector.h>
 
 #include "zoom_sdk.h"
 
@@ -78,7 +79,18 @@ void init_meeting_sharing_interface_binding(nb::module_ &m) {
         .def("LockShare", &IMeetingShareController::LockShare)
         .def("PauseCurrentSharing", &IMeetingShareController::PauseCurrentSharing)
         .def("ResumeCurrentSharing", &IMeetingShareController::ResumeCurrentSharing)
-        .def("GetViewableShareSourceList", &IMeetingShareController::GetViewableShareSourceList)
+        .def("GetViewableShareSourceList", [](IMeetingShareController& self) {
+            IList<unsigned int>* list = self.GetViewableShareSourceList();
+            std::vector<unsigned int> result;
+            if (list) {
+                int count = list->GetCount();
+                result.reserve(count);
+                for (int i = 0; i < count; i++) {
+                    result.push_back(list->GetItem(i));
+                }
+            }
+            return result;
+        }, "Returns a vector of user IDs who are currently sharing")
         .def("GetViewableShareSourceByUserID", &IMeetingShareController::GetViewableShareSourceByUserID)
         .def("IsDesktopSharingEnabled", &IMeetingShareController::IsDesktopSharingEnabled)
         .def("IsShareLocked", &IMeetingShareController::IsShareLocked)
