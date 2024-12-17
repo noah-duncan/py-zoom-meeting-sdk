@@ -106,4 +106,44 @@ void init_zoom_sdk_def_binding(nb::module_ &m) {
         .value("FrameDataFormat_I420_LIMITED", ZOOM_SDK_NAMESPACE::FrameDataFormat_I420_LIMITED)
         .value("FrameDataFormat_I420_FULL", ZOOM_SDK_NAMESPACE::FrameDataFormat_I420_FULL)
         .export_values();
+
+    nb::enum_<ZOOM_SDK_NAMESPACE::CannotShareReasonType>(m, "CannotShareReasonType")
+        .value("CannotShareReasonType_None", ZOOM_SDK_NAMESPACE::CannotShareReasonType_None)
+        .value("CannotShareReasonType_Locked", ZOOM_SDK_NAMESPACE::CannotShareReasonType_Locked)
+        .value("CannotShareReasonType_Disabled", ZOOM_SDK_NAMESPACE::CannotShareReasonType_Disabled)
+        .value("CannotShareReasonType_Other_Screen_Sharing", ZOOM_SDK_NAMESPACE::CannotShareReasonType_Other_Screen_Sharing)
+        .value("CannotShareReasonType_Other_WB_Sharing", ZOOM_SDK_NAMESPACE::CannotShareReasonType_Other_WB_Sharing)
+        .value("CannotShareReasonType_Need_Grab_Myself_Screen_Sharing", ZOOM_SDK_NAMESPACE::CannotShareReasonType_Need_Grab_Myself_Screen_Sharing)
+        .value("CannotShareReasonType_Need_Grab_Other_Screen_Sharing", ZOOM_SDK_NAMESPACE::CannotShareReasonType_Need_Grab_Other_Screen_Sharing)
+        .value("CannotShareReasonType_Need_Grab_Audio_Sharing", ZOOM_SDK_NAMESPACE::CannotShareReasonType_Need_Grab_Audio_Sharing)
+        .value("CannotShareReasonType_Need_Grap_WB_Sharing", ZOOM_SDK_NAMESPACE::CannotShareReasonType_Need_Grap_WB_Sharing)
+        .value("CannotShareReasonType_Reach_Maximum", ZOOM_SDK_NAMESPACE::CannotShareReasonType_Reach_Maximum)
+        .value("CannotShareReasonType_Have_Share_From_Mainsession", ZOOM_SDK_NAMESPACE::CannotShareReasonType_Have_Share_From_Mainsession)
+        .value("CannotShareReasonType_UnKnown", ZOOM_SDK_NAMESPACE::CannotShareReasonType_UnKnown)
+        .export_values();
+
+    nb::enum_<ZOOM_SDK_NAMESPACE::SharingStatus>(m, "SharingStatus")
+        .value("Sharing_Self_Send_Begin", ZOOM_SDK_NAMESPACE::Sharing_Self_Send_Begin)
+        .value("Sharing_Self_Send_End", ZOOM_SDK_NAMESPACE::Sharing_Self_Send_End)
+        .value("Sharing_Self_Send_Pure_Audio_Begin", ZOOM_SDK_NAMESPACE::Sharing_Self_Send_Pure_Audio_Begin)
+        .value("Sharing_Self_Send_Pure_Audio_End", ZOOM_SDK_NAMESPACE::Sharing_Self_Send_Pure_Audio_End)
+        .value("Sharing_Other_Share_Begin", ZOOM_SDK_NAMESPACE::Sharing_Other_Share_Begin)
+        .value("Sharing_Other_Share_End", ZOOM_SDK_NAMESPACE::Sharing_Other_Share_End)
+        .value("Sharing_Other_Share_Pure_Audio_Begin", ZOOM_SDK_NAMESPACE::Sharing_Other_Share_Pure_Audio_Begin)
+        .value("Sharing_Other_Share_Pure_Audio_End", ZOOM_SDK_NAMESPACE::Sharing_Other_Share_Pure_Audio_End)
+        .value("Sharing_View_Other_Sharing", ZOOM_SDK_NAMESPACE::Sharing_View_Other_Sharing)
+        .value("Sharing_Pause", ZOOM_SDK_NAMESPACE::Sharing_Pause)
+        .value("Sharing_Resume", ZOOM_SDK_NAMESPACE::Sharing_Resume)
+        .export_values();
+
+    nb::enum_<ZOOM_SDK_NAMESPACE::ShareType>(m, "ShareType")
+        .value("SHARE_TYPE_UNKNOWN", ZOOM_SDK_NAMESPACE::SHARE_TYPE_UNKNOWN)
+        .value("SHARE_TYPE_AS", ZOOM_SDK_NAMESPACE::SHARE_TYPE_AS)
+        .value("SHARE_TYPE_DS", ZOOM_SDK_NAMESPACE::SHARE_TYPE_DS)
+        .value("SHARE_TYPE_WB", ZOOM_SDK_NAMESPACE::SHARE_TYPE_WB)
+        .value("SHARE_TYPE_AIRHOST", ZOOM_SDK_NAMESPACE::SHARE_TYPE_AIRHOST)
+        .value("SHARE_TYPE_CAMERA", ZOOM_SDK_NAMESPACE::SHARE_TYPE_CAMERA)
+        .value("SHARE_TYPE_DATA", ZOOM_SDK_NAMESPACE::SHARE_TYPE_DATA)
+        .value("SHARE_TYPE_VIDEO_FILE", ZOOM_SDK_NAMESPACE::SHARE_TYPE_VIDEO_FILE)
+        .export_values();
 }

@@ -78,6 +78,8 @@ nanobind_add_module(
   src/binding/rawdata_renderer_interface_binding.cpp
   src/binding/meeting_audio_interface_binding.cpp
   src/binding/meeting_video_interface_binding.cpp
+  src/binding/meeting_sharing_interface_binding.cpp
+  src/meeting_share_ctrl_event_callbacks.cpp
   src/auth_service_event_callbacks.cpp
   src/meeting_service_event_callbacks.cpp
   src/meeting_reminder_event_callbacks.cpp

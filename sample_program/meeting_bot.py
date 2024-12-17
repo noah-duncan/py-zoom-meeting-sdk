@@ -124,6 +124,9 @@ class MeetingBot:
         self.virtual_camera_video_source = None
         self.video_source_helper = None
 
+        self.meeting_sharing_controller = None
+        self.meeting_share_ctrl_event = None
+
     def cleanup(self):
         if self.meeting_service:
             zoom.DestroyMeetingService(self.meeting_service)
@@ -174,6 +177,9 @@ class MeetingBot:
     def on_user_join_callback(self, joined_user_ids, user_name):
         print("on_user_join_callback called. joined_user_ids =", joined_user_ids, "user_name =", user_name)
 
+    def on_sharing_status_callback(self, sharing_status, user_id):
+        print("on_sharing_status_callback called. sharing_status =", sharing_status, "user_id =", user_id)
+
     def on_join(self):
         self.meeting_reminder_event = zoom.MeetingReminderEventCallbacks(onReminderNotifyCallback=self.on_reminder_notify)
         self.reminder_controller = self.meeting_service.GetMeetingReminderController()
@@ -206,6 +212,12 @@ class MeetingBot:
                 self.other_participant_id = participant_id
                 break
         print("other_participant_id", self.other_participant_id)
+
+        self.meeting_sharing_controller = self.meeting_service.GetMeetingShareController()
+        self.meeting_share_ctrl_event = zoom.MeetingShareCtrlEventCallbacks(onSharingStatusCallback=self.on_sharing_status_callback)
+        self.meeting_sharing_controller.SetEvent(self.meeting_share_ctrl_event)
+        viewable_share_source_list = self.meeting_sharing_controller.GetViewableShareSourceList()
+        print("viewable_share_source_list", viewable_share_source_list)
 
         self.audio_ctrl = self.meeting_service.GetMeetingAudioController()
         self.audio_ctrl_event = zoom.MeetingAudioCtrlEventCallbacks(onUserAudioStatusChangeCallback=self.on_user_audio_status_change_callback, onUserActiveAudioChangeCallback=self.on_user_active_audio_change_callback)
