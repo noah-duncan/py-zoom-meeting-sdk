@@ -16,7 +16,7 @@ void init_zoom_sdk_def_binding(nb::module_ &);
 void init_meeting_participants_ctrl_interface_binding(nb::module_ &);
 void init_meeting_audio_interface_binding(nb::module_ &);
 void init_meeting_video_interface_binding(nb::module_ &);
-
+void init_meeting_sharing_interface_binding(nb::module_ &);
 void init_auth_service_event_callbacks(nb::module_ &);
 void init_meeting_service_event_callbacks(nb::module_ &);
 void init_meeting_reminder_event_callbacks(nb::module_ &);
@@ -49,6 +49,7 @@ NB_MODULE(_zoom_meeting_sdk_impl, m) {
     init_rawdata_renderer_interface_binding(m);
     init_meeting_audio_interface_binding(m);
     init_meeting_video_interface_binding(m);
+    init_meeting_sharing_interface_binding(m);
     init_auth_service_event_callbacks(m);
     init_meeting_service_event_callbacks(m);
     init_meeting_reminder_event_callbacks(m);
