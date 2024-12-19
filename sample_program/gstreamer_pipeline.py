@@ -42,13 +42,13 @@ class GstreamerPipeline:
 
         reduce_video_resolution_pipeline_str = (
             'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
-            'queue name=q1 ! '
+            'queue name=q1 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
             'videoconvert ! '
             'videoscale method=2 ! video/x-raw,width=1080,height=720 ! '
             'videorate ! '
-            'queue name=q2  ! '
-            'x264enc speed-preset=superfast tune=zerolatency ! '
-            'queue name=q3  ! '
+            'queue name=q2 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
+            'x264enc tune=zerolatency speed-preset=ultrafast qp-min=17 rc-lookahead=30 subme=8 ref=4 bframes=0 tune=stillimage pass=qual ! '
+            'queue name=q3 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
             'mp4mux name=muxer ! queue name=q4 ! appsink name=sink emit-signals=true sync=false drop=false '
             'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
             'queue name=q5 leaky=downstream ! '
