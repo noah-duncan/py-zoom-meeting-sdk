@@ -56,6 +56,7 @@ private:
     std::function<void()> m_onSuspendParticipantsActivitiesCallback;
     std::function<void(bool)> m_onAICompanionActiveChangeNoticeCallback;
     std::function<void(const zchar_t*)> m_onMeetingTopicChangedCallback;
+    std::function<void(const zchar_t*)> m_onMeetingFullToWatchLiveStreamCallback;
 
 public:
     MeetingServiceEventCallbacks(
@@ -64,13 +65,15 @@ public:
         const std::function<void(const ZOOM_SDK_NAMESPACE::MeetingParameter*)>& onMeetingParameterNotificationCallback = nullptr,
         const std::function<void()>& onSuspendParticipantsActivitiesCallback = nullptr,
         const std::function<void(bool)>& onAICompanionActiveChangeNoticeCallback = nullptr,
-        const std::function<void(const zchar_t*)>& onMeetingTopicChangedCallback = nullptr
+        const std::function<void(const zchar_t*)>& onMeetingTopicChangedCallback = nullptr,
+        const std::function<void(const zchar_t*)>& onMeetingFullToWatchLiveStreamCallback = nullptr
     ) : m_onMeetingStatusChangedCallback(onMeetingStatusChangedCallback),
         m_onMeetingStatisticsWarningNotificationCallback(onMeetingStatisticsWarningNotificationCallback),
         m_onMeetingParameterNotificationCallback(onMeetingParameterNotificationCallback),
         m_onSuspendParticipantsActivitiesCallback(onSuspendParticipantsActivitiesCallback),
         m_onAICompanionActiveChangeNoticeCallback(onAICompanionActiveChangeNoticeCallback),
-        m_onMeetingTopicChangedCallback(onMeetingTopicChangedCallback) {}
+        m_onMeetingTopicChangedCallback(onMeetingTopicChangedCallback),
+        m_onMeetingFullToWatchLiveStreamCallback(onMeetingFullToWatchLiveStreamCallback) {}
 
     void onMeetingStatusChanged(ZOOM_SDK_NAMESPACE::MeetingStatus status, int iResult = 0) override {
         if (m_onMeetingStatusChangedCallback)
@@ -101,6 +104,11 @@ public:
         if (m_onMeetingTopicChangedCallback)
             m_onMeetingTopicChangedCallback(sTopic);
     }
+
+    void onMeetingFullToWatchLiveStream(const zchar_t* sLiveStreamUrl) override {
+        if (m_onMeetingFullToWatchLiveStreamCallback)
+            m_onMeetingFullToWatchLiveStreamCallback(sLiveStreamUrl);
+    }
 };
 
 void init_meeting_service_event_callbacks(nb::module_ &m) {
@@ -112,6 +120,7 @@ void init_meeting_service_event_callbacks(nb::module_ &m) {
                 std::function<void(const ZOOM_SDK_NAMESPACE::MeetingParameter*)>&,
                 std::function<void()>&,
                 std::function<void(bool)>&,
+                std::function<void(const zchar_t*)>&,
                 std::function<void(const zchar_t*)>&
             >(),
             nb::arg("onMeetingStatusChangedCallback") = nullptr,
@@ -119,7 +128,8 @@ void init_meeting_service_event_callbacks(nb::module_ &m) {
             nb::arg("onMeetingParameterNotificationCallback") = nullptr,
             nb::arg("onSuspendParticipantsActivitiesCallback") = nullptr,
             nb::arg("onAICompanionActiveChangeNoticeCallback") = nullptr,
-            nb::arg("onMeetingTopicChangedCallback") = nullptr
+            nb::arg("onMeetingTopicChangedCallback") = nullptr,
+            nb::arg("onMeetingFullToWatchLiveStreamCallback") = nullptr
         );
 
 }
