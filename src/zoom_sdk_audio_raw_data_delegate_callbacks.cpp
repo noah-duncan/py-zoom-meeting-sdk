@@ -31,7 +31,7 @@ class IZoomSDKAudioRawDataDelegate
 public:
 	~IZoomSDKAudioRawDataDelegate(){}
 	virtual void onMixedAudioRawDataReceived(AudioRawData* data_) = 0;
-	virtual void onOneWayAudioRawDataReceived(AudioRawData* data_, uint32_t node_id) = 0;
+	virtual void onOneWayAudioRawDataReceived(AudioRawData* data_, uint32_t user_id) = 0;
 	virtual void onShareAudioRawDataReceived(AudioRawData* data_) = 0;
 
 	/// \brief Invoked when individual interpreter's raw audio data received
@@ -77,18 +77,18 @@ public:
         }
     }
 
-    void onOneWayAudioRawDataReceived(AudioRawData* data_, uint32_t node_id) override {
+    void onOneWayAudioRawDataReceived(AudioRawData* data_, uint32_t user_id) override {
         if (m_onOneWayAudioRawDataReceivedCallback)
         {
             if (m_collectPerformanceData) {
                 auto start = std::chrono::high_resolution_clock::now();
-                m_onOneWayAudioRawDataReceivedCallback(data_, node_id);
+                m_onOneWayAudioRawDataReceivedCallback(data_, user_id);
                 auto end = std::chrono::high_resolution_clock::now();
                 uint64_t processingTimeMicroseconds = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
                 m_performanceData.updatePerformanceData(processingTimeMicroseconds);
             }
             else
-                m_onOneWayAudioRawDataReceivedCallback(data_, node_id);
+                m_onOneWayAudioRawDataReceivedCallback(data_, user_id);
         }
     }
 

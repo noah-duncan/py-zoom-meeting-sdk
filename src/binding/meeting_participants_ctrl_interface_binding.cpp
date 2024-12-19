@@ -144,5 +144,7 @@ void init_meeting_participants_ctrl_interface_binding(nb::module_ &m) {
         .def("GetLocalRecordingStatus", &IUserInfo::GetLocalRecordingStatus)
         .def("IsRawLiveStreaming", &IUserInfo::IsRawLiveStreaming)
         .def("HasRawLiveStreamPrivilege", &IUserInfo::HasRawLiveStreamPrivilege)
-        .def("HasCamera", &IUserInfo::HasCamera);
+        .def("HasCamera", &IUserInfo::HasCamera)
+        .def("IsProductionStudioUser", &IUserInfo::IsProductionStudioUser)
+        .def("GetProductionStudioParent", &IUserInfo::GetProductionStudioParent);
 }
