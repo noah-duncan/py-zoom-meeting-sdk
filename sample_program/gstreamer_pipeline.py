@@ -36,31 +36,27 @@ class GstreamerPipeline:
         """Initialize GStreamer pipeline for combined MP4 recording with audio and video"""
         self.start_time_ns = None
 
+# made shit slow             'x264enc tune=zerolatency speed-preset=ultrafast qp-min=17 rc-lookahead=30 subme=8 ref=4 bframes=0 tune=stillimage pass=qual ! '
+# made shit fast             'x264enc speed-preset=ultrafast  bframes=0 tune=stillimage pass=qual ! '
+# key thing seems to be speed-preset
+
         reduce_video_resolution_pipeline_str = (
             'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
             'queue name=q1 ! '
             'videoconvert ! '
-            'videoscale ! video/x-raw,width=1728,height=1118 ! '
+            'videoscale method=2 ! video/x-raw,width=1080,height=720 ! '
             'videorate ! '
-            'queue name=q2 ! '
-            'x264enc speed-preset=faster '
-            'key-int-max=60 '
-            'qp-min=17 '
-            'rc-lookahead=30 '
-            'subme=8 '           # Better motion estimation
-            'ref=4 '            # More reference frames
-            'bframes=0 '        # Disable B-frames for sharper image
-            'tune=stillimage ' # Better for static content
-            'pass=qual ! '      # Quality-focused encoding
-            'queue name=q3 ! '
+            'queue name=q2  ! '
+            'x264enc speed-preset=superfast tune=zerolatency ! '
+            'queue name=q3  ! '
             'mp4mux name=muxer ! queue name=q4 ! appsink name=sink emit-signals=true sync=false drop=false '
             'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
-            'queue name=q5 ! '
+            'queue name=q5 leaky=downstream ! '
             'audioconvert ! '
             'audiorate ! '
-            'queue name=q6 ! '
+            'queue name=q6 leaky=downstream ! '
             'voaacenc bitrate=128000 ! '
-            'queue name=q7 ! '
+            'queue name=q7 leaky=downstream ! '
             'muxer. '
         )
         
@@ -71,7 +67,7 @@ class GstreamerPipeline:
         self.audio_appsrc = self.pipeline.get_by_name('audio_source')
         
         # Configure video appsrc
-        video_caps = Gst.Caps.from_string('video/x-raw,format=BGR,width=1728,height=1118,framerate=30/1')
+        video_caps = Gst.Caps.from_string('video/x-raw,format=BGR,width=1728,height=1116,framerate=30/1')
         self.appsrc.set_property('caps', video_caps)
         self.appsrc.set_property('format', Gst.Format.TIME)
         self.appsrc.set_property('is-live', True)

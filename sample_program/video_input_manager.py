@@ -53,6 +53,7 @@ class VideoInputStream:
         self.cleaned_up = False
         self.last_frame_time = time.time()
         self.black_frame_timer_id = None
+        self.frame_counter = 0
 
         self.renderer_delegate = zoom.ZoomSDKRendererDelegateCallbacks(
             onRawDataFrameReceivedCallback=self.on_raw_video_frame_received_callback,
@@ -90,12 +91,18 @@ class VideoInputStream:
         self.cleaned_up = True
 
     def on_raw_video_frame_received_callback(self, data):
+        
         print("GOT SHARE FRAME2")
         if self.cleaned_up:
             return
         
         if not self.video_input_manager.wants_frames_for_user(self.user_id):
             return
+
+        # Skip every other frame
+        self.frame_counter += 1
+        #if self.frame_counter % 4 > 0:
+        #    return
 
         self.last_frame_time = time.time()
         bgr_frame = convert_yuv420_frame_to_bgr(data, data.GetStreamWidth(), data.GetStreamHeight())
