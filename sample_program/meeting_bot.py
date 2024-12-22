@@ -379,7 +379,7 @@ class MeetingBot:
         self.active_speaker_id = user_ids[0]
 
         if self.pipeline.wants_any_video_frames():
-            self.video_input_manager.set_mode(mode=VideoInputManager.Mode.ACTIVE_SPEAKER, active_speaker_id=self.active_speaker_id)
+            self.video_input_manager.set_mode(mode=VideoInputManager.Mode.SCREENSHARE_AND_ACTIVE_SPEAKER, active_speaker_id=self.active_speaker_id)
 
 
     def on_user_audio_status_change_callback(self, user_audio_statuses, otherstuff):
@@ -449,7 +449,7 @@ class MeetingBot:
         print("audio_helper_set_external_audio_source_result =", audio_helper_set_external_audio_source_result)
 
         if self.other_participant_id:
-            self.video_input_manager.set_mode(mode=VideoInputManager.Mode.ACTIVE_SPEAKER, active_speaker_id=self.other_participant_id)
+            self.video_input_manager.set_mode(mode=VideoInputManager.Mode.SCREENSHARE_AND_ACTIVE_SPEAKER, active_speaker_id=self.other_participant_id)
 
         # Initialize GStreamer pipeline when starting recording
         self.pipeline.setup_gstreamer_pipeline()
@@ -524,10 +524,10 @@ class MeetingBot:
         raise Exception("Failed to authorize. result =", result)
     
     def meeting_status_changed(self, status, iResult):
+        print("meeting_status_changed called. status =",status,"iResult=",iResult)
         if status == zoom.MEETING_STATUS_INMEETING:
             return self.on_join()
         
-        print("meeting_status_changed called. status =",status,"iResult=",iResult)
 
     def create_services(self):
         self.meeting_service = zoom.CreateMeetingService()

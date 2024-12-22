@@ -41,19 +41,24 @@ def convert_yuv420_frame_to_bgr(frame_bytes, width, height):
     # Now convert YUV420 to BGR using OpenCV
     yuv_image = yuv_data.reshape((height * 3 // 2, width))
     bgr_image = cv2.cvtColor(yuv_image, cv2.COLOR_YUV2BGR_I420)
-    #bgr_image_scaled = cv2.resize(bgr_image, (640, 360), interpolation=cv2.INTER_LINEAR)
+    bgr_image_scaled = cv2.resize(bgr_image, (1728, 1116), interpolation=cv2.INTER_NEAREST)
     #cv2.imwrite('outputfres.png', bgr_image_scaled)
     
-    return bgr_image
+    return bgr_image_scaled
 
 class VideoInputStream:
-    def __init__(self, video_input_manager, user_id):
+    def __init__(self, video_input_manager, user_id, stream_type):
         self.video_input_manager = video_input_manager
         self.user_id = user_id
+        self.stream_type = stream_type
         self.cleaned_up = False
         self.last_frame_time = time.time()
         self.black_frame_timer_id = None
         self.frame_counter = 0
+        # Add FPS tracking variables
+        self.fps = 0
+        self.fps_start_time = time.time()
+        self.FPS_UPDATE_INTERVAL = 1.0  # Update FPS every second
 
         self.renderer_delegate = zoom.ZoomSDKRendererDelegateCallbacks(
             onRawDataFrameReceivedCallback=self.on_raw_video_frame_received_callback,
@@ -61,8 +66,14 @@ class VideoInputStream:
         )
 
         self.renderer = zoom.createRenderer(self.renderer_delegate)
-        self.renderer.setRawDataResolution(zoom.ZoomSDKResolution_1080P)
-        subscribe_result = self.renderer.subscribe(self.user_id, zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_SHARE)
+        self.renderer.setRawDataResolution(zoom.ZoomSDKResolution_360P)
+        
+        # Choose the correct raw data type based on stream_type
+        raw_data_type = (zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_SHARE 
+                        if stream_type == VideoInputManager.StreamType.SCREENSHARE 
+                        else zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_VIDEO)
+        
+        subscribe_result = self.renderer.subscribe(self.user_id, raw_data_type)
         print("subscribe result", subscribe_result)
         self.raw_data_status = zoom.RawData_Off
         
@@ -77,7 +88,7 @@ class VideoInputStream:
         if current_time - self.last_frame_time >= 0.08 and self.raw_data_status == zoom.RawData_Off:
             # Create a black frame of the same dimensions
             black_frame = np.zeros((360, 640, 3), dtype=np.uint8)  # BGR format
-            self.video_input_manager.new_frame_callback(black_frame)
+            self.video_input_manager.new_frame_callback((black_frame, self.stream_type, self.user_id))
             
         return not self.cleaned_up  # Continue timer if not cleaned up
 
@@ -91,20 +102,30 @@ class VideoInputStream:
         self.cleaned_up = True
 
     def on_raw_video_frame_received_callback(self, data):
-        
-        print("GOT SHARE FRAME2")
         if self.cleaned_up:
             return
+            
+        # Update FPS calculation
+        current_time = time.time()
+        self.frame_counter += 1
         
+        # Calculate FPS every second
+        elapsed_time = current_time - self.fps_start_time
+        if elapsed_time >= self.FPS_UPDATE_INTERVAL:
+            self.fps = self.frame_counter / elapsed_time
+            print(f"Current FPS: {self.fps:.2f}")
+            # Reset counters
+            self.frame_counter = 0
+            self.fps_start_time = current_time
+
         if not self.video_input_manager.wants_frames_for_user(self.user_id):
             return
+        
+        print("GOT SHARE FRAME44 buffer len", len(data.GetBuffer()), "width", data.GetStreamWidth(), "height", data.GetStreamHeight(), "is limited", data.IsLimitedI420())
 
-        # Skip every other frame
-        self.frame_counter += 1
-        #if self.frame_counter % 4 > 0:
-        #    return
+        
 
-        self.last_frame_time = time.time()
+        self.last_frame_time = current_time
         bgr_frame = convert_yuv420_frame_to_bgr(data, data.GetStreamWidth(), data.GetStreamHeight())
 
         if bgr_frame is None or bgr_frame.size == 0:
@@ -112,14 +133,20 @@ class VideoInputStream:
             return
 
         print("GOT SHARE FRAME44 buffer len", len(data.GetBuffer()), "width", data.GetStreamWidth(), "height", data.GetStreamHeight(), "is limited", data.IsLimitedI420())
-        self.video_input_manager.new_frame_callback(bgr_frame)
+        self.video_input_manager.new_frame_callback((bgr_frame, self.stream_type, self.user_id))
 
     def on_raw_data_status_changed_callback(self, status):
         self.raw_data_status = status
     
 class VideoInputManager:
+
+    class StreamType:
+        VIDEO = 1
+        SCREENSHARE = 2
+
     class Mode:
         ACTIVE_SPEAKER = 1
+        SCREENSHARE_AND_ACTIVE_SPEAKER = 2
 
     def __init__(self, *, new_frame_callback, wants_any_frames_callback):
         self.new_frame_callback = new_frame_callback
@@ -127,41 +154,55 @@ class VideoInputManager:
         self.mode = None
         self.input_streams = []
 
-    def add_input_streams_if_needed(self, user_ids):
+    def add_input_streams_if_needed(self, streams_info):
         streams_to_remove = [
             input_stream for input_stream in self.input_streams 
-            if input_stream.user_id not in user_ids
+            if not any(
+                stream_info['user_id'] == input_stream.user_id and 
+                stream_info['stream_type'] == input_stream.stream_type 
+                for stream_info in streams_info
+            )
         ]
 
         for stream in streams_to_remove:
             stream.cleanup()
             self.input_streams.remove(stream)
 
-        for user_id in user_ids:
-            if any(input_stream.user_id == user_id for input_stream in self.input_streams):
+        for stream_info in streams_info:
+            if any(input_stream.user_id == stream_info['user_id'] and input_stream.stream_type == stream_info['stream_type'] for input_stream in self.input_streams):
                 continue
 
-            self.input_streams.append(VideoInputStream(self, user_id))
+            self.input_streams.append(VideoInputStream(self, stream_info['user_id'], stream_info['stream_type']))
 
     def cleanup(self):
         for input_stream in self.input_streams:
             input_stream.cleanup()
 
     def set_mode(self, *, mode, active_speaker_id):
-        if mode != VideoInputManager.Mode.ACTIVE_SPEAKER:
+        if mode != VideoInputManager.Mode.ACTIVE_SPEAKER and mode != VideoInputManager.Mode.SCREENSHARE_AND_ACTIVE_SPEAKER:
             raise Exception("Unsupported mode " + str(mode))
         
         self.mode = mode
 
         if self.mode == VideoInputManager.Mode.ACTIVE_SPEAKER:
             self.active_speaker_id = active_speaker_id
-            self.add_input_streams_if_needed([active_speaker_id])
+            self.add_input_streams_if_needed([{"stream_type": VideoInputManager.StreamType.VIDEO, "user_id": active_speaker_id}])
+
+        if self.mode == VideoInputManager.Mode.SCREENSHARE_AND_ACTIVE_SPEAKER:
+            self.active_speaker_id = active_speaker_id
+            self.add_input_streams_if_needed([
+                {"stream_type": VideoInputManager.StreamType.VIDEO, "user_id": active_speaker_id}, 
+                {"stream_type": VideoInputManager.StreamType.SCREENSHARE, "user_id": active_speaker_id}
+            ])
 
     def wants_frames_for_user(self, user_id):
         if not self.wants_any_frames_callback():
             return False
     
         if self.mode == VideoInputManager.Mode.ACTIVE_SPEAKER and user_id != self.active_speaker_id:
+            return False
+        
+        if self.mode == VideoInputManager.Mode.SCREENSHARE_AND_ACTIVE_SPEAKER and user_id != self.active_speaker_id:
             return False
 
         return True
