@@ -43,22 +43,28 @@ class GstreamerPipeline:
 # key thing seems to be speed-preset
 
         reduce_video_resolution_pipeline_str = (
+            # Main video source (screenshare)
             'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
             'queue name=q1 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
             'videoconvert ! '
             'videoscale method=2 ! video/x-raw,width=1080,height=720 ! '
             'videorate ! '
             'queue name=q2 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
-            'compositor name=comp sink_0::xpos=0 sink_0::ypos=0 sink_1::xpos=780 sink_1::ypos=0 ! '
-            'queue name=q8 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
-            'x264enc tune=zerolatency speed-preset=ultrafast qp-min=17 rc-lookahead=30 subme=8 ref=4 bframes=0 tune=stillimage pass=qual ! '
-            'queue name=q3 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
-            'mp4mux name=muxer ! queue name=q4 ! appsink name=sink emit-signals=true sync=false drop=false '
+            'comp.sink_0 '
+            # Speaker bubble source
             'appsrc name=speaker_source do-timestamp=false stream-type=0 format=time ! '
             'queue name=q9 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
             'videoconvert ! '
             'videoscale method=2 ! video/x-raw,width=300,height=200 ! '
             'comp.sink_1 '
+            # Compositor and encoding
+            'compositor name=comp background=black sink_0::alpha=1.0 sink_1::alpha=1.0 ! '
+            'queue name=q8 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
+            'x264enc speed-preset=ultrafast qp-min=17 rc-lookahead=30 subme=8 ref=4 bframes=0 tune=stillimage pass=qual ! '
+            'video/x-h264,profile=baseline ! '
+            'queue name=q3 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
+            'mp4mux name=muxer ! queue name=q4 ! appsink name=sink emit-signals=true sync=false drop=false '
+            # Audio source
             'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
             'queue name=q5 leaky=downstream ! '
             'audioconvert ! '
@@ -223,6 +229,9 @@ class GstreamerPipeline:
             print(f"Error processing video frame: {e}")
 
     def cleanup(self):
+        self.recording_active = False
+        self.audio_recording_active = False
+        
         print("Shutting down GStreamer pipeline...")
         if self.speaker_appsrc:
             self.speaker_appsrc.emit('end-of-stream')

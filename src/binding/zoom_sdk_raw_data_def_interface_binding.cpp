@@ -55,13 +55,13 @@ void init_zoom_sdk_raw_data_def_interface_binding(nb::module_ &m) {
         .def("AddRef", &YUVRawDataI420::AddRef)
         .def("Release", &YUVRawDataI420::Release)
         .def("GetYBuffer", [](YUVRawDataI420& self) -> nb::bytes {
-            return nb::bytes(self.GetYBuffer(), self.GetBufferLen());
+            return nb::bytes(self.GetYBuffer(), self.GetStreamWidth() * self.GetStreamHeight());
         })
         .def("GetUBuffer", [](YUVRawDataI420& self) -> nb::bytes {
-            return nb::bytes(self.GetUBuffer(), self.GetBufferLen());
+            return nb::bytes(self.GetUBuffer(), self.GetStreamWidth() * self.GetStreamHeight() / 4);
         })
         .def("GetVBuffer", [](YUVRawDataI420& self) -> nb::bytes {
-            return nb::bytes(self.GetVBuffer(), self.GetBufferLen());
+            return nb::bytes(self.GetVBuffer(), self.GetStreamWidth() * self.GetStreamHeight() / 4);
         })
         .def("GetAlphaBuffer", [](YUVRawDataI420& self) -> nb::bytes {
             return nb::bytes(self.GetAlphaBuffer(), self.GetAlphaBufferLen());

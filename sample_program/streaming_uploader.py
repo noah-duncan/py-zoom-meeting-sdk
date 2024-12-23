@@ -1,5 +1,4 @@
 import boto3
-from gi.repository import Gst, GObject
 import threading
 from io import BytesIO
 from queue import Queue
