@@ -85,7 +85,10 @@ jobs:
     name: Upload if release
     needs: merge_wheels
     runs-on: ubuntu-latest
+    environment: release
     if: github.event_name == 'release' && github.event.action == 'published'
+    permissions:
+      id-token: write
 
     steps:
     - uses: actions/setup-python@v5
@@ -96,6 +99,4 @@ jobs:
 
     - uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        user: __token__
-        password: ${{ secrets.pypi_password }}
         packages-dir: dist/dist
