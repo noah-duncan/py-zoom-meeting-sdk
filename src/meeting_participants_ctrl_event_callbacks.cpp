@@ -33,6 +33,7 @@
 
 #include "rawdata/zoom_rawdata_api.h"
 #include "rawdata/rawdata_audio_helper_interface.h"
+#include "ilist_caster.h"
 
 #include <iostream>
 #include <functional>
@@ -48,7 +49,7 @@ private:
     function<void(vector<unsigned int>, const zchar_t*)> m_onUserLeftCallback;
     function<void(unsigned int)> m_onHostChangeNotificationCallback;
     function<void(bool, unsigned int)> m_onLowOrRaiseHandStatusChangedCallback;
-    function<void(vector<unsigned int>)> m_onUserNamesChangedCallback;
+    function<void(IList<unsigned int>*)> m_onUserNamesChangedCallback;
     function<void(unsigned int, bool)> m_onCoHostChangeNotificationCallback;
     function<void()> m_onInvalidReclaimHostkeyCallback;
     function<void()> m_onAllHandsLoweredCallback;
@@ -70,7 +71,7 @@ public:
         const function<void(vector<unsigned int>, const zchar_t*)>& onUserLeftCallback = nullptr,
         const function<void(unsigned int)>& onHostChangeNotificationCallback = nullptr,
         const function<void(bool, unsigned int)>& onLowOrRaiseHandStatusChangedCallback = nullptr,
-        const function<void(vector<unsigned int>)>& onUserNamesChangedCallback = nullptr,
+        const function<void(IList<unsigned int>*)>& onUserNamesChangedCallback = nullptr,
         const function<void(unsigned int, bool)>& onCoHostChangeNotificationCallback = nullptr,
         const function<void()>& onInvalidReclaimHostkeyCallback = nullptr,
         const function<void()>& onAllHandsLoweredCallback = nullptr,
@@ -144,17 +145,8 @@ public:
     }
 
     void onUserNamesChanged(IList<unsigned int>* lstUserID) override {
-        if (m_onUserNamesChangedCallback) {
-            vector<unsigned int> result;
-            if (lstUserID) {
-                int count = lstUserID->GetCount();
-                result.reserve(count);
-                for (int i = 0; i < count; i++) {
-                    result.push_back(lstUserID->GetItem(i));
-                }
-            }
-            m_onUserNamesChangedCallback(result);
-        }
+        if (m_onUserNamesChangedCallback)
+            m_onUserNamesChangedCallback(lstUserID);
     }
 
     void onCoHostChangeNotification(unsigned int userId, bool isCoHost) override {
@@ -235,7 +227,7 @@ void init_meeting_participants_ctrl_event_callbacks(nb::module_ &m) {
         const function<void(vector<unsigned int>, const zchar_t*)>&,
         const function<void(unsigned int)>&,
         const function<void(bool, unsigned int)>&,
-        const function<void(vector<unsigned int>)>&,
+        const function<void(IList<unsigned int>*)>&,
         const function<void(unsigned int, bool)>&,
         const function<void()>&,
         const function<void()>&,

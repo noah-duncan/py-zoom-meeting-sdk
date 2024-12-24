@@ -177,6 +177,9 @@ class MeetingBot:
         
         self.create_services()
 
+    def on_user_names_changed_callback(self, named_changed_user_ids):
+        print("on_user_names_changed_callback called. named_changed_user_ids =", named_changed_user_ids)
+
     def on_user_join_callback(self, joined_user_ids, user_name):
         print("on_user_join_callback called. joined_user_ids =", joined_user_ids, "user_name =", user_name)
 
@@ -223,7 +226,7 @@ class MeetingBot:
             GLib.timeout_add_seconds(1, self.start_raw_recording)
 
         self.participants_ctrl = self.meeting_service.GetMeetingParticipantsController()
-        self.participants_ctrl_event = zoom.MeetingParticipantsCtrlEventCallbacks(onUserJoinCallback=self.on_user_join_callback)
+        self.participants_ctrl_event = zoom.MeetingParticipantsCtrlEventCallbacks(onUserJoinCallback=self.on_user_join_callback, onUserNamesChangedCallback=self.on_user_names_changed_callback)
         self.participants_ctrl.SetEvent(self.participants_ctrl_event)
         self.my_participant_id = self.participants_ctrl.GetMySelfUser().GetUserID()
 
@@ -257,6 +260,7 @@ class MeetingBot:
         msg = builder.Build()
         send_result = self.chat_ctrl.SendChatMsgTo(msg)
         print("send_result =", send_result)
+        print("msg = ", msg.GetSegmentDetails())
         builder.Clear()
 
     def on_user_active_audio_change_callback(self, user_ids):
