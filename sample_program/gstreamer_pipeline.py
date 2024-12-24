@@ -22,8 +22,6 @@ class GstreamerPipeline:
         self.queue_drops = {f'q{i}': 0 for i in range(1, 8)}
         self.last_reported_drops = {f'q{i}': 0 for i in range(1, 8)}
 
-        self.speaker_appsrc = None  # Add new source
-
     def on_new_sample_from_appsink(self, sink):
         """Handle new samples from the appsink"""
         sample = sink.emit('pull-sample')
@@ -43,28 +41,14 @@ class GstreamerPipeline:
 # key thing seems to be speed-preset
 
         reduce_video_resolution_pipeline_str = (
-            # Main video source (screenshare)
             'appsrc name=video_source do-timestamp=false stream-type=0 format=time ! '
             'queue name=q1 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
             'videoconvert ! '
-            'videoscale method=2 ! video/x-raw,width=1080,height=720 ! '
             'videorate ! '
             'queue name=q2 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
-            'comp.sink_0 '
-            # Speaker bubble source
-            'appsrc name=speaker_source do-timestamp=false stream-type=0 format=time ! '
-            'queue name=q9 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
-            'videoconvert ! '
-            'videoscale method=2 ! video/x-raw,width=300,height=200 ! '
-            'comp.sink_1 '
-            # Compositor and encoding
-            'compositor name=comp background=black sink_0::alpha=1.0 sink_1::alpha=1.0 ! '
-            'queue name=q8 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
-            'x264enc speed-preset=ultrafast qp-min=17 rc-lookahead=30 subme=8 ref=4 bframes=0 tune=stillimage pass=qual ! '
-            'video/x-h264,profile=baseline ! '
+            'x264enc tune=zerolatency speed-preset=ultrafast qp-min=17 rc-lookahead=30 subme=8 ref=4 bframes=0 tune=stillimage pass=qual ! '
             'queue name=q3 max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! '
             'mp4mux name=muxer ! queue name=q4 ! appsink name=sink emit-signals=true sync=false drop=false '
-            # Audio source
             'appsrc name=audio_source do-timestamp=false stream-type=0 format=time ! '
             'queue name=q5 leaky=downstream ! '
             'audioconvert ! '
@@ -82,7 +66,7 @@ class GstreamerPipeline:
         self.audio_appsrc = self.pipeline.get_by_name('audio_source')
         
         # Configure video appsrc
-        video_caps = Gst.Caps.from_string('video/x-raw,format=BGR,width=1728,height=1116,framerate=30/1')
+        video_caps = Gst.Caps.from_string('video/x-raw,format=BGR,width=1920,height=1080,framerate=30/1')
         self.appsrc.set_property('caps', video_caps)
         self.appsrc.set_property('format', Gst.Format.TIME)
         self.appsrc.set_property('is-live', True)
@@ -100,16 +84,6 @@ class GstreamerPipeline:
         self.audio_appsrc.set_property('do-timestamp', False)
         self.audio_appsrc.set_property('stream-type', 0)  # GST_APP_STREAM_TYPE_STREAM
         self.audio_appsrc.set_property('block', True)  # This helps with synchronization
-
-        # Get and configure speaker appsrc
-        self.speaker_appsrc = self.pipeline.get_by_name('speaker_source')
-        speaker_caps = Gst.Caps.from_string('video/x-raw,format=BGR,width=1728,height=1116,framerate=30/1')
-        self.speaker_appsrc.set_property('caps', speaker_caps)
-        self.speaker_appsrc.set_property('format', Gst.Format.TIME)
-        self.speaker_appsrc.set_property('is-live', True)
-        self.speaker_appsrc.set_property('do-timestamp', False)
-        self.speaker_appsrc.set_property('stream-type', 0)
-        self.speaker_appsrc.set_property('block', True)
 
         # Set up bus
         bus = self.pipeline.get_bus()
@@ -131,7 +105,7 @@ class GstreamerPipeline:
         GLib.timeout_add_seconds(15, self.monitor_pipeline_stats)
 
         # Connect drop signals for all queues
-        for i in range(1, 10):
+        for i in range(1, 8):
             queue = self.pipeline.get_by_name(f'q{i}')
             if queue:
                 queue.connect('overrun', self.on_queue_overrun, f'q{i}')
@@ -170,7 +144,7 @@ class GstreamerPipeline:
         return True
     
     def on_mixed_audio_raw_data_received_callback(self, data):
-        if not self.audio_recording_active or not self.audio_appsrc or not self.recording_active or not self.appsrc or not self.speaker_appsrc:
+        if not self.audio_recording_active or not self.audio_appsrc or not self.recording_active or not self.appsrc:
             return
 
         try:
@@ -192,13 +166,12 @@ class GstreamerPipeline:
             print(f"Error processing audio data: {e}")
 
     def wants_any_video_frames(self):
-        if not self.audio_recording_active or not self.audio_appsrc or not self.recording_active or not self.appsrc or not self.speaker_appsrc:
+        if not self.audio_recording_active or not self.audio_appsrc or not self.recording_active or not self.appsrc:
             return False
 
         return True
     
-    def on_new_video_frame(self, frame_info):
-        frame, stream_type, user_id = frame_info
+    def on_new_video_frame(self, frame):
         try:
             current_time_ns = time.time_ns()
                         
@@ -217,11 +190,8 @@ class GstreamerPipeline:
             # Default to 33ms (30fps) if this is the last frame
             buffer.duration = 33 * 1000 * 1000  # 33ms in nanoseconds
             
-            # Choose the appropriate appsrc based on stream type
-            target_src = self.appsrc if stream_type == 2 else self.speaker_appsrc  # 2 is StreamType.SCREENSHARE
-            
             # Push buffer to pipeline
-            ret = target_src.emit('push-buffer', buffer)
+            ret = self.appsrc.emit('push-buffer', buffer)
             if ret != Gst.FlowReturn.OK:
                 print(f"Warning: Failed to push buffer to pipeline: {ret}")
                 
@@ -229,12 +199,7 @@ class GstreamerPipeline:
             print(f"Error processing video frame: {e}")
 
     def cleanup(self):
-        self.recording_active = False
-        self.audio_recording_active = False
-        
         print("Shutting down GStreamer pipeline...")
-        if self.speaker_appsrc:
-            self.speaker_appsrc.emit('end-of-stream')
         if self.appsrc:
             self.appsrc.emit('end-of-stream')
         if self.audio_appsrc:

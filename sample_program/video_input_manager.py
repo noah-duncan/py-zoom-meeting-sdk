@@ -41,10 +41,10 @@ def convert_yuv420_frame_to_bgr(frame_bytes, width, height):
     # Now convert YUV420 to BGR using OpenCV
     yuv_image = yuv_data.reshape((height * 3 // 2, width))
     bgr_image = cv2.cvtColor(yuv_image, cv2.COLOR_YUV2BGR_I420)
-    bgr_image_scaled = cv2.resize(bgr_image, (1728, 1116), interpolation=cv2.INTER_NEAREST)
+    
     #cv2.imwrite('outputfres.png', bgr_image_scaled)
     
-    return bgr_image_scaled
+    return bgr_image
 
 class VideoInputStream:
     def __init__(self, video_input_manager, user_id, stream_type):
@@ -62,11 +62,12 @@ class VideoInputStream:
 
         self.renderer_delegate = zoom.ZoomSDKRendererDelegateCallbacks(
             onRawDataFrameReceivedCallback=self.on_raw_video_frame_received_callback,
-            onRawDataStatusChangedCallback=self.on_raw_data_status_changed_callback
+            onRawDataStatusChangedCallback=self.on_raw_data_status_changed_callback,
+            collectPerformanceData=True
         )
 
         self.renderer = zoom.createRenderer(self.renderer_delegate)
-        self.renderer.setRawDataResolution(zoom.ZoomSDKResolution_360P)
+        self.renderer.setRawDataResolution(zoom.ZoomSDKResolution_90P)
         
         # Choose the correct raw data type based on stream_type
         raw_data_type = (zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_SHARE 
@@ -88,11 +89,13 @@ class VideoInputStream:
         if current_time - self.last_frame_time >= 0.08 and self.raw_data_status == zoom.RawData_Off:
             # Create a black frame of the same dimensions
             black_frame = np.zeros((360, 640, 3), dtype=np.uint8)  # BGR format
-            self.video_input_manager.new_frame_callback((black_frame, self.stream_type, self.user_id))
+            self.video_input_manager.new_frame_callback_for_stream((black_frame, self.stream_type, self.user_id))
+            print("sent black frame")
             
         return not self.cleaned_up  # Continue timer if not cleaned up
 
     def cleanup(self):
+        performance_data = self.renderer_delegate.getPerformanceData()
         print("starting cleanup input stream for user", self.user_id)
         if self.black_frame_timer_id is not None:
             GLib.source_remove(self.black_frame_timer_id)
@@ -100,6 +103,13 @@ class VideoInputStream:
         self.renderer.unSubscribe()
         print("finished cleanup input stream for user", self.user_id)
         self.cleaned_up = True
+
+        print("totalProcessingTimeMicroseconds =", performance_data.totalProcessingTimeMicroseconds)
+        print("numCalls =", performance_data.numCalls)
+        print("maxProcessingTimeMicroseconds =", performance_data.maxProcessingTimeMicroseconds)
+        print("minProcessingTimeMicroseconds =", performance_data.minProcessingTimeMicroseconds)
+        print("meanProcessingTimeMicroseconds =", float(performance_data.totalProcessingTimeMicroseconds) / performance_data.numCalls)
+        
 
     def on_raw_video_frame_received_callback(self, data):
         if self.cleaned_up:
@@ -121,7 +131,7 @@ class VideoInputStream:
         if not self.video_input_manager.wants_frames_for_user(self.user_id):
             return
         
-        print("GOT SHARE FRAME44 buffer len", len(data.GetBuffer()), "width", data.GetStreamWidth(), "height", data.GetStreamHeight(), "is limited", data.IsLimitedI420())
+        #print("GOT SHARE FRAME44 buffer len", len(data.GetBuffer()), "width", data.GetStreamWidth(), "height", data.GetStreamHeight(), "is limited", data.IsLimitedI420())
 
         
 
@@ -132,8 +142,8 @@ class VideoInputStream:
             print("Warning: Invalid frame received")
             return
 
-        print("GOT SHARE FRAME44 buffer len", len(data.GetBuffer()), "width", data.GetStreamWidth(), "height", data.GetStreamHeight(), "is limited", data.IsLimitedI420())
-        self.video_input_manager.new_frame_callback((bgr_frame, self.stream_type, self.user_id))
+        #print("GOT SHARE FRAME44 buffer len", len(data.GetBuffer()), "width", data.GetStreamWidth(), "height", data.GetStreamHeight(), "is limited", data.IsLimitedI420())
+        self.video_input_manager.new_frame_callback_for_stream((bgr_frame, self.stream_type, self.user_id))
 
     def on_raw_data_status_changed_callback(self, status):
         self.raw_data_status = status
@@ -153,6 +163,9 @@ class VideoInputManager:
         self.wants_any_frames_callback = wants_any_frames_callback
         self.mode = None
         self.input_streams = []
+
+        self.current_frame = np.zeros((1080, 1920, 3), dtype=np.uint8)  # BGR format
+        self.last_speaker_frame = None  # Add this to store the last speaker frame
 
     def add_input_streams_if_needed(self, streams_info):
         streams_to_remove = [
@@ -206,3 +219,59 @@ class VideoInputManager:
             return False
 
         return True
+    
+    def new_frame_callback_for_stream(self, frame):
+        bytes, stream_type, user_id = frame
+        
+        # Handle screenshare frame
+        if stream_type == VideoInputManager.StreamType.SCREENSHARE:
+            h, w = bytes.shape[:2]
+            target_w, target_h = 1920, 1080
+            scale = min(target_w/w, target_h/h)
+            new_w, new_h = int(w * scale), int(h * scale)
+            
+            # Only create new black frame if dimensions changed or it doesn't exist
+            if not hasattr(self, '_black_frame') or self._black_frame.shape != (1080, 1920, 3):
+                self._black_frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
+            
+            # Just use the existing black frame directly
+            self.current_frame = self._black_frame
+            # Zero out the frame (faster than creating new one)
+            #self.current_frame.fill(0)
+            
+            x_offset = (target_w - new_w) // 2
+            y_offset = (target_h - new_h) // 2
+            
+            bgr_image_scaled = cv2.resize(bytes, (new_w, new_h), 
+                                        interpolation=cv2.INTER_NEAREST)
+            
+            self.current_frame[y_offset:y_offset+new_h, 
+                             x_offset:x_offset+new_w] = bgr_image_scaled
+            
+            if self.last_speaker_frame is not None:
+                self._overlay_speaker_bubble(self.last_speaker_frame)
+        
+        # Handle speaker video frame
+        if stream_type == VideoInputManager.StreamType.VIDEO:
+            self.last_speaker_frame = bytes.copy()  # Store the latest speaker frame
+            self._overlay_speaker_bubble(self.last_speaker_frame)
+        
+        # Send the composited frame
+        self.new_frame_callback(self.current_frame)
+
+    def _overlay_speaker_bubble(self, speaker_frame):
+        # Define speaker bubble dimensions and position
+        bubble_width = 160  # Adjust as needed
+        bubble_height = 90  # Adjust as needed
+        x_offset = self.current_frame.shape[1] - bubble_width - 20  # 20px padding from right
+        y_offset = 20  # 20px padding from top
+        
+        # Only resize if the dimensions don't match
+        if speaker_frame.shape[1] != bubble_width or speaker_frame.shape[0] != bubble_height:
+            print("resizing speaker frame to bubble size", speaker_frame.shape, "to", bubble_width, bubble_height)
+            speaker_bubble = cv2.resize(speaker_frame, (bubble_width, bubble_height))
+        else:
+            speaker_bubble = speaker_frame
+        
+        # Overlay the speaker bubble
+        self.current_frame[y_offset:y_offset+bubble_height, x_offset:x_offset+bubble_width] = speaker_bubble
