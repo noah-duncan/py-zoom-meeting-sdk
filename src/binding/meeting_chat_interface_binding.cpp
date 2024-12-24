@@ -85,18 +85,28 @@ void init_meeting_chat_interface_binding(nb::module_ &m) {
         .def("IsThread", &IChatMsgInfo::IsThread)
         .def("GetThreadID", &IChatMsgInfo::GetThreadID)
         .def("GetTextStyleItemList", [](IChatMsgInfo& self) {
-            auto list = self.GetTextStyleItemList();
-            if (!list) {
-                return static_cast<IList<IRichTextStyleItem*>*>(nullptr);
+            IList<IRichTextStyleItem*>* list = self.GetTextStyleItemList();
+            vector<IRichTextStyleItem*> result;
+            if (list) {
+                int count = list->GetCount();
+                result.reserve(count);
+                for (int i = 0; i < count; i++) {
+                    result.push_back(list->GetItem(i));
+                }
             }
-            return list;
+            return result;
         }, nb::rv_policy::reference)
         .def("GetSegmentDetails", [](IChatMsgInfo& self) {
-            auto list = self.GetSegmentDetails();
-            if (!list) {
-                return static_cast<IList<SegmentDetails>*>(nullptr);
+            IList<SegmentDetails>* list = self.GetSegmentDetails();
+            vector<SegmentDetails> result;
+            if (list) {
+                int count = list->GetCount();
+                result.reserve(count);
+                for (int i = 0; i < count; i++) {
+                    result.push_back(list->GetItem(i));
+                }
             }
-            return list;
+            return result;
         }, nb::rv_policy::reference);
 
     nb::class_<IChatMsgInfoBuilder>(m, "IChatMsgInfoBuilder")
@@ -195,7 +205,18 @@ void init_meeting_chat_interface_binding(nb::module_ &m) {
         .def("IsFileTransferEnabled", &IMeetingChatController::IsFileTransferEnabled)
         .def("TransferFile", &IMeetingChatController::TransferFile)
         .def("TransferFileToAll", &IMeetingChatController::TransferFileToAll)
-        .def("GetTransferFileTypeAllowList", &IMeetingChatController::GetTransferFileTypeAllowList)
+        .def("GetTransferFileTypeAllowList", [](IMeetingChatController& self) {
+            IList<const wchar_t*>* list = self.GetTransferFileTypeAllowList();
+            vector<wstring> result;
+            if (list) {
+                int count = list->GetCount();
+                result.reserve(count);
+                for (int i = 0; i < count; i++) {
+                    result.push_back(list->GetItem(i));
+                }
+            }
+            return result;
+        }, nb::rv_policy::reference)
         .def("GetMaxTransferFileSizeBytes", &IMeetingChatController::GetMaxTransferFileSizeBytes);
 
     nb::class_<IRichTextStyleOffset>(m, "IRichTextStyleOffset")
@@ -206,30 +227,17 @@ void init_meeting_chat_interface_binding(nb::module_ &m) {
     nb::class_<IRichTextStyleItem>(m, "IRichTextStyleItem")
         .def("GetTextStyle", &IRichTextStyleItem::GetTextStyle)
         .def("GetTextStyleOffsetList", [](IRichTextStyleItem& self) {
-            auto list = self.GetTextStyleOffsetList();
-            if (!list) {
-                return static_cast<IList<IRichTextStyleOffset*>*>(nullptr);
+            IList<IRichTextStyleOffset*>* list = self.GetTextStyleOffsetList();
+            vector<IRichTextStyleOffset*> result;
+            if (list) {
+                int count = list->GetCount();
+                result.reserve(count);
+                for (int i = 0; i < count; i++) {
+                    result.push_back(list->GetItem(i));
+                }
             }
-            return list;
+            return result;
         }, nb::rv_policy::reference);
-
-    nb::class_<IList<IRichTextStyleItem*>>(m, "IRichTextStyleItemList")
-        .def("GetCount", &IList<IRichTextStyleItem*>::GetCount)
-        .def("GetItem", [](IList<IRichTextStyleItem*>& self, unsigned int index) {
-            if (index >= self.GetCount()) {
-                throw std::out_of_range("Index out of range");
-            }
-            return self.GetItem(index);
-        });
-
-    nb::class_<IList<IRichTextStyleOffset*>>(m, "IRichTextStyleOffsetList")
-        .def("GetCount", &IList<IRichTextStyleOffset*>::GetCount)
-        .def("GetItem", [](IList<IRichTextStyleOffset*>& self, unsigned int index) {
-            if (index >= self.GetCount()) {
-                throw std::out_of_range("Index out of range");
-            }
-            return self.GetItem(index);
-        });
 
     nb::class_<SegmentDetails>(m, "SegmentDetails")
         .def_ro("strContent", &SegmentDetails::strContent)
@@ -237,13 +245,4 @@ void init_meeting_chat_interface_binding(nb::module_ &m) {
         .def_ro("italicAttrs", &SegmentDetails::italicAttrs)
         .def_ro("fontColorAttrs", &SegmentDetails::fontColorAttrs)
         .def_ro("backgroundColorAttrs", &SegmentDetails::backgroundColorAttrs);
-
-    nb::class_<IList<SegmentDetails>>(m, "ISegmentDetailsList")
-        .def("GetCount", &IList<SegmentDetails>::GetCount)
-        .def("GetItem", [](IList<SegmentDetails>& self, unsigned int index) {
-            if (index >= self.GetCount()) {
-                throw std::out_of_range("Index out of range");
-            }
-            return self.GetItem(index);
-        });
 }
