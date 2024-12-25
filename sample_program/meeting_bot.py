@@ -127,6 +127,9 @@ class MeetingBot:
         self.meeting_sharing_controller = None
         self.meeting_share_ctrl_event = None
 
+        self.chat_ctrl = None
+        self.chat_ctrl_event = None
+
     def cleanup(self):
         if self.meeting_service:
             zoom.DestroyMeetingService(self.meeting_service)
@@ -180,6 +183,25 @@ class MeetingBot:
     def on_sharing_status_callback(self, sharing_status, user_id):
         print("on_sharing_status_callback called. sharing_status =", sharing_status, "user_id =", user_id)
 
+    # NOTE: content will always be None use chat_msg_info.GetContent() instead
+    def on_chat_msg_notification_callback(self, chat_msg_info, content):
+        print("\n=== on_chat_msg_notification called ===")
+        print(f"Message ID: {chat_msg_info.GetMessageID()}")
+        print(f"Sender ID: {chat_msg_info.GetSenderUserId()}")
+        print(f"Sender Name: {chat_msg_info.GetSenderDisplayName()}")
+        print(f"Receiver ID: {chat_msg_info.GetReceiverUserId()}")
+        print(f"Receiver Name: {chat_msg_info.GetReceiverDisplayName()}")
+        print(f"Content: {chat_msg_info.GetContent()}")
+        print(f"Timestamp: {chat_msg_info.GetTimeStamp()}")
+        print(f"Message Type: {chat_msg_info.GetChatMessageType()}")
+        print(f"Is Chat To All: {chat_msg_info.IsChatToAll()}")
+        print(f"Is Chat To All Panelist: {chat_msg_info.IsChatToAllPanelist()}")
+        print(f"Is Chat To Waitingroom: {chat_msg_info.IsChatToWaitingroom()}")
+        print(f"Is Comment: {chat_msg_info.IsComment()}")
+        print(f"Is Thread: {chat_msg_info.IsThread()}")
+        print(f"Thread ID: {chat_msg_info.GetThreadID()}")    
+        print("=====================\n")
+
     def on_join(self):
         self.meeting_reminder_event = zoom.MeetingReminderEventCallbacks(onReminderNotifyCallback=self.on_reminder_notify)
         self.reminder_controller = self.meeting_service.GetMeetingReminderController()
@@ -222,6 +244,20 @@ class MeetingBot:
         self.audio_ctrl = self.meeting_service.GetMeetingAudioController()
         self.audio_ctrl_event = zoom.MeetingAudioCtrlEventCallbacks(onUserAudioStatusChangeCallback=self.on_user_audio_status_change_callback, onUserActiveAudioChangeCallback=self.on_user_active_audio_change_callback)
         self.audio_ctrl.SetEvent(self.audio_ctrl_event)
+        
+        self.chat_ctrl = self.meeting_service.GetMeetingChatController()
+        self.chat_ctrl_event = zoom.MeetingChatEventCallbacks(onChatMsgNotificationCallback=self.on_chat_msg_notification_callback)
+        self.chat_ctrl.SetEvent(self.chat_ctrl_event)
+
+        # Send a welcome message to the chat
+        builder = self.chat_ctrl.GetChatMessageBuilder()
+        builder.SetContent("Welcoome to the PyZoomMeetingSDK")
+        builder.SetReceiver(0)
+        builder.SetMessageType(zoom.SDKChatMessageType.To_All)
+        msg = builder.Build()
+        send_result = self.chat_ctrl.SendChatMsgTo(msg)
+        print("send_result =", send_result)
+        builder.Clear()
 
     def on_user_active_audio_change_callback(self, user_ids):
         print("on_user_active_audio_change_callback called. user_ids =", user_ids)

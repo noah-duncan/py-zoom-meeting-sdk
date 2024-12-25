@@ -25,6 +25,7 @@
 #include "meeting_service_components/meeting_waiting_room_interface.h"
 #include "meeting_service_components/meeting_webinar_interface.h"
 #include "meeting_service_components/meeting_raw_archiving_interface.h"
+#include "meeting_service_components/meeting_chat_interface.h"
 
 
 
@@ -154,7 +155,8 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
         .def("GetMeetingAudioController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingAudioController, nb::rv_policy::reference)
         .def("GetMeetingRecordingController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingRecordingController, nb::rv_policy::reference)
         .def("GetMeetingReminderController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingReminderController, nb::rv_policy::reference)
-        .def("GetMeetingParticipantsController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingParticipantsController, nb::rv_policy::reference);
+        .def("GetMeetingParticipantsController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingParticipantsController, nb::rv_policy::reference)
+        .def("GetMeetingChatController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingChatController, nb::rv_policy::reference);
 
     nb::class_<IMeetingServiceEvent>(m, "IMeetingServiceEvent")
         .def("onMeetingStatusChanged", &IMeetingServiceEvent::onMeetingStatusChanged)
