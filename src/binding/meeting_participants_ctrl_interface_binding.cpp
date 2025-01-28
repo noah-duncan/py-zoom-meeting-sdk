@@ -121,8 +121,14 @@ void init_meeting_participants_ctrl_interface_binding(nb::module_ &m) {
         .def("SetFocusModeShareType", &IMeetingParticipantsController::SetFocusModeShareType)
         .def("CanEnableParticipantRequestCloudRecording", &IMeetingParticipantsController::CanEnableParticipantRequestCloudRecording)
         .def("IsParticipantRequestCloudRecordingAllowed", &IMeetingParticipantsController::IsParticipantRequestCloudRecordingAllowed)
-        .def("AllowParticipantsToRequestCloudRecording", &IMeetingParticipantsController::AllowParticipantsToRequestCloudRecording);
-
+        .def("AllowParticipantsToRequestCloudRecording", &IMeetingParticipantsController::AllowParticipantsToRequestCloudRecording)
+        .def("GetAuthorizeUserByRobotUserID", &IMeetingParticipantsController::GetAuthorizeUserByRobotUserID)
+        .def("GetRobotListByAuthorizeUserID", &IMeetingParticipantsController::GetRobotListByAuthorizeUserID)
+        .def("IsSupportVirtualNameTag", &IMeetingParticipantsController::IsSupportVirtualNameTag)
+        .def("EnableVirtualNameTag", &IMeetingParticipantsController::EnableVirtualNameTag)
+        .def("CreateVirtualNameTagRosterInfoBegin", &IMeetingParticipantsController::CreateVirtualNameTagRosterInfoBegin)
+        .def("AddVirtualNameTagRosterInfoToList", &IMeetingParticipantsController::AddVirtualNameTagRosterInfoToList)
+        .def("CreateVirtualNameTagRosterInfoCommit", &IMeetingParticipantsController::CreateVirtualNameTagRosterInfoCommit);
 
     nb::class_<ZOOM_SDK_NAMESPACE::IUserInfo>(m, "IUserInfo")
         .def("GetUserName", &IUserInfo::GetUserName)
@@ -149,5 +155,9 @@ void init_meeting_participants_ctrl_interface_binding(nb::module_ &m) {
         .def("HasRawLiveStreamPrivilege", &IUserInfo::HasRawLiveStreamPrivilege)
         .def("HasCamera", &IUserInfo::HasCamera)
         .def("IsProductionStudioUser", &IUserInfo::IsProductionStudioUser)
-        .def("GetProductionStudioParent", &IUserInfo::GetProductionStudioParent);
+        .def("GetProductionStudioParent", &IUserInfo::GetProductionStudioParent)
+        .def("IsRobotUser", &IUserInfo::IsRobotUser)
+        .def("GetRobotBrandName", &IUserInfo::GetRobotBrandName)
+        .def("IsVirtualNameTagEnabled", &IUserInfo::IsVirtualNameTagEnabled)
+        .def("GetVirtualNameTagList", &IUserInfo::GetVirtualNameTagList);
 }

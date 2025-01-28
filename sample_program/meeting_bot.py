@@ -413,6 +413,7 @@ class MeetingBot:
         param.vanityID = ""
         param.customer_key = ""
         param.webinarToken = ""
+        param.onBehalfToken = ""
         param.isVideoOff = False
         param.isAudioOff = False
 

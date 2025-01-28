@@ -127,7 +127,10 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
             [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p, const std::string &s) { p.userZAK = s.empty() ? nullptr : s.c_str(); })
         .def_prop_rw("app_privilege_token",
             [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p) { return p.app_privilege_token ? std::string(p.app_privilege_token) : std::string(); },
-            [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p, const std::string &s) { p.app_privilege_token = s.empty() ? nullptr : s.c_str(); });        
+            [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p, const std::string &s) { p.app_privilege_token = s.empty() ? nullptr : s.c_str(); })
+        .def_prop_rw("onBehalfToken",
+            [](const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p) { return p.onBehalfToken ? std::string(p.onBehalfToken) : std::string(); },
+            [](ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &p, const std::string &s) { p.onBehalfToken = s.empty() ? nullptr : s.c_str(); });       
 
     nb::class_<ZOOM_SDK_NAMESPACE::JoinParam>(m, "JoinParam")
         .def(nb::init<>())

@@ -47,7 +47,8 @@ void init_setting_service_interface_binding(nb::module_ &m) {
         .def("GetVideoSettings", &ZOOM_SDK_NAMESPACE::ISettingService::GetVideoSettings, nb::rv_policy::reference)
         .def("GetRecordingSettings", &ZOOM_SDK_NAMESPACE::ISettingService::GetRecordingSettings, nb::rv_policy::reference)
         .def("GetStatisticSettings", &ZOOM_SDK_NAMESPACE::ISettingService::GetStatisticSettings, nb::rv_policy::reference)
-        .def("GetShareSettings", &ZOOM_SDK_NAMESPACE::ISettingService::GetShareSettings, nb::rv_policy::reference);
+        .def("GetShareSettings", &ZOOM_SDK_NAMESPACE::ISettingService::GetShareSettings, nb::rv_policy::reference)
+        .def("GetWallpaperSettings", &ZOOM_SDK_NAMESPACE::ISettingService::GetWallpaperSettings, nb::rv_policy::reference);
 
     nb::class_<IAudioSettingContext>(m, "IAudioSettingContext")
         .def("EnableAutoJoinAudio", &IAudioSettingContext::EnableAutoJoinAudio);
