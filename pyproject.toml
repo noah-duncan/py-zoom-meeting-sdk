@@ -33,6 +33,9 @@ build-dir = "build/{wheel_tag}"
 
 # Build stable ABI wheels for CPython 3.12+
 wheel.py-api = "cp312"
+wheel.exclude = [
+    "src/zoomsdk/libcml.so"
+]
 
 [tool.cibuildwheel]
 # Necessary to see build output from the actual compilation
