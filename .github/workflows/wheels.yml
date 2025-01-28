@@ -51,11 +51,11 @@ jobs:
       run: |
         gdown ${{ secrets.ZOOM_SDK_GDRIVE_ID }}
         tar -xf ${{ secrets.ZOOM_SDK_FILENAME }} -C src/zoomsdk
+        cp src/zoomsdk/libmeetingsdk.so src/zoomsdk/libmeetingsdk.so.1
         strip --strip-debug src/zoomsdk/*.so*
         strip --strip-debug src/zoomsdk/qt_libs/Qt/lib/*.so*
         rm sample_program/input_audio/*.pcm
         rm src/zoomsdk/libcml.so
-        ln -s src/zoomsdk/libmeetingsdk.so src/zoomsdk/libmeetingsdk.so.1
 
 
     - uses: pypa/cibuildwheel@v2.19
