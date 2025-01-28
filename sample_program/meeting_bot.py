@@ -271,7 +271,12 @@ class MeetingBot:
 
     def on_mic_start_send_callback(self):
         print("on_mic_start_send_callback called")
-        with open('sample_program/input_audio/test_audio_16778240.pcm', 'rb') as pcm_file:
+        audio_path = 'sample_program/input_audio/test_audio_16778240.pcm'
+        if not os.path.exists(audio_path):
+            print(f"Audio file not found: {audio_path}")
+            return
+            
+        with open(audio_path, 'rb') as pcm_file:
             chunk = pcm_file.read(64000*10)
             self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
 
