@@ -18,34 +18,37 @@ using namespace ZOOMSDK;
 
 class MeetingShareCtrlEventCallbacks : public IMeetingShareCtrlEvent {
 private:
-    std::function<void(SharingStatus, unsigned int)> m_onSharingStatusCallback;
+    std::function<void(ZoomSDKSharingSourceInfo)> m_onSharingStatusCallback;
     std::function<void(bool)> m_onLockShareStatusCallback;
-    std::function<void(ShareInfo&)> m_onShareContentNotificationCallback;
+    std::function<void(ZoomSDKSharingSourceInfo)> m_onShareContentNotificationCallback;
     std::function<void(IShareSwitchMultiToSingleConfirmHandler*)> m_onMultiShareSwitchToSingleShareNeedConfirmCallback;
     std::function<void(ShareSettingType)> m_onShareSettingTypeChangedNotificationCallback;
     std::function<void()> m_onSharedVideoEndedCallback;
     std::function<void(ZoomSDKVideoFileSharePlayError)> m_onVideoFileSharePlayErrorCallback;
+    std::function<void()> m_onFailedToStartShareCallback;
 
 public:
     MeetingShareCtrlEventCallbacks(
-        const std::function<void(SharingStatus, unsigned int)>& onSharingStatusCallback = nullptr,
+        const std::function<void(ZoomSDKSharingSourceInfo)>& onSharingStatusCallback = nullptr,
         const std::function<void(bool)>& onLockShareStatusCallback = nullptr,
-        const std::function<void(ShareInfo&)>& onShareContentNotificationCallback = nullptr,
+        const std::function<void(ZoomSDKSharingSourceInfo)>& onShareContentNotificationCallback = nullptr,
         const std::function<void(IShareSwitchMultiToSingleConfirmHandler*)>& onMultiShareSwitchToSingleShareNeedConfirmCallback = nullptr,
         const std::function<void(ShareSettingType)>& onShareSettingTypeChangedNotificationCallback = nullptr,
         const std::function<void()>& onSharedVideoEndedCallback = nullptr,
-        const std::function<void(ZoomSDKVideoFileSharePlayError)>& onVideoFileSharePlayErrorCallback = nullptr
+        const std::function<void(ZoomSDKVideoFileSharePlayError)>& onVideoFileSharePlayErrorCallback = nullptr,
+        const std::function<void()>& onFailedToStartShareCallback = nullptr
     ) : m_onSharingStatusCallback(onSharingStatusCallback),
         m_onLockShareStatusCallback(onLockShareStatusCallback),
         m_onShareContentNotificationCallback(onShareContentNotificationCallback),
         m_onMultiShareSwitchToSingleShareNeedConfirmCallback(onMultiShareSwitchToSingleShareNeedConfirmCallback),
         m_onShareSettingTypeChangedNotificationCallback(onShareSettingTypeChangedNotificationCallback),
         m_onSharedVideoEndedCallback(onSharedVideoEndedCallback),
-        m_onVideoFileSharePlayErrorCallback(onVideoFileSharePlayErrorCallback) {}
+        m_onVideoFileSharePlayErrorCallback(onVideoFileSharePlayErrorCallback),
+        m_onFailedToStartShareCallback(onFailedToStartShareCallback) {}
 
-    void onSharingStatus(SharingStatus status, unsigned int userId) override {
+    void onSharingStatus(ZoomSDKSharingSourceInfo shareInfo) override {
         if (m_onSharingStatusCallback)
-            m_onSharingStatusCallback(status, userId);
+            m_onSharingStatusCallback(shareInfo);
     }
 
     void onLockShareStatus(bool bLocked) override {
@@ -53,7 +56,7 @@ public:
             m_onLockShareStatusCallback(bLocked);
     }
 
-    void onShareContentNotification(ShareInfo& shareInfo) override {
+    void onShareContentNotification(ZoomSDKSharingSourceInfo shareInfo) override {
         if (m_onShareContentNotificationCallback)
             m_onShareContentNotificationCallback(shareInfo);
     }
@@ -77,18 +80,24 @@ public:
         if (m_onVideoFileSharePlayErrorCallback)
             m_onVideoFileSharePlayErrorCallback(error);
     }
+
+    void onFailedToStartShare() override {
+        if (m_onFailedToStartShareCallback)
+            m_onFailedToStartShareCallback();
+    }
 };
 
 void init_meeting_share_ctrl_event_callbacks(nb::module_ &m) {
     nb::class_<MeetingShareCtrlEventCallbacks, IMeetingShareCtrlEvent>(m, "MeetingShareCtrlEventCallbacks")
         .def(nb::init<
-            const std::function<void(SharingStatus, unsigned int)>&,
+            const std::function<void(ZoomSDKSharingSourceInfo)>&,
             const std::function<void(bool)>&,
-            const std::function<void(ShareInfo&)>&,
+            const std::function<void(ZoomSDKSharingSourceInfo)>&,
             const std::function<void(IShareSwitchMultiToSingleConfirmHandler*)>&,
             const std::function<void(ShareSettingType)>&,
             const std::function<void()>&,
-            const std::function<void(ZoomSDKVideoFileSharePlayError)>&
+            const std::function<void(ZoomSDKVideoFileSharePlayError)>&,
+            const std::function<void()>&
         >(),
             nb::arg("onSharingStatusCallback") = nullptr,
             nb::arg("onLockShareStatusCallback") = nullptr,
@@ -96,6 +105,7 @@ void init_meeting_share_ctrl_event_callbacks(nb::module_ &m) {
             nb::arg("onMultiShareSwitchToSingleShareNeedConfirmCallback") = nullptr,
             nb::arg("onShareSettingTypeChangedNotificationCallback") = nullptr,
             nb::arg("onSharedVideoEndedCallback") = nullptr,
-            nb::arg("onVideoFileSharePlayErrorCallback") = nullptr
+            nb::arg("onVideoFileSharePlayErrorCallback") = nullptr,
+            nb::arg("onFailedToStartShareCallback") = nullptr
         );
 }

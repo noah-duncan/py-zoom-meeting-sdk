@@ -1,6 +1,7 @@
 # Build folder
 /build/*
 !/build/python/
+venv
 
 # ignore the config file
 config.toml

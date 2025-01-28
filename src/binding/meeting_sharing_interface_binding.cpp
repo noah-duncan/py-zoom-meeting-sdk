@@ -79,8 +79,8 @@ void init_meeting_sharing_interface_binding(nb::module_ &m) {
         .def("LockShare", &IMeetingShareController::LockShare)
         .def("PauseCurrentSharing", &IMeetingShareController::PauseCurrentSharing)
         .def("ResumeCurrentSharing", &IMeetingShareController::ResumeCurrentSharing)
-        .def("GetViewableShareSourceList", [](IMeetingShareController& self) {
-            IList<unsigned int>* list = self.GetViewableShareSourceList();
+        .def("GetViewableSharingUserList", [](IMeetingShareController& self) {
+            IList<unsigned int>* list = self.GetViewableSharingUserList();
             std::vector<unsigned int> result;
             if (list) {
                 int count = list->GetCount();
@@ -91,7 +91,6 @@ void init_meeting_sharing_interface_binding(nb::module_ &m) {
             }
             return result;
         }, "Returns a vector of user IDs who are currently sharing")
-        .def("GetViewableShareSourceByUserID", &IMeetingShareController::GetViewableShareSourceByUserID)
         .def("IsDesktopSharingEnabled", &IMeetingShareController::IsDesktopSharingEnabled)
         .def("IsShareLocked", &IMeetingShareController::IsShareLocked)
         .def("IsSupportEnableShareComputerSound", &IMeetingShareController::IsSupportEnableShareComputerSound)
@@ -120,5 +119,18 @@ void init_meeting_sharing_interface_binding(nb::module_ &m) {
         .def("onMultiShareSwitchToSingleShareNeedConfirm", &IMeetingShareCtrlEvent::onMultiShareSwitchToSingleShareNeedConfirm)
         .def("onShareSettingTypeChangedNotification", &IMeetingShareCtrlEvent::onShareSettingTypeChangedNotification)
         .def("onSharedVideoEnded", &IMeetingShareCtrlEvent::onSharedVideoEnded)
-        .def("onVideoFileSharePlayError", &IMeetingShareCtrlEvent::onVideoFileSharePlayError);
+        .def("onVideoFileSharePlayError", &IMeetingShareCtrlEvent::onVideoFileSharePlayError)
+        .def("onFailedToStartShare", &IMeetingShareCtrlEvent::onFailedToStartShare);
+
+    // Add ZoomSDKSharingSourceInfo struct binding
+    nb::class_<ZoomSDKSharingSourceInfo>(m, "SharingSourceInfo")
+        .def_rw("userid", &ZoomSDKSharingSourceInfo::userid)
+        .def_rw("shareSourceID", &ZoomSDKSharingSourceInfo::shareSourceID)
+        .def_rw("status", &ZoomSDKSharingSourceInfo::status)
+        .def_rw("isShowingInFirstView", &ZoomSDKSharingSourceInfo::isShowingInFirstView)
+        .def_rw("isShowingInSecondView", &ZoomSDKSharingSourceInfo::isShowingInSecondView)
+        .def_rw("isCanBeRemoteControl", &ZoomSDKSharingSourceInfo::isCanBeRemoteControl)
+        .def_rw("contentType", &ZoomSDKSharingSourceInfo::contentType)
+        .def_rw("hwndSharedApp", &ZoomSDKSharingSourceInfo::hwndSharedApp)
+        .def_rw("monitorID", &ZoomSDKSharingSourceInfo::monitorID);
 }
