@@ -59,7 +59,7 @@ jobs:
         ZOOM_APP_CLIENT_SECRET: ${{ secrets.ZOOM_APP_CLIENT_SECRET }}
         MEETING_URLS: ${{ secrets.MEETING_URLS }}
         CIBW_ENVIRONMENT_PASS_LINUX: ZOOM_APP_CLIENT_ID ZOOM_APP_CLIENT_SECRET MEETING_URLS
-        CIBW_REPAIR_WHEEL_COMMAND_LINUX: "auditwheel repair --exclude libicudata.so.56 -w {dest_dir} {wheel}"
+        CIBW_REPAIR_WHEEL_COMMAND_LINUX: "auditwheel repair --exclude libunistring.so.2.1.0 -w {dest_dir} {wheel}"
 
     - name: Verify clean directory
       run: git diff --exit-code
