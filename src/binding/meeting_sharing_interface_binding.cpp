@@ -91,6 +91,18 @@ void init_meeting_sharing_interface_binding(nb::module_ &m) {
             }
             return result;
         }, "Returns a vector of user IDs who are currently sharing")
+        .def("GetSharingSourceInfoList", [](IMeetingShareController& self, unsigned int userID) {
+            IList<ZoomSDKSharingSourceInfo>* list = self.GetSharingSourceInfoList(userID);
+            std::vector<ZoomSDKSharingSourceInfo> result;
+            if (list) {
+                int count = list->GetCount();
+                result.reserve(count);
+                for (int i = 0; i < count; i++) {
+                    result.push_back(list->GetItem(i));
+                }
+            }
+            return result;
+        }, "Returns a vector of sharing source information for the specified user")
         .def("IsDesktopSharingEnabled", &IMeetingShareController::IsDesktopSharingEnabled)
         .def("IsShareLocked", &IMeetingShareController::IsShareLocked)
         .def("IsSupportEnableShareComputerSound", &IMeetingShareController::IsSupportEnableShareComputerSound)
