@@ -34,9 +34,10 @@ build-dir = "build/{wheel_tag}"
 # Build stable ABI wheels for CPython 3.12+
 wheel.py-api = "cp312"
 wheel.exclude = [
-    "*libcml.so*",
-    "*test_audio_16778240.pcm*",
-    "*libmeetingsdk.so"
+    "*libgnutls*",
+    "*libcrypto*",
+    "*libsystemd*",
+    "*libunistring*"
 ]
 
 [tool.cibuildwheel]
