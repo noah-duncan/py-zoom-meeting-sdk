@@ -174,7 +174,7 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
         .value("END_MEETING", ZOOM_SDK_NAMESPACE::END_MEETING)
         .export_values();       
 
-    nb::enum_<MeetingEndReason>(m, "MeetingEndReason")
+    nb::enum_<MeetingEndReason>(m, "MeetingEndReason", nb::is_arithmetic())
         .value("EndMeetingReason_None", EndMeetingReason_None)
         .value("EndMeetingReason_KickByHost", EndMeetingReason_KickByHost)
         .value("EndMeetingReason_EndByHost", EndMeetingReason_EndByHost)
