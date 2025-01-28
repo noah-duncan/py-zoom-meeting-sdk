@@ -52,8 +52,6 @@ jobs:
         gdown ${{ secrets.ZOOM_SDK_GDRIVE_ID }}
         tar -xf ${{ secrets.ZOOM_SDK_FILENAME }} -C src/zoomsdk
         cp src/zoomsdk/libmeetingsdk.so src/zoomsdk/libmeetingsdk.so.1
-        strip --strip-debug src/zoomsdk/*.so*
-        strip --strip-debug src/zoomsdk/qt_libs/Qt/lib/*.so*
 
     - uses: pypa/cibuildwheel@v2.19
       env:      
@@ -61,6 +59,7 @@ jobs:
         ZOOM_APP_CLIENT_SECRET: ${{ secrets.ZOOM_APP_CLIENT_SECRET }}
         MEETING_URLS: ${{ secrets.MEETING_URLS }}
         CIBW_ENVIRONMENT_PASS_LINUX: ZOOM_APP_CLIENT_ID ZOOM_APP_CLIENT_SECRET MEETING_URLS
+        CIBW_REPAIR_WHEEL_COMMAND_LINUX: "auditwheel repair --exclude libunistring.so.2 --exclude libgnutls.so.30 --exclude libcrypto.so.1 --exclude libsystemd.so.0 -w {dest_dir} {wheel}"
 
     - name: Verify clean directory
       run: git diff --exit-code
