@@ -59,6 +59,7 @@ jobs:
         ZOOM_APP_CLIENT_SECRET: ${{ secrets.ZOOM_APP_CLIENT_SECRET }}
         MEETING_URLS: ${{ secrets.MEETING_URLS }}
         CIBW_ENVIRONMENT_PASS_LINUX: ZOOM_APP_CLIENT_ID ZOOM_APP_CLIENT_SECRET MEETING_URLS
+        CIBW_REPAIR_WHEEL_COMMAND_LINUX: "auditwheel repair --exclude *libgnutls* --exclude *libcrypto* --exclude *libsystemd* --exclude *libunistring* -w {dest_dir} {wheel}"
 
     - name: Verify clean directory
       run: git diff --exit-code

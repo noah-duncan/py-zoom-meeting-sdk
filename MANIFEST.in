@@ -1,4 +1,0 @@
-global-exclude *libgnutls*
-global-exclude *libcrypto*
-global-exclude *libsystemd*
-global-exclude *libunistring*
