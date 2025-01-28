@@ -121,5 +121,5 @@ void init_rawdata_renderer_interface_binding(nb::module_ &m) {
         .def("unSubscribe", &IZoomSDKRenderer::unSubscribe, nb::call_guard<nb::gil_scoped_release>())
         .def("getResolution", &IZoomSDKRenderer::getResolution)
         .def("getRawDataType", &IZoomSDKRenderer::getRawDataType)
-        .def("getUserId", &IZoomSDKRenderer::getUserId);     
+        .def("getSubscribeId", &IZoomSDKRenderer::getSubscribeId);     
 }

@@ -62,7 +62,10 @@ void init_meeting_participants_ctrl_interface_binding(nb::module_ &m) {
         .def("onInMeetingUserAvatarPathUpdated", &IMeetingParticipantsCtrlEvent::onInMeetingUserAvatarPathUpdated)
         .def("onParticipantProfilePictureStatusChange", &IMeetingParticipantsCtrlEvent::onParticipantProfilePictureStatusChange)
         .def("onFocusModeStateChanged", &IMeetingParticipantsCtrlEvent::onFocusModeStateChanged)
-        .def("onFocusModeShareTypeChanged", &IMeetingParticipantsCtrlEvent::onFocusModeShareTypeChanged);
+        .def("onFocusModeShareTypeChanged", &IMeetingParticipantsCtrlEvent::onFocusModeShareTypeChanged)
+        .def("onRobotRelationChanged", &IMeetingParticipantsCtrlEvent::onRobotRelationChanged)
+        .def("onVirtualNameTagStatusChanged", &IMeetingParticipantsCtrlEvent::onVirtualNameTagStatusChanged)
+        .def("onVirtualNameTagRosterInfoUpdated", &IMeetingParticipantsCtrlEvent::onVirtualNameTagRosterInfoUpdated);
 
     nb::class_<ZOOM_SDK_NAMESPACE::IMeetingParticipantsController>(m, "IMeetingParticipantsController")
         .def("SetEvent", &IMeetingParticipantsController::SetEvent)

@@ -180,8 +180,8 @@ class MeetingBot:
     def on_user_join_callback(self, joined_user_ids, user_name):
         print("on_user_join_callback called. joined_user_ids =", joined_user_ids, "user_name =", user_name)
 
-    def on_sharing_status_callback(self, sharing_status, user_id):
-        print("on_sharing_status_callback called. sharing_status =", sharing_status, "user_id =", user_id)
+    def on_sharing_status_callback(self, sharing_status):
+        print("on_sharing_status_callback called. sharing_status =", sharing_status, "user_id =", sharing_status.userid)
 
     # NOTE: content will always be None use chat_msg_info.GetContent() instead
     def on_chat_msg_notification_callback(self, chat_msg_info, content):
@@ -238,8 +238,8 @@ class MeetingBot:
         self.meeting_sharing_controller = self.meeting_service.GetMeetingShareController()
         self.meeting_share_ctrl_event = zoom.MeetingShareCtrlEventCallbacks(onSharingStatusCallback=self.on_sharing_status_callback)
         self.meeting_sharing_controller.SetEvent(self.meeting_share_ctrl_event)
-        viewable_share_source_list = self.meeting_sharing_controller.GetViewableShareSourceList()
-        print("viewable_share_source_list", viewable_share_source_list)
+        viewable_sharing_user_list = self.meeting_sharing_controller.GetViewableSharingUserList()
+        print("viewable_sharing_user_list", viewable_sharing_user_list)
 
         self.audio_ctrl = self.meeting_service.GetMeetingAudioController()
         self.audio_ctrl_event = zoom.MeetingAudioCtrlEventCallbacks(onUserAudioStatusChangeCallback=self.on_user_audio_status_change_callback, onUserActiveAudioChangeCallback=self.on_user_active_audio_change_callback)
