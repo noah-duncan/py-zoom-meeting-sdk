@@ -54,9 +54,6 @@ jobs:
         cp src/zoomsdk/libmeetingsdk.so src/zoomsdk/libmeetingsdk.so.1
         strip --strip-debug src/zoomsdk/*.so*
         strip --strip-debug src/zoomsdk/qt_libs/Qt/lib/*.so*
-        rm sample_program/input_audio/*.pcm
-        rm src/zoomsdk/libcml.so
-
 
     - uses: pypa/cibuildwheel@v2.19
       env:      
