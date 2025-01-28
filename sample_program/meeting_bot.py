@@ -240,6 +240,9 @@ class MeetingBot:
         self.meeting_sharing_controller.SetEvent(self.meeting_share_ctrl_event)
         viewable_sharing_user_list = self.meeting_sharing_controller.GetViewableSharingUserList()
         print("viewable_sharing_user_list", viewable_sharing_user_list)
+        for user_id in viewable_sharing_user_list:
+            sharing_info_list_for_user = self.meeting_sharing_controller.GetSharingSourceInfoList(user_id)
+            print("sharing_info_list_for_user", user_id, " = ", sharing_info_list_for_user)
 
         self.audio_ctrl = self.meeting_service.GetMeetingAudioController()
         self.audio_ctrl_event = zoom.MeetingAudioCtrlEventCallbacks(onUserAudioStatusChangeCallback=self.on_user_audio_status_change_callback, onUserActiveAudioChangeCallback=self.on_user_active_audio_change_callback)
