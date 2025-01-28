@@ -34,9 +34,9 @@ build-dir = "build/{wheel_tag}"
 # Build stable ABI wheels for CPython 3.12+
 wheel.py-api = "cp312"
 wheel.exclude = [
-    "src/zoomsdk/libcml.so",
-    "sample_program/input_audio/test_audio_16778240.pcm",
-    "src/zoomsdk/libmeetingsdk.so"
+    "*libcml.so*",
+    "*test_audio_16778240.pcm*",
+    "*libmeetingsdk.so"
 ]
 
 [tool.cibuildwheel]
