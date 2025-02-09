@@ -199,6 +199,18 @@ void init_meeting_chat_interface_binding(nb::module_ &m) {
         .def("GetShareMeetingChatStoppedLegalNoticeContent", &IMeetingChatController::GetShareMeetingChatStoppedLegalNoticeContent)
         .def("IsChatMessageCanBeDeleted", &IMeetingChatController::IsChatMessageCanBeDeleted)
         .def("DeleteChatMessage", &IMeetingChatController::DeleteChatMessage)
+        .def("GetAllChatMessageID", [](IMeetingChatController& self) {
+            IList<const zchar_t*>* list = self.GetAllChatMessageID();
+            vector<const zchar_t*> result;
+            if (list) {
+                int count = list->GetCount();
+                result.reserve(count);
+                for (int i = 0; i < count; i++) {
+                    result.push_back(list->GetItem(i));
+                }
+            }
+            return result;
+        }, nb::rv_policy::reference)
         .def("GetChatMessageById", &IMeetingChatController::GetChatMessageById, nb::rv_policy::reference)
         .def("GetChatMessageBuilder", &IMeetingChatController::GetChatMessageBuilder, nb::rv_policy::reference)
         .def("SendChatMsgTo", &IMeetingChatController::SendChatMsgTo)
