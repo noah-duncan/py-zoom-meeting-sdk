@@ -43,6 +43,15 @@ using namespace std;
 using namespace ZOOMSDK;
 
 void init_meeting_participants_ctrl_interface_binding(nb::module_ &m) {
+    nb::enum_<ZOOM_SDK_NAMESPACE::UserRole>(m, "UserRole")
+        .value("USERROLE_NONE", ZOOM_SDK_NAMESPACE::USERROLE_NONE)
+        .value("USERROLE_HOST", ZOOM_SDK_NAMESPACE::USERROLE_HOST)
+        .value("USERROLE_COHOST", ZOOM_SDK_NAMESPACE::USERROLE_COHOST)
+        .value("USERROLE_PANELIST", ZOOM_SDK_NAMESPACE::USERROLE_PANELIST)
+        .value("USERROLE_BREAKOUTROOM_MODERATOR", ZOOM_SDK_NAMESPACE::USERROLE_BREAKOUTROOM_MODERATOR)
+        .value("USERROLE_ATTENDEE", ZOOM_SDK_NAMESPACE::USERROLE_ATTENDEE)
+        .export_values();
+
     nb::class_<IMeetingParticipantsCtrlEvent>(m, "IMeetingParticipantsCtrlEvent")
         .def("onUserJoin", &IMeetingParticipantsCtrlEvent::onUserJoin)
         .def("onUserLeft", &IMeetingParticipantsCtrlEvent::onUserLeft)
