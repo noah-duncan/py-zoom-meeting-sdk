@@ -284,6 +284,10 @@ class MeetingBot:
             self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
 
     def on_one_way_audio_raw_data_received_callback(self, data, node_id):
+        sample_rate = data.GetSampleRate()
+        channel_count = data.GetChannelNum()
+        buffer_size = data.GetBufferLen()
+        print(f"Audio data received {sample_rate} {channel_count} {buffer_size}")
         if os.environ.get('DEEPGRAM_API_KEY') is None:
             volume = normalized_rms_audio(data.GetBuffer())
             if self.audio_print_counter % 20 < 2 and volume > 0.01:
@@ -418,12 +422,11 @@ class MeetingBot:
         param.meetingNumber = meeting_number
         param.userName = display_name
         param.psw = password
-        param.vanityID = ""
-        param.customer_key = ""
-        param.webinarToken = ""
-        param.onBehalfToken = ""
         param.isVideoOff = False
         param.isAudioOff = False
+        param.isAudioRawDataStereo = False
+        param.isMyVoiceInMix = False
+        param.eAudioRawdataSamplingRate = zoom.AudioRawdataSamplingRate.AudioRawdataSamplingRate_32K
 
         join_result = self.meeting_service.Join(join_param)
         print("join_result =",join_result)
