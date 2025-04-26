@@ -384,7 +384,7 @@ class MeetingBot:
     def on_raw_data_frame_received_callback(self, data):
         if self.video_frame_counter % 10 == 0:
             frame_number = int(self.video_frame_counter / 10)
-            save_yuv420_frame_as_png(data.GetBuffer(), 640, 360, f"sample_program/out/video_frames/output_{frame_number:06d}.png")
+            save_yuv420_frame_as_png(data.GetBuffer(), data.GetStreamWidth(), data.GetStreamHeight(), f"sample_program/out/video_frames/output_{frame_number:06d}.png")
             print(f"Saved frame {frame_number} to sample_program/out/video_frames/output_{frame_number:06d}.png")
         self.video_frame_counter += 1
 
