@@ -78,6 +78,27 @@ void init_meeting_video_interface_binding(nb::module_ &m) {
         .value("SpotResult_Unknown", SpotResult_Unknown)
         .export_values();
 
+    // Add SDKVideoPreferenceMode enum
+    nb::enum_<SDKVideoPreferenceMode>(m, "SDKVideoPreferenceMode")
+        .value("SDKVideoPreferenceMode_Balance", SDKVideoPreferenceMode_Balance)
+        .value("SDKVideoPreferenceMode_Sharpness", SDKVideoPreferenceMode_Sharpness)
+        .value("SDKVideoPreferenceMode_Smoothness", SDKVideoPreferenceMode_Smoothness)
+        .value("SDKVideoPreferenceMode_Custom", SDKVideoPreferenceMode_Custom)
+        .export_values();
+
+    // Add VideoSize struct
+    nb::class_<VideoSize>(m, "VideoSize")
+        .def(nb::init<>())
+        .def_rw("width", &VideoSize::width)
+        .def_rw("height", &VideoSize::height);
+
+    // Add SDKVideoPreferenceSetting struct
+    nb::class_<SDKVideoPreferenceSetting>(m, "SDKVideoPreferenceSetting")
+        .def(nb::init<>())
+        .def_rw("mode", &SDKVideoPreferenceSetting::mode)
+        .def_rw("minimumFrameRate", &SDKVideoPreferenceSetting::minimumFrameRate)
+        .def_rw("maximumFrameRate", &SDKVideoPreferenceSetting::maximumFrameRate);
+
     // IMeetingVideoController
     nb::class_<IMeetingVideoController>(m, "IMeetingVideoController")
         .def("SetEvent", &IMeetingVideoController::SetEvent)
@@ -103,7 +124,10 @@ void init_meeting_video_interface_binding(nb::module_ &m) {
         .def("CanEnableAlphaChannelMode", &IMeetingVideoController::CanEnableAlphaChannelMode)
         .def("EnableAlphaChannelMode", &IMeetingVideoController::EnableAlphaChannelMode)
         .def("IsAlphaChannelModeEnabled", &IMeetingVideoController::IsAlphaChannelModeEnabled)
-        .def("GetUserVideoSize", &IMeetingVideoController::GetUserVideoSize);
+        .def("GetUserVideoSize", &IMeetingVideoController::GetUserVideoSize)
+        .def("SetVideoQualityPreference", &IMeetingVideoController::SetVideoQualityPreference)
+        .def("EnableSpeakerContrastEnhance", &IMeetingVideoController::EnableSpeakerContrastEnhance)
+        .def("IsSpeakerContrastEnhanceEnabled", &IMeetingVideoController::IsSpeakerContrastEnhanceEnabled);
 
     // IMeetingVideoCtrlEvent
     nb::class_<IMeetingVideoCtrlEvent>(m, "IMeetingVideoCtrlEvent")
