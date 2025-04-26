@@ -19,6 +19,7 @@ private:
     function<void(IChatMsgInfo*, const zchar_t*)> m_onChatMsgNotificationCallback;
     function<void(ChatStatus*)> m_onChatStatusChangedNotificationCallback;
     function<void(const zchar_t*, SDKChatMessageDeleteType)> m_onChatMsgDeleteNotificationCallback;
+    function<void(IChatMsgInfo*)> m_onChatMessageEditNotificationCallback;
     function<void(bool)> m_onShareMeetingChatStatusChangedCallback;
     function<void(ISDKFileSender*)> m_onFileSendStartCallback;
     function<void(ISDKFileReceiver*)> m_onFileReceivedCallback;
@@ -29,6 +30,7 @@ public:
         const function<void(IChatMsgInfo*, const zchar_t*)>& onChatMsgNotificationCallback = nullptr,
         const function<void(ChatStatus*)>& onChatStatusChangedNotificationCallback = nullptr,
         const function<void(const zchar_t*, SDKChatMessageDeleteType)>& onChatMsgDeleteNotificationCallback = nullptr,
+        const function<void(IChatMsgInfo*)>& onChatMessageEditNotificationCallback = nullptr,
         const function<void(bool)>& onShareMeetingChatStatusChangedCallback = nullptr,
         const function<void(ISDKFileSender*)>& onFileSendStartCallback = nullptr,
         const function<void(ISDKFileReceiver*)>& onFileReceivedCallback = nullptr,
@@ -36,6 +38,7 @@ public:
     ) : m_onChatMsgNotificationCallback(onChatMsgNotificationCallback),
         m_onChatStatusChangedNotificationCallback(onChatStatusChangedNotificationCallback),
         m_onChatMsgDeleteNotificationCallback(onChatMsgDeleteNotificationCallback),
+        m_onChatMessageEditNotificationCallback(onChatMessageEditNotificationCallback),
         m_onShareMeetingChatStatusChangedCallback(onShareMeetingChatStatusChangedCallback),
         m_onFileSendStartCallback(onFileSendStartCallback),
         m_onFileReceivedCallback(onFileReceivedCallback),
@@ -54,6 +57,11 @@ public:
     void onChatMsgDeleteNotification(const zchar_t* msgID, SDKChatMessageDeleteType deleteBy) override {
         if (m_onChatMsgDeleteNotificationCallback)
             m_onChatMsgDeleteNotificationCallback(msgID, deleteBy);
+    }
+
+    void onChatMessageEditNotification(IChatMsgInfo* chatMsg) override {
+        if (m_onChatMessageEditNotificationCallback)
+            m_onChatMessageEditNotificationCallback(chatMsg);
     }
 
     void onShareMeetingChatStatusChanged(bool isStart) override {
@@ -83,6 +91,7 @@ void init_meeting_chat_event_callbacks(nb::module_ &m) {
             const function<void(IChatMsgInfo*, const zchar_t*)>&,
             const function<void(ChatStatus*)>&,
             const function<void(const zchar_t*, SDKChatMessageDeleteType)>&,
+            const function<void(IChatMsgInfo*)>&,
             const function<void(bool)>&,
             const function<void(ISDKFileSender*)>&,
             const function<void(ISDKFileReceiver*)>&,
@@ -91,6 +100,7 @@ void init_meeting_chat_event_callbacks(nb::module_ &m) {
             nb::arg("onChatMsgNotificationCallback") = nullptr,
             nb::arg("onChatStatusChangedNotificationCallback") = nullptr,
             nb::arg("onChatMsgDeleteNotificationCallback") = nullptr,
+            nb::arg("onChatMessageEditNotificationCallback") = nullptr,
             nb::arg("onShareMeetingChatStatusChangedCallback") = nullptr,
             nb::arg("onFileSendStartCallback") = nullptr,
             nb::arg("onFileReceivedCallback") = nullptr,

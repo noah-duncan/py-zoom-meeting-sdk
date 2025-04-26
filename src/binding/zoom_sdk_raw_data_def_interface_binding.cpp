@@ -48,7 +48,8 @@ void init_zoom_sdk_raw_data_def_interface_binding(nb::module_ &m) {
      })
     .def("GetBufferLen", &AudioRawData::GetBufferLen)
     .def("GetSampleRate", &AudioRawData::GetSampleRate)
-    .def("GetChannelNum", &AudioRawData::GetChannelNum);  
+    .def("GetChannelNum", &AudioRawData::GetChannelNum)
+    .def("GetTimeStamp", &AudioRawData::GetTimeStamp);
 
     nb::class_<YUVRawDataI420>(m, "YUVRawDataI420")
         .def("CanAddRef", &YUVRawDataI420::CanAddRef)
@@ -75,5 +76,6 @@ void init_zoom_sdk_raw_data_def_interface_binding(nb::module_ &m) {
         .def("GetStreamWidth", &YUVRawDataI420::GetStreamWidth)
         .def("GetStreamHeight", &YUVRawDataI420::GetStreamHeight)
         .def("GetRotation", &YUVRawDataI420::GetRotation)
-        .def("GetSourceID", &YUVRawDataI420::GetSourceID);
+        .def("GetSourceID", &YUVRawDataI420::GetSourceID)
+        .def("GetTimeStamp", &YUVRawDataI420::GetTimeStamp);
 }

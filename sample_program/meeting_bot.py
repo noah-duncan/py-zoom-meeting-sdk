@@ -287,7 +287,7 @@ class MeetingBot:
         if os.environ.get('DEEPGRAM_API_KEY') is None:
             volume = normalized_rms_audio(data.GetBuffer())
             if self.audio_print_counter % 20 < 2 and volume > 0.01:
-                print("Received audio from user", self.participants_ctrl.GetUserByUserID(node_id).GetUserName(), "with volume", volume)
+                print("Received audio from user", self.participants_ctrl.GetUserByUserID(node_id).GetUserName(), "with volume", volume,"and timestamp", data.GetTimeStamp())
                 print("To get transcript add DEEPGRAM_API_KEY to the .env file")
             self.audio_print_counter += 1
             return
@@ -384,7 +384,7 @@ class MeetingBot:
     def on_raw_data_frame_received_callback(self, data):
         if self.video_frame_counter % 10 == 0:
             frame_number = int(self.video_frame_counter / 10)
-            save_yuv420_frame_as_png(data.GetBuffer(), 640, 360, f"sample_program/out/video_frames/output_{frame_number:06d}.png")
+            save_yuv420_frame_as_png(data.GetBuffer(), data.GetStreamWidth(), data.GetStreamHeight(), f"sample_program/out/video_frames/output_{frame_number:06d}.png")
             print(f"Saved frame {frame_number} to sample_program/out/video_frames/output_{frame_number:06d}.png")
         self.video_frame_counter += 1
 

@@ -55,7 +55,8 @@ void init_meeting_reminder_ctrl_interface_binding(nb::module_ &m) {
         .def("Ignore", &IMeetingReminderHandler::Ignore)
         .def("Accept", &IMeetingReminderHandler::Accept)
         .def("Decline", &IMeetingReminderHandler::Decline)
-        .def("SetHideFeatureDisclaimers", &IMeetingReminderHandler::SetHideFeatureDisclaimers);
+        .def("SetHideFeatureDisclaimers", &IMeetingReminderHandler::SetHideFeatureDisclaimers)
+        .def("IsNeedExplicitConsent4AICustomDisclaimer", &IMeetingReminderHandler::IsNeedExplicitConsent4AICustomDisclaimer);
 
     // Binding for IMeetingReminderContent  
     nb::class_<IMeetingReminderContent>(m, "IMeetingReminderContent")

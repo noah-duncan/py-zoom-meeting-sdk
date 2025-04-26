@@ -26,7 +26,7 @@ private:
     std::function<void()> m_onSharedVideoEndedCallback;
     std::function<void(ZoomSDKVideoFileSharePlayError)> m_onVideoFileSharePlayErrorCallback;
     std::function<void()> m_onFailedToStartShareCallback;
-
+    std::function<void(ZoomSDKSharingSourceInfo)> m_onOptimizingShareForVideoClipStatusChangedCallback;
 public:
     MeetingShareCtrlEventCallbacks(
         const std::function<void(ZoomSDKSharingSourceInfo)>& onSharingStatusCallback = nullptr,
@@ -36,7 +36,8 @@ public:
         const std::function<void(ShareSettingType)>& onShareSettingTypeChangedNotificationCallback = nullptr,
         const std::function<void()>& onSharedVideoEndedCallback = nullptr,
         const std::function<void(ZoomSDKVideoFileSharePlayError)>& onVideoFileSharePlayErrorCallback = nullptr,
-        const std::function<void()>& onFailedToStartShareCallback = nullptr
+        const std::function<void()>& onFailedToStartShareCallback = nullptr,
+        const std::function<void(ZoomSDKSharingSourceInfo)>& onOptimizingShareForVideoClipStatusChangedCallback = nullptr
     ) : m_onSharingStatusCallback(onSharingStatusCallback),
         m_onLockShareStatusCallback(onLockShareStatusCallback),
         m_onShareContentNotificationCallback(onShareContentNotificationCallback),
@@ -44,7 +45,8 @@ public:
         m_onShareSettingTypeChangedNotificationCallback(onShareSettingTypeChangedNotificationCallback),
         m_onSharedVideoEndedCallback(onSharedVideoEndedCallback),
         m_onVideoFileSharePlayErrorCallback(onVideoFileSharePlayErrorCallback),
-        m_onFailedToStartShareCallback(onFailedToStartShareCallback) {}
+        m_onFailedToStartShareCallback(onFailedToStartShareCallback),
+        m_onOptimizingShareForVideoClipStatusChangedCallback(onOptimizingShareForVideoClipStatusChangedCallback) {}
 
     void onSharingStatus(ZoomSDKSharingSourceInfo shareInfo) override {
         if (m_onSharingStatusCallback)
@@ -85,6 +87,11 @@ public:
         if (m_onFailedToStartShareCallback)
             m_onFailedToStartShareCallback();
     }
+
+    void onOptimizingShareForVideoClipStatusChanged(ZoomSDKSharingSourceInfo shareInfo) override {
+        if (m_onOptimizingShareForVideoClipStatusChangedCallback)
+            m_onOptimizingShareForVideoClipStatusChangedCallback(shareInfo);
+    }
 };
 
 void init_meeting_share_ctrl_event_callbacks(nb::module_ &m) {
@@ -97,7 +104,8 @@ void init_meeting_share_ctrl_event_callbacks(nb::module_ &m) {
             const std::function<void(ShareSettingType)>&,
             const std::function<void()>&,
             const std::function<void(ZoomSDKVideoFileSharePlayError)>&,
-            const std::function<void()>&
+            const std::function<void()>&,
+            const std::function<void(ZoomSDKSharingSourceInfo)>&
         >(),
             nb::arg("onSharingStatusCallback") = nullptr,
             nb::arg("onLockShareStatusCallback") = nullptr,
@@ -106,6 +114,7 @@ void init_meeting_share_ctrl_event_callbacks(nb::module_ &m) {
             nb::arg("onShareSettingTypeChangedNotificationCallback") = nullptr,
             nb::arg("onSharedVideoEndedCallback") = nullptr,
             nb::arg("onVideoFileSharePlayErrorCallback") = nullptr,
-            nb::arg("onFailedToStartShareCallback") = nullptr
+            nb::arg("onFailedToStartShareCallback") = nullptr,
+            nb::arg("onOptimizingShareForVideoClipStatusChangedCallback") = nullptr
         );
 }

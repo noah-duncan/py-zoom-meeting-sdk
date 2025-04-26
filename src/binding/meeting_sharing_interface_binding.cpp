@@ -106,7 +106,14 @@ void init_meeting_sharing_interface_binding(nb::module_ &m) {
         .def("IsDesktopSharingEnabled", &IMeetingShareController::IsDesktopSharingEnabled)
         .def("IsShareLocked", &IMeetingShareController::IsShareLocked)
         .def("IsSupportEnableShareComputerSound", &IMeetingShareController::IsSupportEnableShareComputerSound)
-        .def("IsSupportEnableOptimizeForFullScreenVideoClip", &IMeetingShareController::IsSupportEnableOptimizeForFullScreenVideoClip)
+        .def("IsSupportEnableOptimizeForFullScreenVideoClip", [](IMeetingShareController& self) {
+            return self.IsSupportEnableOptimizeForFullScreenVideoClip();
+        }, "Determine if the current meeting supports sharing with optimize video")
+        .def("IsSupportEnableOptimizeForFullScreenVideoClipWithStatus", [](IMeetingShareController& self) {
+            bool bCurEnableOrNot = false;
+            bool result = self.IsSupportEnableOptimizeForFullScreenVideoClip(bCurEnableOrNot);
+            return std::make_tuple(result, bCurEnableOrNot);
+        }, "Determine if optimization for video is supported and get current status (deprecated)")
         .def("EnableShareComputerSound", &IMeetingShareController::EnableShareComputerSound)
         .def("EnableShareComputerSoundWhenSharing", &IMeetingShareController::EnableShareComputerSoundWhenSharing)
         .def("SetAudioShareMode", &IMeetingShareController::SetAudioShareMode)
@@ -132,7 +139,8 @@ void init_meeting_sharing_interface_binding(nb::module_ &m) {
         .def("onShareSettingTypeChangedNotification", &IMeetingShareCtrlEvent::onShareSettingTypeChangedNotification)
         .def("onSharedVideoEnded", &IMeetingShareCtrlEvent::onSharedVideoEnded)
         .def("onVideoFileSharePlayError", &IMeetingShareCtrlEvent::onVideoFileSharePlayError)
-        .def("onFailedToStartShare", &IMeetingShareCtrlEvent::onFailedToStartShare);
+        .def("onFailedToStartShare", &IMeetingShareCtrlEvent::onFailedToStartShare)
+        .def("onOptimizingShareForVideoClipStatusChanged", &IMeetingShareCtrlEvent::onOptimizingShareForVideoClipStatusChanged);
 
     // Add ZoomSDKSharingSourceInfo struct binding
     nb::class_<ZoomSDKSharingSourceInfo>(m, "SharingSourceInfo")
@@ -142,6 +150,7 @@ void init_meeting_sharing_interface_binding(nb::module_ &m) {
         .def_rw("isShowingInFirstView", &ZoomSDKSharingSourceInfo::isShowingInFirstView)
         .def_rw("isShowingInSecondView", &ZoomSDKSharingSourceInfo::isShowingInSecondView)
         .def_rw("isCanBeRemoteControl", &ZoomSDKSharingSourceInfo::isCanBeRemoteControl)
+        .def_rw("bEnableOptimizingVideoSharing", &ZoomSDKSharingSourceInfo::bEnableOptimizingVideoSharing)
         .def_rw("contentType", &ZoomSDKSharingSourceInfo::contentType)
         .def_rw("hwndSharedApp", &ZoomSDKSharingSourceInfo::hwndSharedApp)
         .def_rw("monitorID", &ZoomSDKSharingSourceInfo::monitorID);

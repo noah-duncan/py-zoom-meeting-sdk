@@ -94,5 +94,7 @@ void init_meeting_audio_interface_binding(nb::module_ &m) {
         .def("EnablePlayChimeWhenEnterOrExit", &IMeetingAudioController::EnablePlayChimeWhenEnterOrExit)
         .def("StopIncomingAudio", &IMeetingAudioController::StopIncomingAudio)
         .def("IsIncomingAudioStopped", &IMeetingAudioController::IsIncomingAudioStopped)
-        .def("Is3rdPartyTelephonyAudioOn", &IMeetingAudioController::Is3rdPartyTelephonyAudioOn);
+        .def("Is3rdPartyTelephonyAudioOn", &IMeetingAudioController::Is3rdPartyTelephonyAudioOn)
+        .def("EnablePlayMeetingAudio", &IMeetingAudioController::EnablePlayMeetingAudio)
+        .def("IsPlayMeetingAudioEnabled", &IMeetingAudioController::IsPlayMeetingAudioEnabled);
 }
