@@ -72,7 +72,7 @@ void init_meeting_participants_ctrl_interface_binding(nb::module_ &m) {
         .def("onParticipantProfilePictureStatusChange", &IMeetingParticipantsCtrlEvent::onParticipantProfilePictureStatusChange)
         .def("onFocusModeStateChanged", &IMeetingParticipantsCtrlEvent::onFocusModeStateChanged)
         .def("onFocusModeShareTypeChanged", &IMeetingParticipantsCtrlEvent::onFocusModeShareTypeChanged)
-        .def("onRobotRelationChanged", &IMeetingParticipantsCtrlEvent::onRobotRelationChanged)
+        .def("onBotAuthorizerRelationChanged", &IMeetingParticipantsCtrlEvent::onBotAuthorizerRelationChanged)
         .def("onVirtualNameTagStatusChanged", &IMeetingParticipantsCtrlEvent::onVirtualNameTagStatusChanged)
         .def("onVirtualNameTagRosterInfoUpdated", &IMeetingParticipantsCtrlEvent::onVirtualNameTagRosterInfoUpdated);
 
@@ -131,8 +131,8 @@ void init_meeting_participants_ctrl_interface_binding(nb::module_ &m) {
         .def("CanEnableParticipantRequestCloudRecording", &IMeetingParticipantsController::CanEnableParticipantRequestCloudRecording)
         .def("IsParticipantRequestCloudRecordingAllowed", &IMeetingParticipantsController::IsParticipantRequestCloudRecordingAllowed)
         .def("AllowParticipantsToRequestCloudRecording", &IMeetingParticipantsController::AllowParticipantsToRequestCloudRecording)
-        .def("GetAuthorizeUserByRobotUserID", &IMeetingParticipantsController::GetAuthorizeUserByRobotUserID)
-        .def("GetRobotListByAuthorizeUserID", &IMeetingParticipantsController::GetRobotListByAuthorizeUserID)
+        .def("GetBotAuthorizedUserInfoByUserID", &IMeetingParticipantsController::GetBotAuthorizedUserInfoByUserID)
+        .def("GetAuthorizedBotListByUserID", &IMeetingParticipantsController::GetAuthorizedBotListByUserID)
         .def("IsSupportVirtualNameTag", &IMeetingParticipantsController::IsSupportVirtualNameTag)
         .def("EnableVirtualNameTag", &IMeetingParticipantsController::EnableVirtualNameTag)
         .def("CreateVirtualNameTagRosterInfoBegin", &IMeetingParticipantsController::CreateVirtualNameTagRosterInfoBegin)
@@ -165,8 +165,8 @@ void init_meeting_participants_ctrl_interface_binding(nb::module_ &m) {
         .def("HasCamera", &IUserInfo::HasCamera)
         .def("IsProductionStudioUser", &IUserInfo::IsProductionStudioUser)
         .def("GetProductionStudioParent", &IUserInfo::GetProductionStudioParent)
-        .def("IsRobotUser", &IUserInfo::IsRobotUser)
-        .def("GetRobotBrandName", &IUserInfo::GetRobotBrandName)
+        .def("IsBotUser", &IUserInfo::IsBotUser)
+        .def("GetBotAppName", &IUserInfo::GetBotAppName)
         .def("IsVirtualNameTagEnabled", &IUserInfo::IsVirtualNameTagEnabled)
         .def("GetVirtualNameTagList", &IUserInfo::GetVirtualNameTagList);
 }

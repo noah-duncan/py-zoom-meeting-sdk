@@ -63,7 +63,7 @@ private:
     function<void(bool)> m_onParticipantProfilePictureStatusChangeCallback;
     function<void(bool)> m_onFocusModeStateChangedCallback;
     function<void(FocusModeShareType)> m_onFocusModeShareTypeChangedCallback;
-    function<void(unsigned int)> m_onRobotRelationChangedCallback;
+    function<void(unsigned int)> m_onBotAuthorizerRelationChangedCallback;
     function<void(bool, unsigned int)> m_onVirtualNameTagStatusChangedCallback;
     function<void(unsigned int)> m_onVirtualNameTagRosterInfoUpdatedCallback;
 
@@ -88,7 +88,7 @@ public:
         const function<void(bool)>& onParticipantProfilePictureStatusChangeCallback = nullptr,
         const function<void(bool)>& onFocusModeStateChangedCallback = nullptr,
         const function<void(FocusModeShareType)>& onFocusModeShareTypeChangedCallback = nullptr,
-        const function<void(unsigned int)>& onRobotRelationChangedCallback = nullptr,
+        const function<void(unsigned int)>& onBotAuthorizerRelationChangedCallback = nullptr,
         const function<void(bool, unsigned int)>& onVirtualNameTagStatusChangedCallback = nullptr,
         const function<void(unsigned int)>& onVirtualNameTagRosterInfoUpdatedCallback = nullptr
     ) : m_onUserJoinCallback(onUserJoinCallback),
@@ -110,7 +110,7 @@ public:
         m_onParticipantProfilePictureStatusChangeCallback(onParticipantProfilePictureStatusChangeCallback),
         m_onFocusModeStateChangedCallback(onFocusModeStateChangedCallback),
         m_onFocusModeShareTypeChangedCallback(onFocusModeShareTypeChangedCallback),
-        m_onRobotRelationChangedCallback(onRobotRelationChangedCallback),
+        m_onBotAuthorizerRelationChangedCallback(onBotAuthorizerRelationChangedCallback),
         m_onVirtualNameTagStatusChangedCallback(onVirtualNameTagStatusChangedCallback),
         m_onVirtualNameTagRosterInfoUpdatedCallback(onVirtualNameTagRosterInfoUpdatedCallback) {}
 
@@ -236,9 +236,9 @@ public:
             m_onFocusModeShareTypeChangedCallback(type);
     }
 
-    void onRobotRelationChanged(unsigned int authorizeUserID) override {
-        if (m_onRobotRelationChangedCallback)
-            m_onRobotRelationChangedCallback(authorizeUserID);
+    void onBotAuthorizerRelationChanged(unsigned int authorizeUserID) override {
+        if (m_onBotAuthorizerRelationChangedCallback)
+            m_onBotAuthorizerRelationChangedCallback(authorizeUserID);
     }
 
     void onVirtualNameTagStatusChanged(bool bOn, unsigned int userID) override {
@@ -297,7 +297,7 @@ void init_meeting_participants_ctrl_event_callbacks(nb::module_ &m) {
         nb::arg("onParticipantProfilePictureStatusChangeCallback") = nullptr,
         nb::arg("onFocusModeStateChangedCallback") = nullptr,
         nb::arg("onFocusModeShareTypeChangedCallback") = nullptr,
-        nb::arg("onRobotRelationChangedCallback") = nullptr,
+        nb::arg("onBotAuthorizerRelationChangedCallback") = nullptr,
         nb::arg("onVirtualNameTagStatusChangedCallback") = nullptr,
         nb::arg("onVirtualNameTagRosterInfoUpdatedCallback") = nullptr
     );
