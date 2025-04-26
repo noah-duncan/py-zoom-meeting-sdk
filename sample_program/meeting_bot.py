@@ -287,7 +287,7 @@ class MeetingBot:
         if os.environ.get('DEEPGRAM_API_KEY') is None:
             volume = normalized_rms_audio(data.GetBuffer())
             if self.audio_print_counter % 20 < 2 and volume > 0.01:
-                print("Received audio from user", self.participants_ctrl.GetUserByUserID(node_id).GetUserName(), "with volume", volume)
+                print("Received audio from user", self.participants_ctrl.GetUserByUserID(node_id).GetUserName(), "with volume", volume,"and timestamp", data.GetTimeStamp())
                 print("To get transcript add DEEPGRAM_API_KEY to the .env file")
             self.audio_print_counter += 1
             return
