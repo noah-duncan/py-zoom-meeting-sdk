@@ -139,7 +139,8 @@ void init_meeting_sharing_interface_binding(nb::module_ &m) {
         .def("onShareSettingTypeChangedNotification", &IMeetingShareCtrlEvent::onShareSettingTypeChangedNotification)
         .def("onSharedVideoEnded", &IMeetingShareCtrlEvent::onSharedVideoEnded)
         .def("onVideoFileSharePlayError", &IMeetingShareCtrlEvent::onVideoFileSharePlayError)
-        .def("onFailedToStartShare", &IMeetingShareCtrlEvent::onFailedToStartShare);
+        .def("onFailedToStartShare", &IMeetingShareCtrlEvent::onFailedToStartShare)
+        .def("onOptimizingShareForVideoClipStatusChanged", &IMeetingShareCtrlEvent::onOptimizingShareForVideoClipStatusChanged);
 
     // Add ZoomSDKSharingSourceInfo struct binding
     nb::class_<ZoomSDKSharingSourceInfo>(m, "SharingSourceInfo")
@@ -149,6 +150,7 @@ void init_meeting_sharing_interface_binding(nb::module_ &m) {
         .def_rw("isShowingInFirstView", &ZoomSDKSharingSourceInfo::isShowingInFirstView)
         .def_rw("isShowingInSecondView", &ZoomSDKSharingSourceInfo::isShowingInSecondView)
         .def_rw("isCanBeRemoteControl", &ZoomSDKSharingSourceInfo::isCanBeRemoteControl)
+        .def_rw("bEnableOptimizingVideoSharing", &ZoomSDKSharingSourceInfo::bEnableOptimizingVideoSharing)
         .def_rw("contentType", &ZoomSDKSharingSourceInfo::contentType)
         .def_rw("hwndSharedApp", &ZoomSDKSharingSourceInfo::hwndSharedApp)
         .def_rw("monitorID", &ZoomSDKSharingSourceInfo::monitorID);
