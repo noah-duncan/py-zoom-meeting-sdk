@@ -116,11 +116,11 @@ class TestBot():
             param.meetingNumber = meeting_number
             param.userName = display_name
             param.psw = password
-            param.vanityID = ""
-            param.customer_key = ""
-            param.webinarToken = ""
             param.isVideoOff = False
             param.isAudioOff = False
+            param.isAudioRawDataStereo = False
+            param.isMyVoiceInMix = False
+            param.eAudioRawdataSamplingRate = zoom.AudioRawdataSamplingRate.AudioRawdataSamplingRate_32K
 
             self.meeting_service.Join(join_param)
             return
