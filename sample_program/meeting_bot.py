@@ -418,12 +418,11 @@ class MeetingBot:
         param.meetingNumber = meeting_number
         param.userName = display_name
         param.psw = password
-        param.vanityID = ""
-        param.customer_key = ""
-        param.webinarToken = ""
-        param.onBehalfToken = ""
         param.isVideoOff = False
         param.isAudioOff = False
+        param.isAudioRawDataStereo = False
+        param.isMyVoiceInMix = False
+        param.eAudioRawdataSamplingRate = zoom.AudioRawdataSamplingRate.AudioRawdataSamplingRate_32K
 
         join_result = self.meeting_service.Join(join_param)
         print("join_result =",join_result)
