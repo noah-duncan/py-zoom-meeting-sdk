@@ -148,6 +148,7 @@ void init_meeting_chat_interface_binding(nb::module_ &m) {
         .def("onChatMsgNotification", &IMeetingChatCtrlEvent::onChatMsgNotification)
         .def("onChatStatusChangedNotification", &IMeetingChatCtrlEvent::onChatStatusChangedNotification)
         .def("onChatMsgDeleteNotification", &IMeetingChatCtrlEvent::onChatMsgDeleteNotification)
+        .def("onChatMessageEditNotification", &IMeetingChatCtrlEvent::onChatMessageEditNotification)
         .def("onShareMeetingChatStatusChanged", &IMeetingChatCtrlEvent::onShareMeetingChatStatusChanged)
         .def("onFileSendStart", &IMeetingChatCtrlEvent::onFileSendStart)
         .def("onFileReceived", &IMeetingChatCtrlEvent::onFileReceived)
