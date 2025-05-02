@@ -32,6 +32,7 @@
 
 #include "rawdata/zoom_rawdata_api.h"
 #include "rawdata/rawdata_video_source_helper_interface.h"
+#include "rawdata/rawdata_share_source_helper_interface.h"
 #include "zoom_sdk_raw_data_def.h"
 
 #include <iostream>
