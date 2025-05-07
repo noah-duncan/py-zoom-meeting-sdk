@@ -361,7 +361,13 @@ class MeetingBot:
         yuv_frames = []
         for frame in range(number_of_frames):
             frame_path = f"sample_program/input_frames/frame_{(frame+1):02d}.png"
-            frame_cv = cv2.cvtColor(cv2.imread(frame_path), cv2.COLOR_BGR2YUV_I420)
+            # Let's resize the frame to 1280x720 to test the video quality
+            # at higher resolution
+            frame_cv = cv2.imread(frame_path)
+            frame_cv = cv2.resize(frame_cv, (1280, 720))
+
+            # Send in YUV420 format
+            frame_cv = cv2.cvtColor(frame_cv, cv2.COLOR_BGR2YUV_I420)
             yuv_frames.append(frame_cv.tobytes())
 
         self.share_video_sender = sender
@@ -372,7 +378,7 @@ class MeetingBot:
             yuv_frames.append(frame_bytes)
             result = self.share_video_sender.sendShareFrame(frame_bytes, 1280, 720, zoom.FrameDataFormat_I420_FULL)
             if result != zoom.SDKERR_SUCCESS:
-                print(f"Failed to send frame {frame}")
+                print(f"Failed to send frame: {result}")
                 return False
             return True
         
