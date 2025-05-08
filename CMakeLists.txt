@@ -76,6 +76,7 @@ nanobind_add_module(
   src/binding/zoom_sdk_def_binding.cpp
   src/binding/meeting_participants_ctrl_interface_binding.cpp
   src/binding/rawdata_renderer_interface_binding.cpp
+  src/binding/rawdata_share_helper_interface_binding.cpp
   src/binding/meeting_audio_interface_binding.cpp
   src/binding/meeting_video_interface_binding.cpp
   src/binding/meeting_sharing_interface_binding.cpp
@@ -92,6 +93,7 @@ nanobind_add_module(
   src/meeting_participants_ctrl_event_callbacks.cpp
   src/zoom_sdk_video_source_callbacks.cpp
   src/meeting_chat_event_callbacks.cpp
+  src/zoom_sdk_share_source_callbacks.cpp
   src/utilities.cpp
 
   src/zoomsdk/h/zoom_sdk.h

@@ -127,6 +127,12 @@ class MeetingBot:
         self.meeting_sharing_controller = None
         self.meeting_share_ctrl_event = None
 
+        self.share_helper = None
+        self.share_video_renderer_delegate = None
+        self.share_audio_renderer_delegate = None
+        self.share_video_sender = None
+        self.share_audio_sender = None
+
         self.chat_ctrl = None
         self.chat_ctrl_event = None
 
@@ -180,8 +186,50 @@ class MeetingBot:
     def on_user_join_callback(self, joined_user_ids, user_name):
         print("on_user_join_callback called. joined_user_ids =", joined_user_ids, "user_name =", user_name)
 
-    def on_sharing_status_callback(self, sharing_status):
-        print("on_sharing_status_callback called. sharing_status =", sharing_status, "user_id =", sharing_status.userid)
+    def on_sharing_status_callback(self, share_info):
+        print(
+            f"on_sharing_status_callback called. ",
+            f"userid = {share_info.userid} ",
+            f"shareSourceID = {share_info.shareSourceID} ",
+            f"status = {share_info.status} ",
+            f"contentType = {share_info.contentType} ",
+            f"isShowingInFirstView = {share_info.isShowingInFirstView} ",
+            f"isShowingInSecondView = {share_info.isShowingInSecondView} ",
+        )
+
+    def on_failed_to_start_share_callback(self):
+        print("on_failed_to_start_share_callback called")
+
+    def on_share_content_notification_callback(self, share_info):
+        print(
+            f"on_share_content_notification_callback called. ",
+            f"userid = {share_info.userid} ",
+            f"shareSourceID = {share_info.shareSourceID} ",
+            f"status = {share_info.status} ",
+            f"contentType = {share_info.contentType} ",
+            f"isShowingInFirstView = {share_info.isShowingInFirstView} ",
+            f"isShowingInSecondView = {share_info.isShowingInSecondView} ",
+        )
+
+    def on_share_setting_type_changed_notification_callback(self, share_setting_type):
+        print("on_share_setting_type_changed_notification_callback called. share_setting_type =", share_setting_type)
+
+    def on_shared_video_ended_callback(self):
+        print("on_shared_video_ended_callback called")
+
+    def on_video_file_share_play_error_callback(self, error):
+        print("on_video_file_share_play_error_callback called. error =", error)
+    
+    def on_optimizing_share_for_video_clip_status_changed_callback(self, share_info):
+        print(
+            f"on_optimizing_share_for_video_clip_status_changed_callback called. ",
+            f"userid = {share_info.userid} ",
+            f"shareSourceID = {share_info.shareSourceID} ",
+            f"status = {share_info.status} ",
+            f"contentType = {share_info.contentType} ",
+            f"isShowingInFirstView = {share_info.isShowingInFirstView} ",
+            f"isShowingInSecondView = {share_info.isShowingInSecondView} ",
+        )
 
     # NOTE: content will always be None use chat_msg_info.GetContent() instead
     def on_chat_msg_notification_callback(self, chat_msg_info, content):
@@ -236,7 +284,15 @@ class MeetingBot:
         print("other_participant_id", self.other_participant_id)
 
         self.meeting_sharing_controller = self.meeting_service.GetMeetingShareController()
-        self.meeting_share_ctrl_event = zoom.MeetingShareCtrlEventCallbacks(onSharingStatusCallback=self.on_sharing_status_callback)
+        self.meeting_share_ctrl_event = zoom.MeetingShareCtrlEventCallbacks(
+            onSharingStatusCallback=self.on_sharing_status_callback,
+            onFailedToStartShareCallback=self.on_failed_to_start_share_callback,
+            onShareContentNotificationCallback=self.on_share_content_notification_callback,
+            onShareSettingTypeChangedNotificationCallback=self.on_share_setting_type_changed_notification_callback,
+            onSharedVideoEndedCallback=self.on_shared_video_ended_callback,
+            onVideoFileSharePlayErrorCallback=self.on_video_file_share_play_error_callback,
+            onOptimizingShareForVideoClipStatusChangedCallback=self.on_optimizing_share_for_video_clip_status_changed_callback
+        )
         self.meeting_sharing_controller.SetEvent(self.meeting_share_ctrl_event)
         viewable_sharing_user_list = self.meeting_sharing_controller.GetViewableSharingUserList()
         print("viewable_sharing_user_list", viewable_sharing_user_list)
@@ -282,7 +338,7 @@ class MeetingBot:
         if not os.path.exists(audio_path):
             print(f"Audio file not found: {audio_path}")
             return
-            
+        
         with open(audio_path, 'rb') as pcm_file:
             chunk = pcm_file.read(64000*10)
             self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
@@ -298,7 +354,60 @@ class MeetingBot:
 
         if node_id != self.my_participant_id:
             self.write_to_deepgram(data) 
-       
+
+    def on_share_video_start_send_callback(self, sender):
+        print("on_share_video_start_send_callback called, sender =", sender)
+        number_of_frames = 26
+        yuv_frames = []
+        for frame in range(number_of_frames):
+            frame_path = f"sample_program/input_frames/frame_{(frame+1):02d}.png"
+            # Let's resize the frame to 1280x720 to test the video quality
+            # at higher resolution
+            frame_cv = cv2.imread(frame_path)
+            frame_cv = cv2.resize(frame_cv, (1280, 720))
+
+            # Send in YUV420 format
+            frame_cv = cv2.cvtColor(frame_cv, cv2.COLOR_BGR2YUV_I420)
+            yuv_frames.append(frame_cv.tobytes())
+
+        self.share_video_sender = sender
+        
+        def try_send_frame():
+            # Shift the frame to the end of the list (circular buffer)
+            frame_bytes = yuv_frames.pop(0)
+            yuv_frames.append(frame_bytes)
+            result = self.share_video_sender.sendShareFrame(frame_bytes, 1280, 720, zoom.FrameDataFormat_I420_FULL)
+            if result != zoom.SDKERR_SUCCESS:
+                print(f"Failed to send frame: {result}")
+                return False
+            return True
+        
+        print(f"Sending frames every 200 milliseconds")
+        GLib.timeout_add(200, try_send_frame)
+
+    def on_share_video_stop_send_callback(self):
+        print("on_share_video_stop_send_callback called")
+        self.share_video_sender = None
+
+    def on_share_audio_start_send_callback(self, sender):
+        print("on_share_audio_start_send_callback called, sender =", sender)
+        self.share_audio_sender = sender
+        
+        audio_path = 'sample_program/input_audio/test_audio_16778240.pcm'
+        
+        if not os.path.exists(audio_path):
+            print(f"Audio file not found: {audio_path}")
+            return
+        
+        # Uncomment this to send audio as shared audio
+        # with open(audio_path, 'rb') as pcm_file:
+        #     chunk = pcm_file.read(64000*10)
+        #     self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
+
+    def on_share_audio_stop_send_callback(self):
+        print("on_share_audio_stop_send_callback called")
+        self.share_audio_sender = None
+    
     def write_to_deepgram(self, data):
         try:
             buffer_bytes = data.GetBuffer()
@@ -358,6 +467,20 @@ class MeetingBot:
         self.video_helper.setRawDataResolution(zoom.ZoomSDKResolution_720P)
         subscribe_result = self.video_helper.subscribe(self.other_participant_id, zoom.ZoomSDKRawDataType.RAW_DATA_TYPE_VIDEO)
         print("video_helper subscribe_result =", subscribe_result)
+
+        self.share_helper = zoom.GetRawdataShareSourceHelper()
+        self.share_video_renderer_delegate = zoom.ShareSourceCallbacks(
+            onStartSendCallback=self.on_share_video_start_send_callback,
+            onStopSendCallback=self.on_share_video_stop_send_callback
+        )
+        self.share_audio_renderer_delegate = zoom.ShareAudioCallbacks(
+            onStartSendAudioCallback=self.on_share_audio_start_send_callback,
+            onStopSendAudioCallback=self.on_share_audio_stop_send_callback
+        )
+        self.share_helper.setExternalShareSource(self.share_video_renderer_delegate, self.share_audio_renderer_delegate)
+        sharing_result = self.meeting_sharing_controller.ResumeCurrentSharing()
+        print("sharing_result =", sharing_result)
+
 
         self.virtual_camera_video_source = zoom.ZoomSDKVideoSourceCallbacks(onInitializeCallback=self.on_virtual_camera_initialize_callback, onStartSendCallback=self.on_virtual_camera_start_send_callback)
         self.video_source_helper = zoom.GetRawdataVideoSourceHelper()
