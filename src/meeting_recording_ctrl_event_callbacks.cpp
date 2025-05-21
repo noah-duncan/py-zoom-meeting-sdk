@@ -137,6 +137,11 @@ public:
 };
 
 void init_meeting_recording_ctrl_event_callbacks(nb::module_ &m) {
+    nb::enum_<ZOOM_SDK_NAMESPACE::RequestLocalRecordingStatus>(m, "RequestLocalRecordingStatus")
+        .value("RequestLocalRecording_Granted", ZOOM_SDK_NAMESPACE::RequestLocalRecording_Granted)
+        .value("RequestLocalRecording_Denied", ZOOM_SDK_NAMESPACE::RequestLocalRecording_Denied)
+        .value("RequestLocalRecording_Timeout", ZOOM_SDK_NAMESPACE::RequestLocalRecording_Timeout);
+
     nb::class_<MeetingRecordingCtrlEventCallbacks, ZOOM_SDK_NAMESPACE::IMeetingRecordingCtrlEvent>(m, "MeetingRecordingCtrlEventCallbacks")
     .def(nb::init<
         const function<void(ZOOM_SDK_NAMESPACE::RecordingStatus)>&,
