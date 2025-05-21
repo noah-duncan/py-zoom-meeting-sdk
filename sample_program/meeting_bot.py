@@ -264,8 +264,11 @@ class MeetingBot:
                     GLib.timeout_add_seconds(1, self.start_raw_recording)
                 else:
                     self.stop_raw_recording()
+            def on_local_recording_privilege_request_callback(status):
+                print("on_local_recording_privilege_request_callback called. status =", status)
 
-            self.recording_event = zoom.MeetingRecordingCtrlEventCallbacks(onRecordPrivilegeChangedCallback=on_recording_privilege_changed)
+            self.recording_event = zoom.MeetingRecordingCtrlEventCallbacks(onRecordPrivilegeChangedCallback=on_recording_privilege_changed,
+                                                                           onLocalRecordingPrivilegeRequestStatusCallback=on_local_recording_privilege_request_callback)
             self.recording_ctrl.SetEvent(self.recording_event)
 
             GLib.timeout_add_seconds(1, self.start_raw_recording)
@@ -314,13 +317,29 @@ class MeetingBot:
 
         # Send a welcome message to the chat
         builder = self.chat_ctrl.GetChatMessageBuilder()
-        builder.SetContent("Welcoome to the PyZoomMeetingSDK")
+        builder.SetContent("Welcome to the PyZoomMeetingSDK")
         builder.SetReceiver(0)
         builder.SetMessageType(zoom.SDKChatMessageType.To_All)
         msg = builder.Build()
         send_result = self.chat_ctrl.SendChatMsgTo(msg)
         print("send_result =", send_result)
         builder.Clear()
+
+        try:
+            meeting_info = self.meeting_service.GetMeetingInfo()
+            print(f"join meeting, get meeting_info, meeting_number = {meeting_info.GetMeetingNumber()}")
+            print(f"join meeting, get meeting_info, meeting_id = {meeting_info.GetMeetingID()}")
+            print(f"join meeting, get meeting_info, meeting_topic = {meeting_info.GetMeetingTopic()}")
+            print(f"join meeting, get meeting_info, meeting_password = {meeting_info.GetMeetingPassword()}")
+            print(f"join meeting, get meeting_info, meeting_type = {meeting_info.GetMeetingType()}")
+            print(f"join meeting, get meeting_info, invite_email_template = {meeting_info.GetInviteEmailTemplate()}")
+            print(f"join meeting, get meeting_info, invite_email_title = {meeting_info.GetInviteEmailTitle()}")
+            print(f"join meeting, get meeting_info, join_meeting_url = {meeting_info.GetJoinMeetingUrl()}")
+            print(f"join meeting, get meeting_info, meeting_host_tag = {meeting_info.GetMeetingHostTag()}")
+            print(f"join meeting, get meeting_info, meeting_conn_type = {meeting_info.GetMeetingConnType()}")
+            print(f"join meeting, get meeting_info, supported_meeting_audio_type = {meeting_info.GetSupportedMeetingAudioType()}")
+        except Exception as e:
+            print(f"get meeting info error, error: {e}")
 
     def on_user_active_audio_change_callback(self, user_ids):
         print("on_user_active_audio_change_callback called. user_ids =", user_ids)
