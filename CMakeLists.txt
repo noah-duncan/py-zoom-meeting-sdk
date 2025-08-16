@@ -81,6 +81,7 @@ nanobind_add_module(
   src/binding/meeting_video_interface_binding.cpp
   src/binding/meeting_sharing_interface_binding.cpp
   src/binding/meeting_chat_interface_binding.cpp
+  src/binding/meeting_breakout_rooms_interface_v2_binding.cpp
   src/meeting_share_ctrl_event_callbacks.cpp
   src/auth_service_event_callbacks.cpp
   src/meeting_service_event_callbacks.cpp
@@ -93,14 +94,15 @@ nanobind_add_module(
   src/meeting_participants_ctrl_event_callbacks.cpp
   src/zoom_sdk_video_source_callbacks.cpp
   src/meeting_chat_event_callbacks.cpp
+  src/meeting_bo_event_callbacks.cpp
   src/zoom_sdk_share_source_callbacks.cpp
   src/utilities.cpp
 
   src/zoomsdk/h/zoom_sdk.h
 )
 
-target_link_libraries(_zoom_meeting_sdk_impl PRIVATE 
-    PkgConfig::deps 
+target_link_libraries(_zoom_meeting_sdk_impl PRIVATE
+    PkgConfig::deps
     -L${ZOOM_SDK_LIB_DIR} -lmeetingsdk
 )
 
