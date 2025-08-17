@@ -255,8 +255,8 @@ class MeetingBot:
 
     def on_has_attendee_rights_notification(self, attendee):
         print("on_has_attendee_rights_notification called. attendee =", attendee)
-        attendee.JoinBo()
-        print("joined breakout room")
+        join_bo_result = attendee.JoinBo()
+        print("called JoinBo(). join_bo_result =", join_bo_result)
 
     def on_join(self):
         self.meeting_reminder_event = zoom.MeetingReminderEventCallbacks(onReminderNotifyCallback=self.on_reminder_notify)
@@ -387,6 +387,10 @@ class MeetingBot:
         self.share_video_sender = sender
 
         def try_send_frame():
+            if self.share_video_sender is None:
+                print("share_video_sender is None")
+                return False
+
             # Shift the frame to the end of the list (circular buffer)
             frame_bytes = yuv_frames.pop(0)
             yuv_frames.append(frame_bytes)
@@ -583,10 +587,10 @@ class MeetingBot:
         raise Exception("Failed to authorize. result =", result)
 
     def meeting_status_changed(self, status, iResult):
+        print("meeting_status_changed called. status =",status,"iResult=",iResult)
+
         if status == zoom.MEETING_STATUS_INMEETING:
             return self.on_join()
-
-        print("meeting_status_changed called. status =",status,"iResult=",iResult)
 
     def create_services(self):
         self.meeting_service = zoom.CreateMeetingService()
