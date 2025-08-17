@@ -131,10 +131,10 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
         .def_rw("userType", &ZOOM_SDK_NAMESPACE::JoinParam::userType)
         .def_prop_rw("param",
             [](ZOOM_SDK_NAMESPACE::JoinParam &p) -> ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin& { return p.param.withoutloginuserJoin; },
-            [](ZOOM_SDK_NAMESPACE::JoinParam &p, const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &jp) { 
-                std::cout << "meetingNumber " << jp.meetingNumber << std::endl; 
+            [](ZOOM_SDK_NAMESPACE::JoinParam &p, const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &jp) {
+                std::cout << "meetingNumber " << jp.meetingNumber << std::endl;
                 std::cout << "mn" << jp.meetingNumber << std::endl;
-                p.param.withoutloginuserJoin = jp; 
+                p.param.withoutloginuserJoin = jp;
             }
         );
 
@@ -153,7 +153,8 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
         .def("GetMeetingRecordingController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingRecordingController, nb::rv_policy::reference)
         .def("GetMeetingReminderController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingReminderController, nb::rv_policy::reference)
         .def("GetMeetingParticipantsController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingParticipantsController, nb::rv_policy::reference)
-        .def("GetMeetingChatController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingChatController, nb::rv_policy::reference);
+        .def("GetMeetingChatController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingChatController, nb::rv_policy::reference)
+        .def("GetMeetingBOController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingBOController, nb::rv_policy::reference);
 
     nb::class_<IMeetingServiceEvent>(m, "IMeetingServiceEvent")
         .def("onMeetingStatusChanged", &IMeetingServiceEvent::onMeetingStatusChanged)
@@ -166,7 +167,7 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
     nb::enum_<ZOOM_SDK_NAMESPACE::LeaveMeetingCmd>(m, "LeaveMeetingCmd")
         .value("LEAVE_MEETING", ZOOM_SDK_NAMESPACE::LEAVE_MEETING)
         .value("END_MEETING", ZOOM_SDK_NAMESPACE::END_MEETING)
-        .export_values();       
+        .export_values();
 
     nb::enum_<MeetingEndReason>(m, "MeetingEndReason", nb::is_arithmetic())
         .value("EndMeetingReason_None", EndMeetingReason_None)
