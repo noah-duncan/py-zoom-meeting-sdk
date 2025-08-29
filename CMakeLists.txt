@@ -82,6 +82,7 @@ nanobind_add_module(
   src/binding/meeting_sharing_interface_binding.cpp
   src/binding/meeting_chat_interface_binding.cpp
   src/binding/meeting_breakout_rooms_interface_v2_binding.cpp
+  src/binding/meeting_waiting_room_interface_binding.cpp
   src/meeting_share_ctrl_event_callbacks.cpp
   src/auth_service_event_callbacks.cpp
   src/meeting_service_event_callbacks.cpp
