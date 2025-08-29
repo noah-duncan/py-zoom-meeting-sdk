@@ -154,7 +154,8 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
         .def("GetMeetingReminderController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingReminderController, nb::rv_policy::reference)
         .def("GetMeetingParticipantsController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingParticipantsController, nb::rv_policy::reference)
         .def("GetMeetingChatController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingChatController, nb::rv_policy::reference)
-        .def("GetMeetingBOController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingBOController, nb::rv_policy::reference);
+        .def("GetMeetingBOController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingBOController, nb::rv_policy::reference)
+        .def("GetMeetingWaitingRoomController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingWaitingRoomController, nb::rv_policy::reference);
 
     nb::class_<IMeetingServiceEvent>(m, "IMeetingServiceEvent")
         .def("onMeetingStatusChanged", &IMeetingServiceEvent::onMeetingStatusChanged)
