@@ -64,6 +64,7 @@ void init_meeting_video_interface_binding(nb::module_ &m) {
         .value("PinResult_Fail_VideoModeDoNotSupport", PinResult_Fail_VideoModeDoNotSupport)
         .value("PinResult_Fail_NoPrivilegeToPin", PinResult_Fail_NoPrivilegeToPin)
         .value("PinResult_Fail_MeetingDoNotSupport", PinResult_Fail_MeetingDoNotSupport)
+        .value("PinResult_Fail_TooManyUsers", PinResult_Fail_TooManyUsers)
         .value("PinResult_Unknown", PinResult_Unknown)
         .export_values();
 

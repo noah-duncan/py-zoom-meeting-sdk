@@ -74,7 +74,8 @@ void init_meeting_participants_ctrl_interface_binding(nb::module_ &m) {
         .def("onFocusModeShareTypeChanged", &IMeetingParticipantsCtrlEvent::onFocusModeShareTypeChanged)
         .def("onBotAuthorizerRelationChanged", &IMeetingParticipantsCtrlEvent::onBotAuthorizerRelationChanged)
         .def("onVirtualNameTagStatusChanged", &IMeetingParticipantsCtrlEvent::onVirtualNameTagStatusChanged)
-        .def("onVirtualNameTagRosterInfoUpdated", &IMeetingParticipantsCtrlEvent::onVirtualNameTagRosterInfoUpdated);
+        .def("onVirtualNameTagRosterInfoUpdated", &IMeetingParticipantsCtrlEvent::onVirtualNameTagRosterInfoUpdated)
+        .def("onGrantCoOwnerPrivilegeChanged", &IMeetingParticipantsCtrlEvent::onGrantCoOwnerPrivilegeChanged);
 
     nb::class_<ZOOM_SDK_NAMESPACE::IMeetingParticipantsController>(m, "IMeetingParticipantsController")
         .def("SetEvent", &IMeetingParticipantsController::SetEvent)
