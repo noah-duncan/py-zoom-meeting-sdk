@@ -32,7 +32,7 @@ public:
 	~IZoomSDKAudioRawDataDelegate(){}
 	virtual void onMixedAudioRawDataReceived(AudioRawData* data_) = 0;
 	virtual void onOneWayAudioRawDataReceived(AudioRawData* data_, uint32_t user_id) = 0;
-	virtual void onShareAudioRawDataReceived(AudioRawData* data_) = 0;
+	virtual void onShareAudioRawDataReceived(AudioRawData* data_, uint32_t user_id) = 0;
 
 	/// \brief Invoked when individual interpreter's raw audio data received
 	/// \param data_ Raw audio data, see \link AudioRawData \endlink.
@@ -45,7 +45,7 @@ class ZoomSDKAudioRawDataDelegateCallbacks : public ZOOM_SDK_NAMESPACE::IZoomSDK
 private:
     function<void(AudioRawData*)> m_onMixedAudioRawDataReceivedCallback;
     function<void(AudioRawData*, uint32_t)> m_onOneWayAudioRawDataReceivedCallback;
-    function<void(AudioRawData*)> m_onShareAudioRawDataReceivedCallback;
+    function<void(AudioRawData*, uint32_t)> m_onShareAudioRawDataReceivedCallback;
     function<void(AudioRawData*, const zchar_t*)> m_onOneWayInterpreterAudioRawDataReceivedCallback;
     bool m_collectPerformanceData;
     CallbackPerformanceData m_performanceData;
@@ -53,7 +53,7 @@ public:
     ZoomSDKAudioRawDataDelegateCallbacks(
         const function<void(AudioRawData*)>& onMixedAudioRawDataReceivedCallback = nullptr,
         const function<void(AudioRawData*, uint32_t)>& onOneWayAudioRawDataReceivedCallback = nullptr,
-        const function<void(AudioRawData*)>& onShareAudioRawDataReceivedCallback = nullptr,
+        const function<void(AudioRawData*, uint32_t)>& onShareAudioRawDataReceivedCallback = nullptr,
         const function<void(AudioRawData*, const zchar_t*)>& onOneWayInterpreterAudioRawDataReceivedCallback = nullptr,
         bool collectPerformanceData = false
     ) : m_onMixedAudioRawDataReceivedCallback(onMixedAudioRawDataReceivedCallback),
@@ -92,18 +92,18 @@ public:
         }
     }
 
-    void onShareAudioRawDataReceived(AudioRawData* data_) override {
+    void onShareAudioRawDataReceived(AudioRawData* data_, uint32_t user_id) override {
         if (m_onShareAudioRawDataReceivedCallback)
         {
             if (m_collectPerformanceData) {
                 auto start = std::chrono::high_resolution_clock::now();
-                m_onShareAudioRawDataReceivedCallback(data_);
+                m_onShareAudioRawDataReceivedCallback(data_, user_id);
                 auto end = std::chrono::high_resolution_clock::now();
                 uint64_t processingTimeMicroseconds = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
                 m_performanceData.updatePerformanceData(processingTimeMicroseconds);
             }
             else
-                m_onShareAudioRawDataReceivedCallback(data_);
+                m_onShareAudioRawDataReceivedCallback(data_, user_id);
         }
     }
 
@@ -133,7 +133,7 @@ void init_zoom_sdk_audio_raw_data_delegate_callbacks(nb::module_ &m) {
         .def(nb::init<
             const function<void(AudioRawData*)>&,
             const function<void(AudioRawData*, uint32_t)>&,
-            const function<void(AudioRawData*)>&,
+            const function<void(AudioRawData*, uint32_t)>&,
             const function<void(AudioRawData*, const zchar_t*)>&,
             bool
         >(),
