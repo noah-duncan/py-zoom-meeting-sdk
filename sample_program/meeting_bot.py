@@ -553,9 +553,10 @@ class MeetingBot:
         self.video_frame_counter += 1
 
     def stop_raw_recording(self):
-        rec_ctrl = self.meeting_service.StopRawRecording()
-        if rec_ctrl.StopRawRecording() != zoom.SDKERR_SUCCESS:
-            raise Exception("Error with stop raw recording")
+        print("stopping raw recording")
+        stop_raw_recording_result = self.recording_ctrl.StopRawRecording()
+        if stop_raw_recording_result != zoom.SDKERR_SUCCESS:
+            print("Error with stop raw recording result =", stop_raw_recording_result)
 
     def leave(self):
         if self.meeting_service is None:
