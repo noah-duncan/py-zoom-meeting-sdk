@@ -138,6 +138,26 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
             }
         );
 
+    nb::enum_<ZOOM_SDK_NAMESPACE::MeetingConnType>(m, "MeetingConnType")
+        .value("Meeting_Conn_None", ZOOM_SDK_NAMESPACE::Meeting_Conn_None)
+        .value("Meeting_Conn_Normal", ZOOM_SDK_NAMESPACE::Meeting_Conn_Normal)
+        .value("Meeting_Conn_FailOver", ZOOM_SDK_NAMESPACE::Meeting_Conn_FailOver)
+        .export_values();
+
+    nb::class_<IMeetingInfo>(m, "IMeetingInfo")
+        .def("GetMeetingNumber", &ZOOM_SDK_NAMESPACE::IMeetingInfo::GetMeetingNumber, nb::rv_policy::reference)
+        .def("GetMeetingID", &ZOOM_SDK_NAMESPACE::IMeetingInfo::GetMeetingID, nb::rv_policy::reference)
+        .def("GetMeetingTopic", &ZOOM_SDK_NAMESPACE::IMeetingInfo::GetMeetingTopic, nb::rv_policy::reference)
+        .def("GetMeetingPassword", &ZOOM_SDK_NAMESPACE::IMeetingInfo::GetMeetingPassword, nb::rv_policy::reference)
+        .def("GetMeetingType", &ZOOM_SDK_NAMESPACE::IMeetingInfo::GetMeetingType, nb::rv_policy::reference)
+        .def("GetInviteEmailTemplate", &ZOOM_SDK_NAMESPACE::IMeetingInfo::GetInviteEmailTemplate, nb::rv_policy::reference)
+        .def("GetInviteEmailTitle", &ZOOM_SDK_NAMESPACE::IMeetingInfo::GetInviteEmailTitle, nb::rv_policy::reference)
+        .def("GetJoinMeetingUrl", &ZOOM_SDK_NAMESPACE::IMeetingInfo::GetJoinMeetingUrl, nb::rv_policy::reference)
+        .def("GetMeetingHostTag", &ZOOM_SDK_NAMESPACE::IMeetingInfo::GetMeetingHostTag, nb::rv_policy::reference)
+        .def("GetMeetingConnType", &ZOOM_SDK_NAMESPACE::IMeetingInfo::GetMeetingConnType, nb::rv_policy::reference)
+        .def("GetSupportedMeetingAudioType", &ZOOM_SDK_NAMESPACE::IMeetingInfo::GetSupportedMeetingAudioType, nb::rv_policy::reference);
+
+
     nb::class_<IMeetingService>(m, "IMeetingService")
         .def("GetMeetingStatus", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingStatus)
         .def("Join", [](ZOOM_SDK_NAMESPACE::IMeetingService& self, ZOOM_SDK_NAMESPACE::JoinParam& param) {
@@ -154,6 +174,7 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
         .def("GetMeetingReminderController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingReminderController, nb::rv_policy::reference)
         .def("GetMeetingParticipantsController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingParticipantsController, nb::rv_policy::reference)
         .def("GetMeetingChatController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingChatController, nb::rv_policy::reference)
+        .def("GetMeetingInfo", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingInfo, nb::rv_policy::reference)
         .def("GetMeetingBOController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingBOController, nb::rv_policy::reference)
         .def("GetMeetingWaitingRoomController", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingWaitingRoomController, nb::rv_policy::reference);
 

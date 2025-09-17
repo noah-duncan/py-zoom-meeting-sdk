@@ -272,8 +272,11 @@ class MeetingBot:
                     GLib.timeout_add_seconds(1, self.start_raw_recording)
                 else:
                     self.stop_raw_recording()
+            def on_local_recording_privilege_request_callback(status):
+                print("on_local_recording_privilege_request_callback called. status =", status)
 
-            self.recording_event = zoom.MeetingRecordingCtrlEventCallbacks(onRecordPrivilegeChangedCallback=on_recording_privilege_changed)
+            self.recording_event = zoom.MeetingRecordingCtrlEventCallbacks(onRecordPrivilegeChangedCallback=on_recording_privilege_changed,
+                                                                           onLocalRecordingPrivilegeRequestStatusCallback=on_local_recording_privilege_request_callback)
             self.recording_ctrl.SetEvent(self.recording_event)
 
             GLib.timeout_add_seconds(1, self.start_raw_recording)
@@ -328,13 +331,29 @@ class MeetingBot:
 
         # Send a welcome message to the chat
         builder = self.chat_ctrl.GetChatMessageBuilder()
-        builder.SetContent("Welcoome to the PyZoomMeetingSDK")
+        builder.SetContent("Welcome to the PyZoomMeetingSDK")
         builder.SetReceiver(0)
         builder.SetMessageType(zoom.SDKChatMessageType.To_All)
         msg = builder.Build()
         send_result = self.chat_ctrl.SendChatMsgTo(msg)
         print("send_result =", send_result)
         builder.Clear()
+
+        try:
+            meeting_info = self.meeting_service.GetMeetingInfo()
+            print("MEETING INFO")
+            print(f"meeting_number = {meeting_info.GetMeetingNumber()}")
+            print(f"meeting_id = {meeting_info.GetMeetingID()}")
+            print(f"meeting_topic = {meeting_info.GetMeetingTopic()}")
+            print(f"meeting_password = {meeting_info.GetMeetingPassword()}")
+            print(f"meeting_type = {meeting_info.GetMeetingType()}")
+            print(f"invite_email_title = {meeting_info.GetInviteEmailTitle()}")
+            print(f"join_meeting_url = {meeting_info.GetJoinMeetingUrl()}")
+            print(f"meeting_host_tag = {meeting_info.GetMeetingHostTag()}")
+            print(f"meeting_conn_type = {meeting_info.GetMeetingConnType()}")
+            print(f"supported_meeting_audio_type = {meeting_info.GetSupportedMeetingAudioType()}")
+        except Exception as e:
+            print(f"get meeting info error, error: {e}")
 
     def on_user_active_audio_change_callback(self, user_ids):
         print("on_user_active_audio_change_callback called. user_ids =", user_ids)
@@ -534,9 +553,10 @@ class MeetingBot:
         self.video_frame_counter += 1
 
     def stop_raw_recording(self):
-        rec_ctrl = self.meeting_service.StopRawRecording()
-        if rec_ctrl.StopRawRecording() != zoom.SDKERR_SUCCESS:
-            raise Exception("Error with stop raw recording")
+        print("stopping raw recording")
+        stop_raw_recording_result = self.recording_ctrl.StopRawRecording()
+        if stop_raw_recording_result != zoom.SDKERR_SUCCESS:
+            print("Error with stop raw recording result =", stop_raw_recording_result)
 
     def leave(self):
         if self.meeting_service is None:
