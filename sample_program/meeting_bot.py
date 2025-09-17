@@ -341,17 +341,17 @@ class MeetingBot:
 
         try:
             meeting_info = self.meeting_service.GetMeetingInfo()
-            print(f"join meeting, get meeting_info, meeting_number = {meeting_info.GetMeetingNumber()}")
-            print(f"join meeting, get meeting_info, meeting_id = {meeting_info.GetMeetingID()}")
-            print(f"join meeting, get meeting_info, meeting_topic = {meeting_info.GetMeetingTopic()}")
-            print(f"join meeting, get meeting_info, meeting_password = {meeting_info.GetMeetingPassword()}")
-            print(f"join meeting, get meeting_info, meeting_type = {meeting_info.GetMeetingType()}")
-            print(f"join meeting, get meeting_info, invite_email_template = {meeting_info.GetInviteEmailTemplate()}")
-            print(f"join meeting, get meeting_info, invite_email_title = {meeting_info.GetInviteEmailTitle()}")
-            print(f"join meeting, get meeting_info, join_meeting_url = {meeting_info.GetJoinMeetingUrl()}")
-            print(f"join meeting, get meeting_info, meeting_host_tag = {meeting_info.GetMeetingHostTag()}")
-            print(f"join meeting, get meeting_info, meeting_conn_type = {meeting_info.GetMeetingConnType()}")
-            print(f"join meeting, get meeting_info, supported_meeting_audio_type = {meeting_info.GetSupportedMeetingAudioType()}")
+            print("MEETING INFO")
+            print(f"meeting_number = {meeting_info.GetMeetingNumber()}")
+            print(f"meeting_id = {meeting_info.GetMeetingID()}")
+            print(f"meeting_topic = {meeting_info.GetMeetingTopic()}")
+            print(f"meeting_password = {meeting_info.GetMeetingPassword()}")
+            print(f"meeting_type = {meeting_info.GetMeetingType()}")
+            print(f"invite_email_title = {meeting_info.GetInviteEmailTitle()}")
+            print(f"join_meeting_url = {meeting_info.GetJoinMeetingUrl()}")
+            print(f"meeting_host_tag = {meeting_info.GetMeetingHostTag()}")
+            print(f"meeting_conn_type = {meeting_info.GetMeetingConnType()}")
+            print(f"supported_meeting_audio_type = {meeting_info.GetSupportedMeetingAudioType()}")
         except Exception as e:
             print(f"get meeting info error, error: {e}")
 
