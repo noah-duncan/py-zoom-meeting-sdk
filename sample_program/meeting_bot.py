@@ -28,61 +28,61 @@ def save_yuv420_frame_as_png(frame_bytes, width, height, output_path):
 def generate_jwt(client_id, client_secret):
     iat = datetime.utcnow()
     exp = iat + timedelta(hours=24)
-    
+
     payload = {
         "iat": iat,
         "exp": exp,
         "appKey": client_id,
         "tokenExp": int(exp.timestamp())
     }
-    
+
     token = jwt.encode(payload, client_secret, algorithm="HS256")
     return token
 
 def normalized_rms_audio(pcm_data: bytes, sample_width: int = 2) -> bool:
     """
     Determine if PCM audio data contains significant audio or is essentially silence.
-    
+
     Args:
         pcm_data: Bytes object containing PCM audio data in linear16 format
         threshold: RMS amplitude threshold below which audio is considered silent (0.0 to 1.0)
         sample_width: Number of bytes per sample (2 for linear16)
-        
+
     Returns:
         bool: True if the audio is essentially silence, False if it contains significant audio
     """
     if len(pcm_data) == 0:
         return True
-        
+
     # Convert bytes to 16-bit integers
     import array
     samples = array.array('h')  # signed short integer array
     samples.frombytes(pcm_data)
-    
+
     # Calculate RMS amplitude
     sum_squares = sum(sample * sample for sample in samples)
     rms = (sum_squares / len(samples)) ** 0.5
-    
+
     # Normalize RMS to 0.0-1.0 range
     # For 16-bit audio, max value is 32767
     normalized_rms = rms / 32767.0
-    
+
     return normalized_rms
 
 def create_red_yuv420_frame(width=640, height=360):
     # Create BGR frame (red is [0,0,255] in BGR)
     bgr_frame = np.zeros((height, width, 3), dtype=np.uint8)
     bgr_frame[:, :] = [0, 0, 255]  # Pure red in BGR
-    
+
     # Convert BGR to YUV420 (I420)
     yuv_frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2YUV_I420)
-    
+
     # Return as bytes
     return yuv_frame.tobytes()
 
 class MeetingBot:
     def __init__(self):
-        
+
         self.meeting_service = None
         self.setting_service = None
         self.auth_service = None
@@ -136,6 +136,9 @@ class MeetingBot:
         self.chat_ctrl = None
         self.chat_ctrl_event = None
 
+        self.bo_ctrl = None
+        self.bo_ctrl_event = None
+
     def cleanup(self):
         if self.meeting_service:
             zoom.DestroyMeetingService(self.meeting_service)
@@ -180,7 +183,7 @@ class MeetingBot:
         init_sdk_result = zoom.InitSDK(init_param)
         if init_sdk_result != zoom.SDKERR_SUCCESS:
             raise Exception('InitSDK failed')
-        
+
         self.create_services()
 
     def on_user_join_callback(self, joined_user_ids, user_name):
@@ -219,7 +222,7 @@ class MeetingBot:
 
     def on_video_file_share_play_error_callback(self, error):
         print("on_video_file_share_play_error_callback called. error =", error)
-    
+
     def on_optimizing_share_for_video_clip_status_changed_callback(self, share_info):
         print(
             f"on_optimizing_share_for_video_clip_status_changed_callback called. ",
@@ -247,8 +250,13 @@ class MeetingBot:
         print(f"Is Chat To Waitingroom: {chat_msg_info.IsChatToWaitingroom()}")
         print(f"Is Comment: {chat_msg_info.IsComment()}")
         print(f"Is Thread: {chat_msg_info.IsThread()}")
-        print(f"Thread ID: {chat_msg_info.GetThreadID()}")    
+        print(f"Thread ID: {chat_msg_info.GetThreadID()}")
         print("=====================\n")
+
+    def on_has_attendee_rights_notification(self, attendee):
+        print("on_has_attendee_rights_notification called. attendee =", attendee)
+        join_bo_result = attendee.JoinBo()
+        print("called JoinBo(). join_bo_result =", join_bo_result)
 
     def on_join(self):
         self.meeting_reminder_event = zoom.MeetingReminderEventCallbacks(onReminderNotifyCallback=self.on_reminder_notify)
@@ -310,10 +318,16 @@ class MeetingBot:
         # This is work-around to get it to work again.
         # See here for more details: https://devforum.zoom.us/t/cant-record-audio-with-linux-meetingsdk-after-6-3-5-6495-error-code-32/130689/5
         self.audio_ctrl.JoinVoip()
-        
+
         self.chat_ctrl = self.meeting_service.GetMeetingChatController()
         self.chat_ctrl_event = zoom.MeetingChatEventCallbacks(onChatMsgNotificationCallback=self.on_chat_msg_notification_callback)
         self.chat_ctrl.SetEvent(self.chat_ctrl_event)
+
+        self.bo_ctrl = self.meeting_service.GetMeetingBOController()
+        self.bo_ctrl_event = zoom.MeetingBOEventCallbacks(
+            onHasAttendeeRightsNotificationCallback=self.on_has_attendee_rights_notification
+        )
+        self.bo_ctrl.SetEvent(self.bo_ctrl_event)
 
         # Send a welcome message to the chat
         builder = self.chat_ctrl.GetChatMessageBuilder()
@@ -357,7 +371,7 @@ class MeetingBot:
         if not os.path.exists(audio_path):
             print(f"Audio file not found: {audio_path}")
             return
-        
+
         with open(audio_path, 'rb') as pcm_file:
             chunk = pcm_file.read(64000*10)
             self.audio_raw_data_sender.send(chunk, 32000, zoom.ZoomSDKAudioChannel_Mono)
@@ -372,7 +386,7 @@ class MeetingBot:
             return
 
         if node_id != self.my_participant_id:
-            self.write_to_deepgram(data) 
+            self.write_to_deepgram(data)
 
     def on_share_video_start_send_callback(self, sender):
         print("on_share_video_start_send_callback called, sender =", sender)
@@ -390,8 +404,12 @@ class MeetingBot:
             yuv_frames.append(frame_cv.tobytes())
 
         self.share_video_sender = sender
-        
+
         def try_send_frame():
+            if self.share_video_sender is None:
+                print("share_video_sender is None")
+                return False
+
             # Shift the frame to the end of the list (circular buffer)
             frame_bytes = yuv_frames.pop(0)
             yuv_frames.append(frame_bytes)
@@ -400,7 +418,7 @@ class MeetingBot:
                 print(f"Failed to send frame: {result}")
                 return False
             return True
-        
+
         print(f"Sending frames every 200 milliseconds")
         GLib.timeout_add(200, try_send_frame)
 
@@ -411,13 +429,13 @@ class MeetingBot:
     def on_share_audio_start_send_callback(self, sender):
         print("on_share_audio_start_send_callback called, sender =", sender)
         self.share_audio_sender = sender
-        
+
         audio_path = 'sample_program/input_audio/test_audio_16778240.pcm'
-        
+
         if not os.path.exists(audio_path):
             print(f"Audio file not found: {audio_path}")
             return
-        
+
         # Uncomment this to send audio as shared audio
         # with open(audio_path, 'rb') as pcm_file:
         #     chunk = pcm_file.read(64000*10)
@@ -426,7 +444,7 @@ class MeetingBot:
     def on_share_audio_stop_send_callback(self):
         print("on_share_audio_stop_send_callback called")
         self.share_audio_sender = None
-    
+
     def write_to_deepgram(self, data):
         try:
             buffer_bytes = data.GetBuffer()
@@ -440,7 +458,7 @@ class MeetingBot:
 
     def write_to_file(self, path, data):
         try:
-            buffer_bytes = data.GetBuffer()          
+            buffer_bytes = data.GetBuffer()
 
             with open(path, 'ab') as file:
                 file.write(buffer_bytes)
@@ -469,7 +487,7 @@ class MeetingBot:
         if self.audio_helper is None:
             print("audio_helper is None")
             return
-        
+
         if self.audio_source is None:
             self.audio_source = zoom.ZoomSDKAudioRawDataDelegateCallbacks(onOneWayAudioRawDataReceivedCallback=self.on_one_way_audio_raw_data_received_callback, collectPerformanceData=True)
 
@@ -542,7 +560,7 @@ class MeetingBot:
     def leave(self):
         if self.meeting_service is None:
             return
-        
+
         status = self.meeting_service.GetMeetingStatus()
         if status == zoom.MEETING_STATUS_IDLE:
             return
@@ -578,7 +596,7 @@ class MeetingBot:
 
     def on_reminder_notify(self, content, handler):
         if handler:
-            handler.accept()
+            handler.Accept()
 
     def auth_return(self, result):
         if result == zoom.AUTHRET_SUCCESS:
@@ -586,37 +604,37 @@ class MeetingBot:
             return self.join_meeting()
 
         raise Exception("Failed to authorize. result =", result)
-    
+
     def meeting_status_changed(self, status, iResult):
+        print("meeting_status_changed called. status =",status,"iResult=",iResult)
+
         if status == zoom.MEETING_STATUS_INMEETING:
             return self.on_join()
-        
-        print("meeting_status_changed called. status =",status,"iResult=",iResult)
 
     def create_services(self):
         self.meeting_service = zoom.CreateMeetingService()
-        
+
         self.setting_service = zoom.CreateSettingService()
 
         self.meeting_service_event = zoom.MeetingServiceEventCallbacks(onMeetingStatusChangedCallback=self.meeting_status_changed)
-                
+
         meeting_service_set_revent_result = self.meeting_service.SetEvent(self.meeting_service_event)
         if meeting_service_set_revent_result != zoom.SDKERR_SUCCESS:
             raise Exception("Meeting Service set event failed")
-        
+
         self.auth_event = zoom.AuthServiceEventCallbacks(onAuthenticationReturnCallback=self.auth_return)
 
         self.auth_service = zoom.CreateAuthService()
 
         set_event_result = self.auth_service.SetEvent(self.auth_event)
         print("set_event_result =",set_event_result)
-    
+
         # Use the auth service
         auth_context = zoom.AuthContext()
         auth_context.jwt_token = generate_jwt(os.environ.get('ZOOM_APP_CLIENT_ID'), os.environ.get('ZOOM_APP_CLIENT_SECRET'))
 
         result = self.auth_service.SDKAuth(auth_context)
-    
+
         if result == zoom.SDKError.SDKERR_SUCCESS:
             print("Authentication successful")
         else:
