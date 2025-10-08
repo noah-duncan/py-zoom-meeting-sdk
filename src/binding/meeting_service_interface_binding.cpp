@@ -199,7 +199,7 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
         .value("EndMeetingReason_NoAttendee", EndMeetingReason_NoAttendee)
         .value("EndMeetingReason_HostStartAnotherMeeting", EndMeetingReason_HostStartAnotherMeeting)
         .value("EndMeetingReason_FreeMeetingTimeOut", EndMeetingReason_FreeMeetingTimeOut)
-        .value("EndMeetingReason_NetworkBroken", EndMeetingReason_NetworkBroken);
+        .value("EndMeetingReason_Undefined", EndMeetingReason_Undefined);
 
     nb::enum_<ZOOM_SDK_NAMESPACE::MeetingStatus>(m, "MeetingStatus")
         .value("MEETING_STATUS_IDLE", ZOOM_SDK_NAMESPACE::MEETING_STATUS_IDLE)
@@ -244,7 +244,7 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
 
     nb::enum_<ZOOM_SDK_NAMESPACE::MeetingFailCode>(m, "MeetingFailCode", nb::is_arithmetic())
         .value("MEETING_SUCCESS", ZOOM_SDK_NAMESPACE::MEETING_SUCCESS)
-        .value("MEETING_FAIL_NETWORK_ERR", ZOOM_SDK_NAMESPACE::MEETING_FAIL_NETWORK_ERR)
+        .value("MEETING_FAIL_CONNECTION_ERR", ZOOM_SDK_NAMESPACE::MEETING_FAIL_CONNECTION_ERR)
         .value("MEETING_FAIL_RECONNECT_ERR", ZOOM_SDK_NAMESPACE::MEETING_FAIL_RECONNECT_ERR)
         .value("MEETING_FAIL_MMR_ERR", ZOOM_SDK_NAMESPACE::MEETING_FAIL_MMR_ERR)
         .value("MEETING_FAIL_PASSWORD_ERR", ZOOM_SDK_NAMESPACE::MEETING_FAIL_PASSWORD_ERR)
@@ -280,6 +280,8 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
         .value("MEETING_FAIL_NEED_SIGN_IN_FOR_PRIVATE_MEETING", ZOOM_SDK_NAMESPACE::MEETING_FAIL_NEED_SIGN_IN_FOR_PRIVATE_MEETING)
         .value("MEETING_FAIL_APP_PRIVILEGE_TOKEN_ERROR", ZOOM_SDK_NAMESPACE::MEETING_FAIL_APP_PRIVILEGE_TOKEN_ERROR)
         .value("MEETING_FAIL_JMAK_USER_EMAIL_NOT_MATCH", ZOOM_SDK_NAMESPACE::MEETING_FAIL_JMAK_USER_EMAIL_NOT_MATCH)
+        .value("MEETING_FAIL_NEED_CONFIRM_PLINK", ZOOM_SDK_NAMESPACE::MEETING_FAIL_NEED_CONFIRM_PLINK)
+        .value("MEETING_FAIL_NEED_INPUT_PLINK", ZOOM_SDK_NAMESPACE::MEETING_FAIL_NEED_INPUT_PLINK)
         .value("MEETING_FAIL_UNKNOWN", ZOOM_SDK_NAMESPACE::MEETING_FAIL_UNKNOWN)
         .export_values();
 }
