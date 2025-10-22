@@ -58,7 +58,7 @@ RUN apt-get update && apt-get install -y linux-libc-dev
 RUN apt-get update && apt-get install -y universal-ctags
 
 # Install python dependencies
-RUN pip install pyjwt==2.10.1 cython==3.0.11 gdown==5.2.0 deepgram-sdk python-dotenv opencv-python numpy
+RUN pip install pyjwt==2.10.1 cython==3.0.11 gdown==5.2.0 deepgram-sdk==4.3.0 python-dotenv==1.0.1 opencv-python==4.11.0.86 numpy==2.2.2
 
 # Alias python3 to python
 RUN ln -s /usr/bin/python3 /usr/bin/python
