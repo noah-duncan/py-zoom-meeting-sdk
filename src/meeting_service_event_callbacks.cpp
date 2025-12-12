@@ -46,6 +46,14 @@ using namespace ZOOMSDK;
 	/// \brief Callback event for the meeting topic changed. 
 	/// \param sTopic The new meeting topic.
 	virtual void onMeetingTopicChanged(const zchar_t* sTopic) = 0;
+
+	 * @brief Called when the user's share network quality changes.
+	 * @param type The data type whose network quality changed.
+	 * @param level The new network quality level for the specified data type.
+	 * @param userId The user whose network quality changed.
+	 * @param uplink This data is uplink or downlink.
+	
+	virtual void onUserNetworkStatusChanged(MeetingComponentType type, ConnectionQuality level, unsigned int userId, bool uplink) = 0;
 */
 
 class MeetingServiceEventCallbacks : public ZOOM_SDK_NAMESPACE::IMeetingServiceEvent {
@@ -57,6 +65,7 @@ private:
     std::function<void(bool)> m_onAICompanionActiveChangeNoticeCallback;
     std::function<void(const zchar_t*)> m_onMeetingTopicChangedCallback;
     std::function<void(const zchar_t*)> m_onMeetingFullToWatchLiveStreamCallback;
+    std::function<void(ZOOM_SDK_NAMESPACE::MeetingComponentType, ZOOM_SDK_NAMESPACE::ConnectionQuality, unsigned int, bool)> m_onUserNetworkStatusChangedCallback;
 
 public:
     MeetingServiceEventCallbacks(
@@ -66,14 +75,16 @@ public:
         const std::function<void()>& onSuspendParticipantsActivitiesCallback = nullptr,
         const std::function<void(bool)>& onAICompanionActiveChangeNoticeCallback = nullptr,
         const std::function<void(const zchar_t*)>& onMeetingTopicChangedCallback = nullptr,
-        const std::function<void(const zchar_t*)>& onMeetingFullToWatchLiveStreamCallback = nullptr
+        const std::function<void(const zchar_t*)>& onMeetingFullToWatchLiveStreamCallback = nullptr,
+        const std::function<void(ZOOM_SDK_NAMESPACE::MeetingComponentType, ZOOM_SDK_NAMESPACE::ConnectionQuality, unsigned int, bool)>& onUserNetworkStatusChangedCallback = nullptr
     ) : m_onMeetingStatusChangedCallback(onMeetingStatusChangedCallback),
         m_onMeetingStatisticsWarningNotificationCallback(onMeetingStatisticsWarningNotificationCallback),
         m_onMeetingParameterNotificationCallback(onMeetingParameterNotificationCallback),
         m_onSuspendParticipantsActivitiesCallback(onSuspendParticipantsActivitiesCallback),
         m_onAICompanionActiveChangeNoticeCallback(onAICompanionActiveChangeNoticeCallback),
         m_onMeetingTopicChangedCallback(onMeetingTopicChangedCallback),
-        m_onMeetingFullToWatchLiveStreamCallback(onMeetingFullToWatchLiveStreamCallback) {}
+        m_onMeetingFullToWatchLiveStreamCallback(onMeetingFullToWatchLiveStreamCallback),
+        m_onUserNetworkStatusChangedCallback(onUserNetworkStatusChangedCallback) {}
 
     void onMeetingStatusChanged(ZOOM_SDK_NAMESPACE::MeetingStatus status, int iResult = 0) override {
         if (m_onMeetingStatusChangedCallback)
@@ -109,6 +120,11 @@ public:
         if (m_onMeetingFullToWatchLiveStreamCallback)
             m_onMeetingFullToWatchLiveStreamCallback(sLiveStreamUrl);
     }
+
+    void onUserNetworkStatusChanged(ZOOM_SDK_NAMESPACE::MeetingComponentType type, ZOOM_SDK_NAMESPACE::ConnectionQuality level, unsigned int userId, bool uplink) override {
+        if (m_onUserNetworkStatusChangedCallback)
+            m_onUserNetworkStatusChangedCallback(type, level, userId, uplink);
+    }
 };
 
 void init_meeting_service_event_callbacks(nb::module_ &m) {
@@ -121,7 +137,8 @@ void init_meeting_service_event_callbacks(nb::module_ &m) {
                 std::function<void()>&,
                 std::function<void(bool)>&,
                 std::function<void(const zchar_t*)>&,
-                std::function<void(const zchar_t*)>&
+                std::function<void(const zchar_t*)>&,
+                std::function<void(ZOOM_SDK_NAMESPACE::MeetingComponentType, ZOOM_SDK_NAMESPACE::ConnectionQuality, unsigned int, bool)>&
             >(),
             nb::arg("onMeetingStatusChangedCallback") = nullptr,
             nb::arg("onMeetingStatisticsWarningNotificationCallback") = nullptr,
@@ -129,7 +146,8 @@ void init_meeting_service_event_callbacks(nb::module_ &m) {
             nb::arg("onSuspendParticipantsActivitiesCallback") = nullptr,
             nb::arg("onAICompanionActiveChangeNoticeCallback") = nullptr,
             nb::arg("onMeetingTopicChangedCallback") = nullptr,
-            nb::arg("onMeetingFullToWatchLiveStreamCallback") = nullptr
+            nb::arg("onMeetingFullToWatchLiveStreamCallback") = nullptr,
+            nb::arg("onUserNetworkStatusChangedCallback") = nullptr
         );
 
 }
