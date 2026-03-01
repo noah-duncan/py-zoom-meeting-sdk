@@ -46,7 +46,7 @@ void init_meeting_breakout_rooms_interface_v2_binding(nb::module_ &m) {
     .def_rw("IsAutoMoveAllAssignedParticipantsEnabled", &BOOption::IsAutoMoveAllAssignedParticipantsEnabled)
     .def_rw("IsBOTimerEnabled", &BOOption::IsBOTimerEnabled)
     .def_rw("IsTimerAutoStopBOEnabled", &BOOption::IsTimerAutoStopBOEnabled)
-    .def_rw("nTimerDuration", &BOOption::nTimerDuration)
+    .def_rw("nTimerDurationMinutes", &BOOption::nTimerDurationMinutes)
     .def_rw("IsAttendeeContained", &BOOption::IsAttendeeContained)
     .def_rw("IsPanelistCanChooseBO", &BOOption::IsPanelistCanChooseBO)
     .def_rw("IsAttendeeCanChooseBO", &BOOption::IsAttendeeCanChooseBO)
@@ -63,6 +63,35 @@ void init_meeting_breakout_rooms_interface_v2_binding(nb::module_ &m) {
     .def("ReturnToMainSession", &IReturnToMainSessionHandler::ReturnToMainSession)
     .def("Ignore", &IReturnToMainSessionHandler::Ignore);
 
+  // Data helper interfaces
+  nb::class_<IBOData>(m, "IBOData")
+    .def("SetEvent", &IBOData::SetEvent)
+    .def("GetUnassignedUserList", &IBOData::GetUnassignedUserList)
+    .def("GetBOMeetingIDList", &IBOData::GetBOMeetingIDList)
+    .def("GetBOUserName", &IBOData::GetBOUserName)
+    .def("IsBOUserMyself", &IBOData::IsBOUserMyself)
+    .def("GetBOMeetingByID", &IBOData::GetBOMeetingByID)
+    .def("GetCurrentBoName", &IBOData::GetCurrentBoName);
+
+  nb::class_<IBOAdmin>(m, "IBOAdmin")
+    .def("StartBO", &IBOAdmin::StartBO)
+    .def("StopBO", &IBOAdmin::StopBO)
+    .def("AssignNewUserToRunningBO", &IBOAdmin::AssignNewUserToRunningBO)
+    .def("SwitchAssignedUserToRunningBO", &IBOAdmin::SwitchAssignedUserToRunningBO)
+    .def("CanStartBO", &IBOAdmin::CanStartBO)
+    .def("SetEvent", &IBOAdmin::SetEvent)
+    .def("JoinBOByUserRequest", &IBOAdmin::JoinBOByUserRequest)
+    .def("IgnoreUserHelpRequest", &IBOAdmin::IgnoreUserHelpRequest)
+    .def("BroadcastMessage", &IBOAdmin::BroadcastMessage)
+    .def("InviteBOUserReturnToMainSession", &IBOAdmin::InviteBOUserReturnToMainSession)
+    .def("IsBroadcastVoiceToBOSupport", &IBOAdmin::IsBroadcastVoiceToBOSupport)
+    .def("CanBroadcastVoiceToBO", &IBOAdmin::CanBroadcastVoiceToBO)
+    .def("BroadcastVoiceToBo", &IBOAdmin::BroadcastVoiceToBo);
+
+  nb::class_<IBOAssistant>(m, "IBOAssistant")
+    .def("JoinBO", &IBOAssistant::JoinBO)
+    .def("LeaveBO", &IBOAssistant::LeaveBO);
+
   nb::class_<IBOCreatorEvent>(m, "IBOCreatorEvent")
     .def("onBOCreateSuccess", &IBOCreatorEvent::onBOCreateSuccess)
     .def("OnWebPreAssignBODataDownloadStatusChanged", &IBOCreatorEvent::OnWebPreAssignBODataDownloadStatusChanged)
@@ -76,6 +105,7 @@ void init_meeting_breakout_rooms_interface_v2_binding(nb::module_ &m) {
     .def("SetEvent", &IBOCreator::SetEvent)
     .def("CreateBO", &IBOCreator::CreateBO)
     .def("CreateBreakoutRoom", &IBOCreator::CreateBreakoutRoom)
+    .def("createBreakoutRoom", &IBOCreator::CreateBreakoutRoom) // Alias for consistency
     .def("UpdateBOName", &IBOCreator::UpdateBOName)
     .def("RemoveBO", &IBOCreator::RemoveBO)
     .def("AssignUserToBO", &IBOCreator::AssignUserToBO)

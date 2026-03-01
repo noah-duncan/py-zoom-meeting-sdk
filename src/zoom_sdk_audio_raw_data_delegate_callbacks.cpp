@@ -92,7 +92,7 @@ public:
         }
     }
 
-    void onShareAudioRawDataReceived(AudioRawData* data_) override {
+    void onShareAudioRawDataReceived(AudioRawData* data_, uint32_t user_id) override {
         if (m_onShareAudioRawDataReceivedCallback)
         {
             if (m_collectPerformanceData) {

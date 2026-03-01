@@ -199,7 +199,8 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
         .value("EndMeetingReason_NoAttendee", EndMeetingReason_NoAttendee)
         .value("EndMeetingReason_HostStartAnotherMeeting", EndMeetingReason_HostStartAnotherMeeting)
         .value("EndMeetingReason_FreeMeetingTimeOut", EndMeetingReason_FreeMeetingTimeOut)
-        .value("EndMeetingReason_NetworkBroken", EndMeetingReason_NetworkBroken);
+        .value("EndMeetingReason_Undefined", EndMeetingReason_Undefined)
+        .value("EndMeetingReason_DueToAuthorizedUserLeave", EndMeetingReason_DueToAuthorizedUserLeave);
 
     nb::enum_<ZOOM_SDK_NAMESPACE::MeetingStatus>(m, "MeetingStatus")
         .value("MEETING_STATUS_IDLE", ZOOM_SDK_NAMESPACE::MEETING_STATUS_IDLE)
@@ -244,7 +245,7 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
 
     nb::enum_<ZOOM_SDK_NAMESPACE::MeetingFailCode>(m, "MeetingFailCode", nb::is_arithmetic())
         .value("MEETING_SUCCESS", ZOOM_SDK_NAMESPACE::MEETING_SUCCESS)
-        .value("MEETING_FAIL_NETWORK_ERR", ZOOM_SDK_NAMESPACE::MEETING_FAIL_NETWORK_ERR)
+        .value("MEETING_FAIL_CONNECTION_ERR", ZOOM_SDK_NAMESPACE::MEETING_FAIL_CONNECTION_ERR)
         .value("MEETING_FAIL_RECONNECT_ERR", ZOOM_SDK_NAMESPACE::MEETING_FAIL_RECONNECT_ERR)
         .value("MEETING_FAIL_MMR_ERR", ZOOM_SDK_NAMESPACE::MEETING_FAIL_MMR_ERR)
         .value("MEETING_FAIL_PASSWORD_ERR", ZOOM_SDK_NAMESPACE::MEETING_FAIL_PASSWORD_ERR)

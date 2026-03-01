@@ -66,6 +66,7 @@ private:
     function<void(unsigned int)> m_onBotAuthorizerRelationChangedCallback;
     function<void(bool, unsigned int)> m_onVirtualNameTagStatusChangedCallback;
     function<void(unsigned int)> m_onVirtualNameTagRosterInfoUpdatedCallback;
+    function<void(bool)> m_onGrantCoOwnerPrivilegeChangedCallback;
 
 public:
     MeetingParticipantsCtrlEventCallbacks(
@@ -90,7 +91,8 @@ public:
         const function<void(FocusModeShareType)>& onFocusModeShareTypeChangedCallback = nullptr,
         const function<void(unsigned int)>& onBotAuthorizerRelationChangedCallback = nullptr,
         const function<void(bool, unsigned int)>& onVirtualNameTagStatusChangedCallback = nullptr,
-        const function<void(unsigned int)>& onVirtualNameTagRosterInfoUpdatedCallback = nullptr
+        const function<void(unsigned int)>& onVirtualNameTagRosterInfoUpdatedCallback = nullptr,
+        const function<void(bool)>& onGrantCoOwnerPrivilegeChangedCallback = nullptr
     ) : m_onUserJoinCallback(onUserJoinCallback),
         m_onUserLeftCallback(onUserLeftCallback),
         m_onHostChangeNotificationCallback(onHostChangeNotificationCallback),
@@ -112,7 +114,8 @@ public:
         m_onFocusModeShareTypeChangedCallback(onFocusModeShareTypeChangedCallback),
         m_onBotAuthorizerRelationChangedCallback(onBotAuthorizerRelationChangedCallback),
         m_onVirtualNameTagStatusChangedCallback(onVirtualNameTagStatusChangedCallback),
-        m_onVirtualNameTagRosterInfoUpdatedCallback(onVirtualNameTagRosterInfoUpdatedCallback) {}
+        m_onVirtualNameTagRosterInfoUpdatedCallback(onVirtualNameTagRosterInfoUpdatedCallback),
+        m_onGrantCoOwnerPrivilegeChangedCallback(onGrantCoOwnerPrivilegeChangedCallback) {}
 
     void onUserJoin(IList<unsigned int>* lstUserID, const zchar_t* strUserList = NULL) override {
         if (m_onUserJoinCallback) {
@@ -250,6 +253,11 @@ public:
         if (m_onVirtualNameTagRosterInfoUpdatedCallback)
             m_onVirtualNameTagRosterInfoUpdatedCallback(userID);
     }
+
+    void onGrantCoOwnerPrivilegeChanged(bool canGrantOther) override {
+        if (m_onGrantCoOwnerPrivilegeChangedCallback)
+            m_onGrantCoOwnerPrivilegeChangedCallback(canGrantOther);
+    }
 };
 
 void init_meeting_participants_ctrl_event_callbacks(nb::module_ &m) {
@@ -276,7 +284,8 @@ void init_meeting_participants_ctrl_event_callbacks(nb::module_ &m) {
         const function<void(FocusModeShareType)>&,
         const function<void(unsigned int)>&,
         const function<void(bool, unsigned int)>&,
-        const function<void(unsigned int)>&
+        const function<void(unsigned int)>&,
+        const function<void(bool)>&
     >(),
         nb::arg("onUserJoinCallback") = nullptr,
         nb::arg("onUserLeftCallback") = nullptr,
@@ -299,6 +308,7 @@ void init_meeting_participants_ctrl_event_callbacks(nb::module_ &m) {
         nb::arg("onFocusModeShareTypeChangedCallback") = nullptr,
         nb::arg("onBotAuthorizerRelationChangedCallback") = nullptr,
         nb::arg("onVirtualNameTagStatusChangedCallback") = nullptr,
-        nb::arg("onVirtualNameTagRosterInfoUpdatedCallback") = nullptr
+        nb::arg("onVirtualNameTagRosterInfoUpdatedCallback") = nullptr,
+        nb::arg("onGrantCoOwnerPrivilegeChangedCallback") = nullptr
     );
 }

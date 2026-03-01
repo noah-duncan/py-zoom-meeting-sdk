@@ -96,6 +96,7 @@ nanobind_add_module(
   src/zoom_sdk_video_source_callbacks.cpp
   src/meeting_chat_event_callbacks.cpp
   src/meeting_bo_event_callbacks.cpp
+  src/meeting_bo_creator_event_callbacks.cpp
   src/zoom_sdk_share_source_callbacks.cpp
   src/utilities.cpp
 
