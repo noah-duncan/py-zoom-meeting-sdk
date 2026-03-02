@@ -178,7 +178,8 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
         .value("EndMeetingReason_NoAttendee", EndMeetingReason_NoAttendee)
         .value("EndMeetingReason_HostStartAnotherMeeting", EndMeetingReason_HostStartAnotherMeeting)
         .value("EndMeetingReason_FreeMeetingTimeOut", EndMeetingReason_FreeMeetingTimeOut)
-        .value("EndMeetingReason_Undefined", EndMeetingReason_Undefined);
+        .value("EndMeetingReason_Undefined", EndMeetingReason_Undefined)
+        .value("EndMeetingReason_DueToAuthorizedUserLeave", EndMeetingReason_DueToAuthorizedUserLeave);
 
     nb::enum_<ZOOM_SDK_NAMESPACE::MeetingStatus>(m, "MeetingStatus")
         .value("MEETING_STATUS_IDLE", ZOOM_SDK_NAMESPACE::MEETING_STATUS_IDLE)
