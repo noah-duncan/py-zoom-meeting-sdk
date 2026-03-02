@@ -169,5 +169,6 @@ void init_meeting_participants_ctrl_interface_binding(nb::module_ &m) {
         .def("IsBotUser", &IUserInfo::IsBotUser)
         .def("GetBotAppName", &IUserInfo::GetBotAppName)
         .def("IsVirtualNameTagEnabled", &IUserInfo::IsVirtualNameTagEnabled)
-        .def("GetVirtualNameTagList", &IUserInfo::GetVirtualNameTagList);
+        .def("GetVirtualNameTagList", &IUserInfo::GetVirtualNameTagList)
+        .def("IsAudioOnlyUser", &IUserInfo::IsAudioOnlyUser);
 }
