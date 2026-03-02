@@ -54,6 +54,12 @@ void init_meeting_recording_interface_binding(nb::module_ &m) {
         .def("onSmartRecordingEnableActionCallback", &IMeetingRecordingCtrlEvent::onSmartRecordingEnableActionCallback)
         .def("onTranscodingStatusChanged", &IMeetingRecordingCtrlEvent::onTranscodingStatusChanged);
 
+    nb::enum_<ZOOM_SDK_NAMESPACE::RequestLocalRecordingStatus>(m, "RequestLocalRecordingStatus")
+    .value("RequestLocalRecording_Granted", ZOOM_SDK_NAMESPACE::RequestLocalRecording_Granted)
+    .value("RequestLocalRecording_Denied", ZOOM_SDK_NAMESPACE::RequestLocalRecording_Denied)
+    .value("RequestLocalRecording_Timeout", ZOOM_SDK_NAMESPACE::RequestLocalRecording_Timeout)
+    .export_values();
+
     nb::class_<IMeetingRecordingController>(m, "IMeetingRecordingController")
         .def("SetEvent", &IMeetingRecordingController::SetEvent)
         .def("IsSupportRequestLocalRecordingPrivilege", &IMeetingRecordingController::IsSupportRequestLocalRecordingPrivilege)
