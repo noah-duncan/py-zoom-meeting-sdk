@@ -46,7 +46,7 @@ void init_meeting_breakout_rooms_interface_v2_binding(nb::module_ &m) {
     .def_rw("IsAutoMoveAllAssignedParticipantsEnabled", &BOOption::IsAutoMoveAllAssignedParticipantsEnabled)
     .def_rw("IsBOTimerEnabled", &BOOption::IsBOTimerEnabled)
     .def_rw("IsTimerAutoStopBOEnabled", &BOOption::IsTimerAutoStopBOEnabled)
-    .def_rw("nTimerDuration", &BOOption::nTimerDuration)
+    .def_rw("nTimerDurationMinutes", &BOOption::nTimerDurationMinutes)
     .def_rw("IsAttendeeContained", &BOOption::IsAttendeeContained)
     .def_rw("IsPanelistCanChooseBO", &BOOption::IsPanelistCanChooseBO)
     .def_rw("IsAttendeeCanChooseBO", &BOOption::IsAttendeeCanChooseBO)
