@@ -22,6 +22,21 @@ jobs:
     - name: Build SDist
       run: pipx run build --sdist
 
+    - name: Normalize sdist filename for PyPI (PEP 625)
+      run: |
+        python - <<'PY'
+        import glob, os
+        for path in glob.glob("dist/*.tar.gz"):
+            base = os.path.basename(path)
+            # If backend produced zoom-meeting-sdk-<ver>.tar.gz, rename to zoom_meeting_sdk-<ver>.tar.gz
+            if base.startswith("zoom-meeting-sdk-"):
+                new = os.path.join("dist", base.replace("zoom-meeting-sdk-", "zoom_meeting_sdk-", 1))
+                os.rename(path, new)
+                print(f"Renamed {path} -> {new}")
+            else:
+                print(f"Keeping {path}")
+        PY
+
     - name: Check metadata
       run: pipx run twine check dist/*
 
