@@ -41,46 +41,6 @@
 namespace nb = nanobind;
 using namespace ZOOMSDK;
 
-void printJoinParam(const JoinParam& param) {
-    std::cout << "JoinParam contents:" << std::endl;
-    std::cout << "User Type: " << (param.userType == SDK_UT_NORMALUSER ? "Normal User" : "Without Login") << std::endl;
-
-    if (param.userType == SDK_UT_NORMALUSER) {
-        const auto& np = param.param.normaluserJoin;
-        std::cout << "Normal User Join Parameters:" << std::endl;
-        std::cout << "  Meeting Number: " << np.meetingNumber << std::endl;
-        std::cout << "  Vanity ID: " << (np.vanityID ? np.vanityID : "NULL") << std::endl;
-        std::cout << "  User Name: " << (np.userName ? np.userName : "NULL") << std::endl;
-        std::cout << "  Password: " << (np.psw ? np.psw : "NULL") << std::endl;
-        std::cout << "  App Privilege Token: " << (np.app_privilege_token ? np.app_privilege_token : "NULL") << std::endl;
-        std::cout << "  Customer Key: " << (np.customer_key ? np.customer_key : "NULL") << std::endl;
-        std::cout << "  Webinar Token: " << (np.webinarToken ? np.webinarToken : "NULL") << std::endl;
-        std::cout << "  Video Off: " << (np.isVideoOff ? "Yes" : "No") << std::endl;
-        std::cout << "  Audio Off: " << (np.isAudioOff ? "Yes" : "No") << std::endl;
-        std::cout << "  Join Token: " << (np.join_token ? np.join_token : "NULL") << std::endl;
-        std::cout << "  Is My Voice In Mix: " << (np.isMyVoiceInMix ? "Yes" : "No") << std::endl;
-        std::cout << "  Is Audio Raw Data Stereo: " << (np.isAudioRawDataStereo ? "Yes" : "No") << std::endl;
-        std::cout << "  Audio Raw Data Sampling Rate: " << np.eAudioRawdataSamplingRate << std::endl;
-    } else {
-        const auto& wp = param.param.withoutloginuserJoin;
-        std::cout << "Without Login User Join Parameters:" << std::endl;
-        std::cout << "  Meeting Number: " << wp.meetingNumber << std::endl;
-        std::cout << "  Vanity ID: " << (wp.vanityID ? wp.vanityID : "NULL") << std::endl;
-        std::cout << "  User Name: " << (wp.userName ? wp.userName : "NULL") << std::endl;
-        std::cout << "  Password: " << (wp.psw ? wp.psw : "NULL") << std::endl;
-        std::cout << "  App Privilege Token: " << (wp.app_privilege_token ? wp.app_privilege_token : "NULL") << std::endl;
-        std::cout << "  User ZAK: " << (wp.userZAK ? wp.userZAK : "NULL") << std::endl;
-        std::cout << "  Customer Key: " << (wp.customer_key ? wp.customer_key : "NULL") << std::endl;
-        std::cout << "  Webinar Token: " << (wp.webinarToken ? wp.webinarToken : "NULL") << std::endl;
-        std::cout << "  Video Off: " << (wp.isVideoOff ? "Yes" : "No") << std::endl;
-        std::cout << "  Audio Off: " << (wp.isAudioOff ? "Yes" : "No") << std::endl;
-        std::cout << "  Join Token: " << (wp.join_token ? wp.join_token : "NULL") << std::endl;
-        std::cout << "  Is My Voice In Mix: " << (wp.isMyVoiceInMix ? "Yes" : "No") << std::endl;
-        std::cout << "  Is Audio Raw Data Stereo: " << (wp.isAudioRawDataStereo ? "Yes" : "No") << std::endl;
-        std::cout << "  Audio Raw Data Sampling Rate: " << wp.eAudioRawdataSamplingRate << std::endl;
-    }
-}
-
 void init_meeting_service_interface_binding(nb::module_ &m) {
     nb::enum_<ZOOM_SDK_NAMESPACE::SDKUserType>(m, "SDKUserType")
         .value("SDK_UT_NORMALUSER", ZOOM_SDK_NAMESPACE::SDK_UT_NORMALUSER)
@@ -132,8 +92,6 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
         .def_prop_rw("param",
             [](ZOOM_SDK_NAMESPACE::JoinParam &p) -> ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin& { return p.param.withoutloginuserJoin; },
             [](ZOOM_SDK_NAMESPACE::JoinParam &p, const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &jp) {
-                std::cout << "meetingNumber " << jp.meetingNumber << std::endl;
-                std::cout << "mn" << jp.meetingNumber << std::endl;
                 p.param.withoutloginuserJoin = jp;
             }
         );
@@ -160,10 +118,7 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
 
     nb::class_<IMeetingService>(m, "IMeetingService")
         .def("GetMeetingStatus", &ZOOM_SDK_NAMESPACE::IMeetingService::GetMeetingStatus)
-        .def("Join", [](ZOOM_SDK_NAMESPACE::IMeetingService& self, ZOOM_SDK_NAMESPACE::JoinParam& param) {
-            printJoinParam(param);
-            return self.Join(param);
-        })
+        .def("Join", &ZOOM_SDK_NAMESPACE::IMeetingService::Join)
         .def("SetEvent", &ZOOM_SDK_NAMESPACE::IMeetingService::SetEvent)
         .def("Start", &ZOOM_SDK_NAMESPACE::IMeetingService::Start)
         .def("Leave", &ZOOM_SDK_NAMESPACE::IMeetingService::Leave, nb::call_guard<nb::gil_scoped_release>())

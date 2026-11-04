@@ -42,17 +42,6 @@ using namespace ZOOMSDK;
 
 void init_zoom_sdk_binding(nb::module_ &m) {
     m.def("InitSDK", [](ZOOM_SDK_NAMESPACE::InitParam& initParam) {
-        std::cout << "strWebDomain" << std::endl;
-        std::cout << initParam.strWebDomain << std::endl;
-        std::cout << "strSupportUrl" << std::endl;
-        std::cout << initParam.strSupportUrl << std::endl;
-        std::cout << "enableGenerateDump" << std::endl;
-        std::cout << initParam.enableGenerateDump << std::endl;
-        std::cout << "emLanguageID" << std::endl;
-        std::cout << initParam.emLanguageID << std::endl;
-        std::cout << "enableLogByDefault" << std::endl;
-        std::cout << initParam.enableLogByDefault << std::endl;
-
         return ZOOM_SDK_NAMESPACE::InitSDK(initParam);
     }, nb::arg("initParam"), "Initialize ZOOM SDK");
 
