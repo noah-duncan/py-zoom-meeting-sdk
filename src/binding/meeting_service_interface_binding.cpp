@@ -92,8 +92,6 @@ void init_meeting_service_interface_binding(nb::module_ &m) {
         .def_prop_rw("param",
             [](ZOOM_SDK_NAMESPACE::JoinParam &p) -> ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin& { return p.param.withoutloginuserJoin; },
             [](ZOOM_SDK_NAMESPACE::JoinParam &p, const ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin &jp) {
-                std::cout << "meetingNumber " << jp.meetingNumber << std::endl;
-                std::cout << "mn" << jp.meetingNumber << std::endl;
                 p.param.withoutloginuserJoin = jp;
             }
         );
