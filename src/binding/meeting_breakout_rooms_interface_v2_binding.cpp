@@ -14,7 +14,60 @@ using namespace std;
 using namespace ZOOMSDK;
 using namespace nb::literals;
 
+static vector<string> to_string_vector(IList<const zchar_t*>* list) {
+  vector<string> result;
+  if (list) {
+    int count = list->GetCount();
+    result.reserve(count);
+    for (int i = 0; i < count; i++) {
+      const zchar_t* item = list->GetItem(i);
+      if (item) result.emplace_back(item);
+    }
+  }
+  return result;
+}
+
 void init_meeting_breakout_rooms_interface_v2_binding(nb::module_ &m) {
+  nb::enum_<BOControllerError>(m, "BOControllerError")
+    .value("BOControllerError_NULL_POINTER", BOControllerError_NULL_POINTER)
+    .value("BOControllerError_WRONG_CURRENT_STATUS", BOControllerError_WRONG_CURRENT_STATUS)
+    .value("BOControllerError_TOKEN_NOT_READY", BOControllerError_TOKEN_NOT_READY)
+    .value("BOControllerError_NO_PRIVILEGE", BOControllerError_NO_PRIVILEGE)
+    .value("BOControllerError_BO_LIST_IS_UPLOADING", BOControllerError_BO_LIST_IS_UPLOADING)
+    .value("BOControllerError_UPLOAD_FAIL", BOControllerError_UPLOAD_FAIL)
+    .value("BOControllerError_NO_ONE_HAS_BEEN_ASSIGNED", BOControllerError_NO_ONE_HAS_BEEN_ASSIGNED)
+    .value("BOControllerError_UNKNOWN", BOControllerError_UNKNOWN);
+
+  nb::class_<IBOMeeting>(m, "IBOMeeting")
+    .def("GetBOID", &IBOMeeting::GetBOID)
+    .def("GetBOName", &IBOMeeting::GetBOName)
+    .def("GetBOUserList", [](IBOMeeting& self) { return to_string_vector(self.GetBOUserList()); });
+
+  nb::class_<IBOAdminEvent>(m, "IBOAdminEvent");
+
+  nb::class_<IBOAdmin>(m, "IBOAdmin")
+    .def("StartBO", &IBOAdmin::StartBO)
+    .def("StopBO", &IBOAdmin::StopBO)
+    .def("AssignNewUserToRunningBO", &IBOAdmin::AssignNewUserToRunningBO)
+    .def("SwitchAssignedUserToRunningBO", &IBOAdmin::SwitchAssignedUserToRunningBO)
+    .def("CanStartBO", &IBOAdmin::CanStartBO)
+    .def("SetEvent", &IBOAdmin::SetEvent, nb::keep_alive<1, 2>())
+    .def("JoinBOByUserRequest", &IBOAdmin::JoinBOByUserRequest)
+    .def("IgnoreUserHelpRequest", &IBOAdmin::IgnoreUserHelpRequest)
+    .def("BroadcastMessage", &IBOAdmin::BroadcastMessage)
+    .def("InviteBOUserReturnToMainSession", &IBOAdmin::InviteBOUserReturnToMainSession);
+
+  nb::class_<IBODataEvent>(m, "IBODataEvent");
+
+  nb::class_<IBOData>(m, "IBOData")
+    .def("SetEvent", &IBOData::SetEvent, nb::keep_alive<1, 2>())
+    .def("GetUnassignedUserList", [](IBOData& self) { return to_string_vector(self.GetUnassignedUserList()); })
+    .def("GetBOMeetingIDList", [](IBOData& self) { return to_string_vector(self.GetBOMeetingIDList()); })
+    .def("GetBOUserName", &IBOData::GetBOUserName)
+    .def("IsBOUserMyself", &IBOData::IsBOUserMyself)
+    .def("GetBOMeetingByID", &IBOData::GetBOMeetingByID, nb::rv_policy::reference)
+    .def("GetCurrentBoName", &IBOData::GetCurrentBoName);
+
   // Enums
   nb::enum_<PreAssignBODataStatus>(m, "PreAssignBODataStatus")
     .value("PreAssignBODataStatus_none", PreAssignBODataStatus_none)
@@ -46,7 +99,7 @@ void init_meeting_breakout_rooms_interface_v2_binding(nb::module_ &m) {
     .def_rw("IsAutoMoveAllAssignedParticipantsEnabled", &BOOption::IsAutoMoveAllAssignedParticipantsEnabled)
     .def_rw("IsBOTimerEnabled", &BOOption::IsBOTimerEnabled)
     .def_rw("IsTimerAutoStopBOEnabled", &BOOption::IsTimerAutoStopBOEnabled)
-    .def_rw("nTimerDuration", &BOOption::nTimerDuration)
+    .def_rw("nTimerDurationMinutes", &BOOption::nTimerDurationMinutes)
     .def_rw("IsAttendeeContained", &BOOption::IsAttendeeContained)
     .def_rw("IsPanelistCanChooseBO", &BOOption::IsPanelistCanChooseBO)
     .def_rw("IsAttendeeCanChooseBO", &BOOption::IsAttendeeCanChooseBO)
@@ -118,11 +171,11 @@ void init_meeting_breakout_rooms_interface_v2_binding(nb::module_ &m) {
 
   nb::class_<IMeetingBOController>(m, "IMeetingBOController")
     .def("SetEvent", &IMeetingBOController::SetEvent)
-    .def("GetBOCreatorHelper", &IMeetingBOController::GetBOCreatorHelper)
-    .def("GetBOAdminHelper", &IMeetingBOController::GetBOAdminHelper)
-    .def("GetBOAssistantHelper", &IMeetingBOController::GetBOAssistantHelper)
-    .def("GetBOAttedeeHelper", &IMeetingBOController::GetBOAttedeeHelper)
-    .def("GetBODataHelper", &IMeetingBOController::GetBODataHelper)
+    .def("GetBOCreatorHelper", &IMeetingBOController::GetBOCreatorHelper, nb::rv_policy::reference)
+    .def("GetBOAdminHelper", &IMeetingBOController::GetBOAdminHelper, nb::rv_policy::reference)
+    .def("GetBOAssistantHelper", &IMeetingBOController::GetBOAssistantHelper, nb::rv_policy::reference)
+    .def("GetBOAttedeeHelper", &IMeetingBOController::GetBOAttedeeHelper, nb::rv_policy::reference)
+    .def("GetBODataHelper", &IMeetingBOController::GetBODataHelper, nb::rv_policy::reference)
     .def("IsBOStarted", &IMeetingBOController::IsBOStarted)
     .def("IsBOEnabled", &IMeetingBOController::IsBOEnabled)
     .def("IsInBOMeeting", &IMeetingBOController::IsInBOMeeting);

@@ -131,5 +131,9 @@ void init_meeting_waiting_room_interface_binding(nb::module_ &m) {
         .def("RenameUser", &ZOOM_SDK_NAMESPACE::IMeetingWaitingRoomController::RenameUser)
         .def("CanExpelUser", &ZOOM_SDK_NAMESPACE::IMeetingWaitingRoomController::CanExpelUser)
         .def("ExpelUser", &ZOOM_SDK_NAMESPACE::IMeetingWaitingRoomController::ExpelUser)
-        .def("IsWaitingRoomOnEntryLocked", &ZOOM_SDK_NAMESPACE::IMeetingWaitingRoomController::IsWaitingRoomOnEntryLocked);
+        .def("IsWaitingRoomOnEntryLocked", &ZOOM_SDK_NAMESPACE::IMeetingWaitingRoomController::IsWaitingRoomOnEntryLocked)
+        .def("PresetAudioInWaitingRoom", &ZOOM_SDK_NAMESPACE::IMeetingWaitingRoomController::PresetAudioInWaitingRoom)
+        .def("IsPresetAudioUnmuteInWaitingRoom", &ZOOM_SDK_NAMESPACE::IMeetingWaitingRoomController::IsPresetAudioUnmuteInWaitingRoom)
+        .def("PresetVideoInWaitingRoom", &ZOOM_SDK_NAMESPACE::IMeetingWaitingRoomController::PresetVideoInWaitingRoom)
+        .def("IsPresetVideoUnmuteInWaitingRoom", &ZOOM_SDK_NAMESPACE::IMeetingWaitingRoomController::IsPresetVideoUnmuteInWaitingRoom);
 }
