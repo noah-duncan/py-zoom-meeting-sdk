@@ -60,7 +60,7 @@ void init_meeting_breakout_rooms_interface_v2_binding(nb::module_ &m) {
     .def("CreateBoTransactionCommit", &IBatchCreateBOHelper::CreateBoTransactionCommit);
 
   nb::class_<IReturnToMainSessionHandler>(m, "IReturnToMainSessionHandler")
-    .def("ReturnToMainSession", &IReturnToMainSessionHandler::ReturnToMainSession)
+    .def("ReturnToMainSession", &IReturnToMainSessionHandler::ReturnToMainSession, nb::call_guard<nb::gil_scoped_release>())
     .def("Ignore", &IReturnToMainSessionHandler::Ignore);
 
   nb::class_<IBOCreatorEvent>(m, "IBOCreatorEvent")
@@ -90,7 +90,7 @@ void init_meeting_breakout_rooms_interface_v2_binding(nb::module_ &m) {
 
   nb::class_<IBOAttendee>(m, "IBOAttendee")
     .def("JoinBo", &IBOAttendee::JoinBo)
-    .def("LeaveBo", &IBOAttendee::LeaveBo)
+    .def("LeaveBo", &IBOAttendee::LeaveBo, nb::call_guard<nb::gil_scoped_release>())
     .def("GetBoName", &IBOAttendee::GetBoName)
     .def("SetEvent", &IBOAttendee::SetEvent)
     .def("RequestForHelp", &IBOAttendee::RequestForHelp)
