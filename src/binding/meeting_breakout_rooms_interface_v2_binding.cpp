@@ -51,7 +51,7 @@ void init_meeting_breakout_rooms_interface_v2_binding(nb::module_ &m) {
     .def("AssignNewUserToRunningBO", &IBOAdmin::AssignNewUserToRunningBO)
     .def("SwitchAssignedUserToRunningBO", &IBOAdmin::SwitchAssignedUserToRunningBO)
     .def("CanStartBO", &IBOAdmin::CanStartBO)
-    .def("SetEvent", &IBOAdmin::SetEvent)
+    .def("SetEvent", &IBOAdmin::SetEvent, nb::keep_alive<1, 2>())
     .def("JoinBOByUserRequest", &IBOAdmin::JoinBOByUserRequest)
     .def("IgnoreUserHelpRequest", &IBOAdmin::IgnoreUserHelpRequest)
     .def("BroadcastMessage", &IBOAdmin::BroadcastMessage)
@@ -60,7 +60,7 @@ void init_meeting_breakout_rooms_interface_v2_binding(nb::module_ &m) {
   nb::class_<IBODataEvent>(m, "IBODataEvent");
 
   nb::class_<IBOData>(m, "IBOData")
-    .def("SetEvent", &IBOData::SetEvent)
+    .def("SetEvent", &IBOData::SetEvent, nb::keep_alive<1, 2>())
     .def("GetUnassignedUserList", [](IBOData& self) { return to_string_vector(self.GetUnassignedUserList()); })
     .def("GetBOMeetingIDList", [](IBOData& self) { return to_string_vector(self.GetBOMeetingIDList()); })
     .def("GetBOUserName", &IBOData::GetBOUserName)
