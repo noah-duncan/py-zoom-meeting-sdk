@@ -150,7 +150,113 @@ public:
   }
 };
 
+class BOAdminEventCallbacks : public IBOAdminEvent {
+private:
+  function<void(const zchar_t*)> m_onHelpRequestReceivedCallback;
+  function<void(BOControllerError)> m_onStartBOErrorCallback;
+  function<void(int, bool)> m_onBOEndTimerUpdatedCallback;
+  function<void(bool)> m_onStartBOResponseCallback;
+  function<void(bool)> m_onStopBOResponseCallback;
+
+public:
+  BOAdminEventCallbacks(
+    const function<void(const zchar_t*)>& onHelpRequestReceivedCallback = nullptr,
+    const function<void(BOControllerError)>& onStartBOErrorCallback = nullptr,
+    const function<void(int, bool)>& onBOEndTimerUpdatedCallback = nullptr,
+    const function<void(bool)>& onStartBOResponseCallback = nullptr,
+    const function<void(bool)>& onStopBOResponseCallback = nullptr
+  ) : m_onHelpRequestReceivedCallback(onHelpRequestReceivedCallback),
+      m_onStartBOErrorCallback(onStartBOErrorCallback),
+      m_onBOEndTimerUpdatedCallback(onBOEndTimerUpdatedCallback),
+      m_onStartBOResponseCallback(onStartBOResponseCallback),
+      m_onStopBOResponseCallback(onStopBOResponseCallback)
+      {}
+
+  void onHelpRequestReceived(const zchar_t* strUserID) override {
+    if (m_onHelpRequestReceivedCallback)
+      m_onHelpRequestReceivedCallback(strUserID);
+  }
+
+  void onStartBOError(BOControllerError errCode) override {
+    if (m_onStartBOErrorCallback)
+      m_onStartBOErrorCallback(errCode);
+  }
+
+  void onBOEndTimerUpdated(int remaining, bool isTimesUpNotice) override {
+    if (m_onBOEndTimerUpdatedCallback)
+      m_onBOEndTimerUpdatedCallback(remaining, isTimesUpNotice);
+  }
+
+  void onStartBOResponse(bool bSuccess) override {
+    if (m_onStartBOResponseCallback)
+      m_onStartBOResponseCallback(bSuccess);
+  }
+
+  void onStopBOResponse(bool bSuccess) override {
+    if (m_onStopBOResponseCallback)
+      m_onStopBOResponseCallback(bSuccess);
+  }
+};
+
+class BODataEventCallbacks : public IBODataEvent {
+private:
+  function<void(const zchar_t*)> m_onBOInfoUpdatedCallback;
+  function<void()> m_onUnAssignedUserUpdatedCallback;
+  function<void()> m_onBOListInfoUpdatedCallback;
+
+public:
+  BODataEventCallbacks(
+    const function<void(const zchar_t*)>& onBOInfoUpdatedCallback = nullptr,
+    const function<void()>& onUnAssignedUserUpdatedCallback = nullptr,
+    const function<void()>& onBOListInfoUpdatedCallback = nullptr
+  ) : m_onBOInfoUpdatedCallback(onBOInfoUpdatedCallback),
+      m_onUnAssignedUserUpdatedCallback(onUnAssignedUserUpdatedCallback),
+      m_onBOListInfoUpdatedCallback(onBOListInfoUpdatedCallback)
+      {}
+
+  void onBOInfoUpdated(const zchar_t* strBOID) override {
+    if (m_onBOInfoUpdatedCallback)
+      m_onBOInfoUpdatedCallback(strBOID);
+  }
+
+  void onUnAssignedUserUpdated() override {
+    if (m_onUnAssignedUserUpdatedCallback)
+      m_onUnAssignedUserUpdatedCallback();
+  }
+
+  void OnBOListInfoUpdated() override {
+    if (m_onBOListInfoUpdatedCallback)
+      m_onBOListInfoUpdatedCallback();
+  }
+};
+
 void init_meeting_bo_event_callbacks(nb::module_ &m) {
+  nb::class_<BOAdminEventCallbacks, IBOAdminEvent>(m, "BOAdminEventCallbacks")
+    .def(nb::init<
+      const function<void(const zchar_t*)>&,
+      const function<void(BOControllerError)>&,
+      const function<void(int, bool)>&,
+      const function<void(bool)>&,
+      const function<void(bool)>&
+    >(),
+      nb::arg("onHelpRequestReceivedCallback") = nullptr,
+      nb::arg("onStartBOErrorCallback") = nullptr,
+      nb::arg("onBOEndTimerUpdatedCallback") = nullptr,
+      nb::arg("onStartBOResponseCallback") = nullptr,
+      nb::arg("onStopBOResponseCallback") = nullptr
+    );
+
+  nb::class_<BODataEventCallbacks, IBODataEvent>(m, "BODataEventCallbacks")
+    .def(nb::init<
+      const function<void(const zchar_t*)>&,
+      const function<void()>&,
+      const function<void()>&
+    >(),
+      nb::arg("onBOInfoUpdatedCallback") = nullptr,
+      nb::arg("onUnAssignedUserUpdatedCallback") = nullptr,
+      nb::arg("onBOListInfoUpdatedCallback") = nullptr
+    );
+
   nb::class_<MeetingBOEventCallbacks, IMeetingBOControllerEvent>(m, "MeetingBOEventCallbacks")
     .def(nb::init<
       const function<void(IBOAttendee*)>&,
