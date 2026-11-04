@@ -45,6 +45,10 @@ void init_meeting_breakout_rooms_interface_v2_binding(nb::module_ &m) {
 
   nb::class_<IBOAdminEvent>(m, "IBOAdminEvent");
 
+  nb::class_<IBOAssistant>(m, "IBOAssistant")
+    .def("JoinBO", &IBOAssistant::JoinBO)
+    .def("LeaveBO", &IBOAssistant::LeaveBO);
+
   nb::class_<IBOAdmin>(m, "IBOAdmin")
     .def("StartBO", &IBOAdmin::StartBO)
     .def("StopBO", &IBOAdmin::StopBO)
