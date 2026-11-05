@@ -44,17 +44,18 @@ namespace nb = nanobind;
 using namespace ZOOMSDK;
 
 void init_zoom_rawdata_api_binding(nb::module_ &m) {
+    // SDK-owned singletons: deleting them from Python leaves the SDK calling freed memory
     m.def("GetAudioRawdataHelper", []() -> ZOOM_SDK_NAMESPACE::IZoomSDKAudioRawDataHelper* {
         return ZOOM_SDK_NAMESPACE::GetAudioRawdataHelper();
-    }, nb::rv_policy::take_ownership);
+    }, nb::rv_policy::reference);
 
     m.def("GetRawdataVideoSourceHelper", []() -> ZOOM_SDK_NAMESPACE::IZoomSDKVideoSourceHelper* {
         return ZOOM_SDK_NAMESPACE::GetRawdataVideoSourceHelper();
-    }, nb::rv_policy::take_ownership);
+    }, nb::rv_policy::reference);
 
     m.def("GetRawdataShareSourceHelper", []() -> ZOOM_SDK_NAMESPACE::IZoomSDKShareSourceHelper* {
         return ZOOM_SDK_NAMESPACE::GetRawdataShareSourceHelper();
-    }, nb::rv_policy::take_ownership);
+    }, nb::rv_policy::reference);
 
     m.def("createRenderer", [](IZoomSDKRendererDelegate* pDelegate) -> IZoomSDKRenderer* {
         IZoomSDKRenderer* pRenderer = nullptr;
